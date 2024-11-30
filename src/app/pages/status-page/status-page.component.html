@@ -1,0 +1,50 @@
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5">
+    <select [(ngModel)]="selectedRange" (change)="setDelta()" class="col-span-12 select w-full max-w-xs">
+        @for (range of rangeSelect; track range.name) {
+            <option [ngValue]="range.value">{{range.name}}</option>
+        }
+    </select>
+    @if (sensors.length == 0) {
+        <div class="flex justify-center col-span-12">
+            <span class="loading loading-infinity loading-lg text-success"></span>
+        </div>
+    }
+    @for (sensor of sensors; track sensor.sensor_id) {
+            <div class="stats shadow text-center col-span-12 lg:col-span-3">
+                <div class="stat">
+                    <div class="stat-title">{{this.getSensorTitle(sensor)}}</div>
+                    <div>
+                        <div [class]="['text-'+this.getSensorValidity(sensor), 'stat-value']">{{this.getLastMeasurement(sensor)}}</div>
+                        <div class="stat-desc">{{sensor.sensor_unit}}</div>
+                    </div>
+                    <div>
+                        <div class="grid grid-cols-5">
+                            <div class="cols-span-1 text-warning">
+                                {{sensor.threshold_critically_low}}
+                            </div>
+                            <div class="cols-span-1 text-success">
+                                {{sensor.threshold_low}}
+                            </div>
+                            <div class="cols-span-1">
+                            </div>
+                            <div class="cols-span-1 text-success">
+                                {{sensor.threshold_high}}
+                            </div>
+                            <div class="row-span-1 text-warning">
+                                {{sensor.threshold_critically_high}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72">
+                <app-line-chart
+                    [chartTitle]="this.getSensorTitle(sensor)" 
+                    [sensor]="sensor"
+                    class="h-full">
+                </app-line-chart>
+            </div>
+    }
+</div>
+<span class="text-error hidden"></span>
+<span class="text-neutral hidden"></span>
