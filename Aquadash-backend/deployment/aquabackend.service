@@ -1,0 +1,10 @@
+ [Unit]
+ Description=Gunicorn Daemon for FastAPI Demo Application
+ After=network.target
+
+ [Service]
+ WorkingDirectory=/home/aquapoly/Aquadash/Aquadash-backend/
+ ExecStart=/home/aquapoly/Aquadash/Aquadash-backend/.venv/bin/gunicorn -c deployment/conf.py app.main:app
+
+ [Install]
+ WantedBy=multi-user.target

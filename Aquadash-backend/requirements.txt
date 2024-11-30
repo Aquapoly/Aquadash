@@ -1,0 +1,9 @@
+fastapi[all]
+sqlalchemy
+psycopg2-binary
+passlib
+cryptography
+python-multipart
+python-jose
+pytz
+gunicorn
