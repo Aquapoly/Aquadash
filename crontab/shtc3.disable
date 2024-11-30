@@ -1,0 +1,3 @@
+@reboot python3 /home/aquapoly/monitoring/sensors/services/shtc3.py >> /var/log/crontab/cron.log 2>&1
+* * * * * python3 /home/aquapoly/monitoring/sensors/services/shtc3.py >> /var/log/crontab/cron.log 2>&1
+
