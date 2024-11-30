@@ -35,6 +35,37 @@ sudo apt install docker-compose -y
 
 python3 -m venv .venv
 
+# Mettre a jour les depots
+echo "Mise a jour des depots..."
+sudo apt update && sudo apt upgrade -y
+
+# Installer Node.js (et npm inclus)
+echo "Installation de Node.js..."
+sudo apt install -y nodejs
+
+# Verifier si npm est installee, sinon l'installer
+if ! command -v npm &> /dev/null; then
+  echo "npm non trouve, installation de npm..."
+  sudo apt install -y npm
+fi
+
+# Mettre a jour npm a la derniere version
+echo "Mise a jour de npm..."
+sudo npm install -g npm@latest -y
+
+# Installer Angular CLI globalement
+echo "Installation d'Angular CLI..."
+sudo npm install -g @angular/cli -y
+
+# Verifier les installations
+echo "Verifications des versions installees :"
+echo -n "Node.js version : "; nodejs --version
+echo -n "npm version : "; npm --version
+echo -n "Angular CLI version : "; ng version
+
+# Instructions finales
+echo "Installation terminee. Tu peux maintenant executer 'npm run build' dans ton projet Angular."
+
 clear 
 
 echo "Installation réussie, il est conseillé de redémarer la machine avant de continuer"
