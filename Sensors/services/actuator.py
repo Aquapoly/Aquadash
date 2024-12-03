@@ -67,7 +67,7 @@ class Actuator:
     
 
 def main():
-    actuator = Actuator(PUMP_PIN,3)
+    actuator = Actuator(PUMP_PIN,1)
     actuator.initLoop()
 
 if __name__ == "__main__":

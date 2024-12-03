@@ -264,9 +264,9 @@ def default_populate_database(db: Session):
     # Create three sensors associated with the prototype
     sensors = []
     sensor_types = [
-        (SensorType.temperature, "Celsius", 0.0, 10.0, 30.0, 40.0),
         (SensorType.ec, "mS/cm", 0.0, 1.0, 2.0, 3.0),
-        (SensorType.ph, "pH", 0.0, 4.0, 7.0, 10.0)
+        (SensorType.ph, "pH", 0.0, 4.0, 7.0, 10.0),
+        (SensorType.temperature, "Celsius", 0.0, 10.0, 30.0, 40.0)
     ]
 
     existing_sensors = get_sensors(db=db, prototype_id=prototype.prototype_id)
