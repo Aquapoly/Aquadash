@@ -1,0 +1,8 @@
+# Default: Use CRLF for all files
+* text eol=crlf
+
+# Exceptions: Use LF for script files
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
