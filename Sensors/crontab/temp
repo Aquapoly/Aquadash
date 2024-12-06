@@ -1,2 +1,2 @@
-@reboot cd /home/aquapoly/Aquadash/Sensors && python3 -m services.atlas_main 3 >> /var/log/crontab/cron.log 2>&1
-* * * * * cd /home/aquapoly/Aquadash/Sensors && python3 -m services.atlas_main 3 >> /var/log/crontab/cron.log 2>&1
+@reboot cd /home/aquapoly/Aquadash/Sensors && python3 -m services.atlas_main 3 >> /var/log/cron.log 2>&1
+* * * * * cd /home/aquapoly/Aquadash/Sensors && python3 -m services.atlas_main 3 >> /var/log/cron.log 2>&1
