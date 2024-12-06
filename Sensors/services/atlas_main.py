@@ -30,13 +30,16 @@ def main():
           sensor_i2c_addr = SENSOR_ID_TO_I2C_ADDR[sensor_id]
      except IndexError as err:
           logging.error('File must be run with the sensor_id as an argument.')
+          print("File must be run with the sensor_id as an argument.")
           return
      except KeyError as err:
           logging.error('Unkonwn sensor type passed as argument (check constants.py).')
+          print("Unkonwn sensor type passed as argument (check constants.py).")
           return
 
      val = get_value(sensor_i2c_addr)
      logging.debug(f"Value read: {val}")
+     print(f"Valeur lue,: {val}")
      requests.post(f"{SERVER_URL}/measurements", json={"value":val, "sensor_id": sensor_id})
 
 if __name__ == "__main__":

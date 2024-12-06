@@ -23,6 +23,8 @@ sudo apt install python3 -y
 # Install Systemd
 echo "Ensuring systemd is installed..."
 sudo apt install systemd -y
+sudo apt install -y rsyslog
+sudo apt install postfix
 
 # Install Docker and Docker Compose
 echo "Installing curl..."
