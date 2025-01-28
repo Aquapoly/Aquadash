@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 
 from . import crud, models, schemas
 from .database import engine, get_db
-#from .services import camera
 from .classes.sensor_type import SensorType
+from .services import camera
 from .services.actuator import get_actuator_activation
 from .security import authentification
 from .security import permissions
@@ -218,7 +218,10 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
 
 @app.get("/picture", response_model=schemas.Picture)
 async def picture():
-    return camera.get_image()
+    try:
+        return camera.get_image()
+    except OSError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not available.")
 
 
 # auth stuff
