@@ -4,3 +4,5 @@
 
 # Compiled python
 *.pyc
+
+services/AtlasI2C.py
