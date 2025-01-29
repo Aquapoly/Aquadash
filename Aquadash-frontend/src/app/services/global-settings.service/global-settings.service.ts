@@ -15,11 +15,11 @@ export class GlobalSettingsService {
   toggleDarkMode() {
     this.darkMode = !this.darkMode;
     this.applyTheme();
-    localStorage.setItem('theme', this.darkMode ? 'dracula' : 'nord');
+    localStorage.setItem('theme', this.darkMode ? 'dracula' : 'light');
   }
 
   applyTheme() {
-    const theme = this.darkMode ? 'dracula' : 'nord';
+    const theme = this.darkMode ? 'dracula' : 'light';
     console.log(theme);
     document.body.setAttribute('data-theme', theme);
   }
