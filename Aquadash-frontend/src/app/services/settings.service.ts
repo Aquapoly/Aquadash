@@ -6,11 +6,16 @@ import { Injectable } from '@angular/core';
 export class SettingsService {
   private darkMode = false;
 
-  constructor() {}
+  constructor() {
+    const savedTheme = localStorage.getItem('theme');
+    this.darkMode = savedTheme === 'dracula';
+    this.applyTheme();
+  }
 
   toggleDarkMode() {
     this.darkMode = !this.darkMode;
     this.applyTheme();
+    localStorage.setItem('theme', this.darkMode ? 'dracula' : 'nord');
   }
 
   applyTheme() {
