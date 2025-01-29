@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { SettingsService } from '@app/services/settings.service';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
 
@@ -13,7 +13,7 @@ import { faBell } from '@fortawesome/free-regular-svg-icons';
 export class NavigationBarComponent implements OnInit {
   faBell = faBell;
   darkMode = false;
-  private settingsService = inject(SettingsService);
+  private settingsService = inject(GlobalSettingsService);
 
   ngOnInit(): void {
     this.settingsService.applyTheme();
