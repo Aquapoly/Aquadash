@@ -13,21 +13,21 @@ export class GlobalSettingsService {
     this.applyTheme();
   }
 
-  toggleDarkMode() {
+  toggleDarkMode(): void {
     this.darkMode = !this.darkMode;
     this.applyTheme();
     localStorage.setItem('theme', this.getThemeName());
   }
 
-  applyTheme() {
+  applyTheme(): void {
     document.body.setAttribute('data-theme', this.getThemeName());
   }
 
-  getTheme() {
+  getTheme(): boolean {
     return this.darkMode;
   }
 
-  private getThemeName() {
+  private getThemeName(): string {
     return this.darkMode ? DARK_THEME : LIGHT_THEME;
   }
 }

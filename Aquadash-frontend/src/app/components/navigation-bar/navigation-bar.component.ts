@@ -19,7 +19,7 @@ export class NavigationBarComponent implements OnInit {
     this.settingsService.applyTheme();
     this.darkMode = this.settingsService.getTheme();
   }
-  toggleDarkMode() {
+  toggleDarkMode(): void {
     this.settingsService.toggleDarkMode();
     this.darkMode = this.settingsService.getTheme();
   }
