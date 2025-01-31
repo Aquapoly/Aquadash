@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { DARK_THEME, LIGHT_THEME } from '../../../constants/constants';
 
 @Injectable({
   providedIn: 'root',
@@ -8,23 +9,25 @@ export class GlobalSettingsService {
 
   constructor() {
     const savedTheme = localStorage.getItem('theme');
-    this.darkMode = savedTheme === 'dracula';
+    this.darkMode = savedTheme === DARK_THEME;
     this.applyTheme();
   }
 
   toggleDarkMode() {
     this.darkMode = !this.darkMode;
     this.applyTheme();
-    localStorage.setItem('theme', this.darkMode ? 'dracula' : 'light');
+    localStorage.setItem('theme', this.getThemeName());
   }
 
   applyTheme() {
-    const theme = this.darkMode ? 'dracula' : 'light';
-    console.log(theme);
-    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', this.getThemeName());
   }
 
   getTheme() {
     return this.darkMode;
+  }
+
+  private getThemeName() {
+    return this.darkMode ? DARK_THEME : LIGHT_THEME;
   }
 }
