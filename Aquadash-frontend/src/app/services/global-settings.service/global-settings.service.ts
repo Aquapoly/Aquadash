@@ -20,7 +20,7 @@ export class GlobalSettingsService {
   }
 
   applyTheme(): void {
-    document.body.setAttribute('data-theme', this.getThemeName());
+    document.documentElement.setAttribute('data-theme', this.getThemeName());
   }
 
   getTheme(): boolean {
