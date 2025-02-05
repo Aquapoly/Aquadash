@@ -25,6 +25,10 @@ Install dependencies (in the virtual environment):
 ```bash
 pip install -r requirements.txt
 ```
+Pour utiliser Docker (optionel):
+```bash
+docker compose up --build
+```
 
 ### Database (Linux)
 Install PostgreSQL :
