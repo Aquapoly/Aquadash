@@ -47,7 +47,7 @@
               >Durée</span
             >
           </th>
-          <th>Activé/Désactivé</th>
+          <th>Actif</th>
           <th>Dernière activation</th>
         </tr>
       </thead>
@@ -86,11 +86,11 @@
             <select
               [(ngModel)]="actuator.activation_condition"
               name="condition_{{ actuator.actuator_id }}"
-              class="bg-transparent"
+              class="select select-bordered select-sm"
               required
             >
-              <option value="low">Low</option>
               <option value="high">High</option>
+              <option value="low">Low</option>
             </select>
           </td>
           <td>
@@ -112,12 +112,17 @@
             />
           </td>
           <td>
-            <input
-              [(ngModel)]="actuator.enabled"
-              type="checkbox"
-              class="checkbox checkbox-primary"
-              name="enabled_{{ actuator.actuator_id }}"
-            />
+            <div class="form-control">
+              <label class="label cursor-pointer w-min">
+                <input
+                  [(ngModel)]="actuator.enabled"
+                  type="checkbox"
+                  class="toggle toggle-primary"
+                  checked="checked"
+                  name="enabled_{{ actuator.actuator_id }}"
+                />
+              </label>
+            </div>
           </td>
           <td>
             {{ actuator.last_activated | date : "short" }}
