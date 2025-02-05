@@ -59,7 +59,7 @@ export class StatusPageComponent implements OnInit {
       (msr) => msr[0] === sensor.sensor_id
     );
     if (!get_measurement || !get_measurement[1]) {
-      return 'neutral';
+      return 'neutral-content';
     }
 
     const last_measurement = get_measurement[1];
