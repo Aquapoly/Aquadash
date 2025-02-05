@@ -5,6 +5,7 @@ import { TimeDelta } from '@app/interfaces/time-delta';
 import { SensorService } from '@app/services/sensor.service';
 import { Chart } from 'chart.js/auto';
 // import { Math } from 'core-js';
+import { oklch, formatHex } from 'culori';
 
 @Component({
   selector: 'app-line-chart',
@@ -33,12 +34,26 @@ export class LineChartComponent implements OnInit, AfterViewInit {
     this.createChart();
   }
 
+  private getColor(sensorId: number): string {
+    var elem = document.getElementById(`sensor${sensorId}`);
+    const color = elem
+      ? formatHex(
+          oklch(window.getComputedStyle(elem).getPropertyValue('color'))
+        )
+      : '#000000';
+    console.log(color);
+    return color || '#000000';
+  }
+
   async createChart() {
     const measurements: Measurement[] =
       await this.sensorService.getSensorMeasurementsDelta(
         this.sensor.sensor_id,
         this.sensorService.time_delta()
       );
+
+    const color = this.getColor(this.sensor.sensor_id);
+
     this.chart = new Chart(this.chartId, {
       type: 'line', //this denotes tha type of chart
 
@@ -49,6 +64,8 @@ export class LineChartComponent implements OnInit, AfterViewInit {
           {
             label: this.sensor.sensor_unit,
             data: measurements.map((msr) => msr.value),
+            borderColor: color,
+            backgroundColor: color + '40',
           },
         ],
       },
