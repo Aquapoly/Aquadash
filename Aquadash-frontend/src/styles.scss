@@ -5,9 +5,11 @@
 @tailwind components;
 @tailwind utilities;
 
+$height: max-content;
+
 html,
 body {
-  height: 100%;
+  height: max(100vh, 100%);
   font-family: "Inter", "Roboto", sans-serif;
 }
 body {

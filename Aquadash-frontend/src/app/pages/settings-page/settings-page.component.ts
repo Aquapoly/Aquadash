@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-actuator-page',
   standalone: true,
   templateUrl: './settings-page.component.html',
-  styleUrl: './settings-page.component.css',
+  styleUrl: './settings-page.component.scss',
   imports: [FormsModule, ModalComponent, CommonModule],
 })
 export class SettingsPageComponent implements OnInit {
