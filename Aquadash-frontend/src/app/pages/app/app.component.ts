@@ -9,9 +9,16 @@ import { SettingsPageComponent } from '@app/pages/settings-page/settings-page.co
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavigationBarComponent, LineChartComponent, StatusPageComponent, SettingsPageComponent, FontAwesomeModule],
+  imports: [
+    RouterOutlet,
+    NavigationBarComponent,
+    LineChartComponent,
+    StatusPageComponent,
+    SettingsPageComponent,
+    FontAwesomeModule,
+  ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   title = 'aquadash';

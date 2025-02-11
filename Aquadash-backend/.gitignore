@@ -18,6 +18,7 @@ env
 docs_build
 venv
 .venv
+.env
 docs.zip
 archive.zip
 logs
