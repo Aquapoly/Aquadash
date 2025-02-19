@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
 
@@ -7,8 +8,19 @@ import { faBell } from '@fortawesome/free-regular-svg-icons';
   standalone: true,
   imports: [FontAwesomeModule],
   templateUrl: './navigation-bar.component.html',
-  styleUrl: './navigation-bar.component.css'
+  styleUrl: './navigation-bar.component.scss',
 })
-export class NavigationBarComponent {
-  faBell = faBell
+export class NavigationBarComponent implements OnInit {
+  faBell = faBell;
+  darkMode = false;
+  private settingsService = inject(GlobalSettingsService);
+
+  ngOnInit(): void {
+    this.settingsService.applyTheme();
+    this.darkMode = this.settingsService.getTheme();
+  }
+  toggleDarkMode(): void {
+    this.settingsService.toggleDarkMode();
+    this.darkMode = this.settingsService.getTheme();
+  }
 }

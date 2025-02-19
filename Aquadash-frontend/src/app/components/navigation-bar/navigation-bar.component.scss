@@ -1,0 +1,20 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.navbar-start {
+  width: min-content;
+  z-index: 1;
+}
+
+.navbar-center {
+  width: 100%;
+  position: absolute;
+  top: 8px;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 0;
+}
