@@ -4,7 +4,7 @@ Normalement l'application est accessible dans http://localhost
 
 ## Serveur de developpement 
 
-Lancer `npm start` pour lancer le serveur de développement. Naviguer vers `http://localhost:4200/`. L'application se rechargera automatiquement si vous modifiez un fichier source.
+Lancer `npm start` pour lancer le serveur de développement. Naviguer vers `http://localhost:4200/`. L'application se rechargera automatiquement si vous modifiez un fichier source. Pour un environement de développement veuillez également modifier le fichier environment.ts : `export const SERVER_URL="http://localhost:8000";`
 
 ## Build
 
