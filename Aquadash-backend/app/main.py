@@ -279,3 +279,31 @@ async def read_items(token: Annotated[str, Depends(authentification.oauth2_schem
     return {"token": token}
 
 # simplify_operation_ids(app)
+
+@app.post("/Measurement/Random", 
+          tags = ["Measurements"])
+async def post_random_measurements(
+   
+    datas:schemas.RandomMeasurements,
+    db: Session = Depends(get_db)
+):
+    try:
+        db.query(models.Measurement).delete()
+        db.commit()
+        return {"message": "Données remplacées avec succès."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        measurements = crud.generate_meas(datas.nb_measurements, 
+                                          datas.yearly_measurements_ratio,
+                                          datas.dayly_measurements_ratio,
+                                          datas.hourly_measurements_ratio, 
+                                          datas.deviation_rate, 
+                                          datas.smoothing_factor, 
+                                          datas.drift_adjustment, db)
+        for meas in measurements:
+            db_Measurement = models.Measurement(sensor_id=meas[0], value=meas[1], timestamp=meas[2])
+            db.add(db_Measurement)
+            db.commit()
+            db.refresh(db_Measurement)

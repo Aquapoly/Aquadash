@@ -11,7 +11,9 @@ from . import models, schemas
 import secrets
 from .security import authentification
 from .security import permissions
-from datetime import datetime
+from datetime import datetime, timedelta
+import random, pytz
+from concurrent.futures import ThreadPoolExecutor
 
 
 def get_prototypes(db: Session, prototype_id: int | None = None):
@@ -307,3 +309,67 @@ def default_populate_database(db: Session):
         "sensors": sensors,
         "actuator": actuator
     }
+
+def generate_smooth_values(middle:float,rnge:float, nb_meas:int, alpha:float, threshold:float, drift_adjustment:float):
+    values = []
+    drift_adjustment = 0.20
+    values.append(round(random.gauss(middle,rnge), 2))
+    for i in range(1, nb_meas):
+        new_val = round(random.gauss(middle,rnge),2) + drift_adjustment*(middle-values[i-1])*0.5
+        smooth_value = alpha*new_val + (1-alpha)*values[i-1]
+        if abs(smooth_value - values[i-1]) > threshold:
+            smooth_value = values[i-1] - threshold if smooth_value < values[i-1] else values[i-1] + threshold
+        values.append(round(smooth_value,2))
+    return values
+
+def generate_timestamps(nb_meas:int, rnge:str):
+    timestamps = []
+    for i in range(nb_meas):
+        now = datetime.now(pytz.UTC)
+        if   rnge == "year": startingDate = now - timedelta(days=365)
+        elif rnge == "day": startingDate = now - timedelta(days=1)
+        elif rnge == "hour" : startingDate = now - timedelta(hours=1)
+        delta     = now-startingDate
+        timestamp =  startingDate + timedelta(seconds=random.randint(0, int(delta.total_seconds())))
+        timestamps.append(f"'{timestamp}'")
+    sorted_copy = sorted(timestamps.copy())
+    return sorted_copy
+
+def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio: float, deviation_percent: float, smoothing_factor: float, drift_adjustment: float, db: Session):
+    request = db.query(models.Sensor).all()
+    nb_sensors = len(request)
+    while nb_meas % nb_sensors != 0: nb_meas += 1
+
+    nb_year_meas = int(nb_meas * year_ratio)
+    nb_day_meas = int(nb_meas * day_ratio)
+    nb_hour_meas = int(nb_meas * hour_ratio)
+    nb_meas_per_sensor = (nb_year_meas + nb_day_meas + nb_hour_meas) // nb_sensors
+
+    def generate_sensor_values(sensor):
+        value_range = ((sensor.threshold_critically_high - sensor.threshold_critically_low) * deviation_percent / 2)
+        middle = (sensor.threshold_critically_high + sensor.threshold_critically_low) / 2
+        threshold = value_range / 2
+        return sensor.sensor_id, generate_smooth_values(middle, value_range, nb_meas_per_sensor, smoothing_factor, threshold, drift_adjustment)
+
+    with ThreadPoolExecutor() as executor:
+        values = dict(executor.map(generate_sensor_values, request))
+
+    timestamps = {
+        "year": generate_timestamps(nb_year_meas, "year"),
+        "day": generate_timestamps(nb_day_meas, "day"),
+        "hour": generate_timestamps(nb_hour_meas, "hour")
+    }
+
+    def distribute_meas(nb, time_key):
+        index, sensor_index = 0, 0
+        result = []
+        for i in range(nb):
+            result.append([sensor_ids[sensor_index], values[sensor_ids[sensor_index]][index], timestamps[time_key][i]])
+            sensor_index += 1
+            if sensor_index == nb_sensors:
+                index += 1
+                sensor_index = 0
+        return result
+
+    sensor_ids = list(values.keys())
+    return distribute_meas(nb_year_meas, "year") + distribute_meas(nb_day_meas, "day") + distribute_meas(nb_hour_meas, "hour")
