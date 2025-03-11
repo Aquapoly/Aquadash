@@ -1,25 +1,55 @@
 <form #settingsForm="ngForm">
-  <div
-    class="collapse collapse-open w-11/12 m-auto shadow"
-  >
-    <input type="checkbox" />
-    <div class="collapse-title font-semibold text-xl text-center">
-      Actuateurs
+  <div class="collapse collapse-open w-11/12 m-auto shadow px-8">
+    <div class="py-6 px-4 sm:px-0">
+      <h3 class="text-base/7 font-semibold">Actuateurs</h3>
+      <p class="mt-1 text-sm/6 text-gray-400">
+        Les actuateurs sont des dispositifs qui contrôlent les équipements du
+        système hydroponique (pompes, lumières, etc.).
+      </p>
     </div>
+
     <table class="table">
       <thead>
-      <tr>
-        <th><span data-tippy-content="Contrôle l'équipement pour ajuster l'eau, les nutriments et les conditions de croissance des plantes.">Actuateur</span></th>
-        <th><span data-tippy-content="Type d'actuateur (ex: pompe, vannes, lumière)">Type</span></th>
-        <th><span data-tippy-content="Valeur minimale autorisée">Valeur minimale</span></th>
-        <th><span data-tippy-content="Valeur maximale autorisée">Valeur maximale</span></th>
-        <th><span data-tippy-content="Condition d'activation">Condition</span></th>
-        <th><span data-tippy-content="Temps d'attente entre chaque activations (en secondes)">Période</span></th>
-        <th><span data-tippy-content="Durée d'activation (en secondes)">Durée</span></th>
-        <th>Activé/Désactivé</th>
-        <th>Dernière activation</th>
-      </tr>
-
+        <tr>
+          <th>
+            <span
+              data-tippy-content="Contrôle l'équipement pour ajuster l'eau, les nutriments et les conditions de croissance des plantes."
+              >Actuateur</span
+            >
+          </th>
+          <th>
+            <span
+              data-tippy-content="Type d'actuateur (ex: pompe, vannes, lumière)"
+              >Type</span
+            >
+          </th>
+          <th>
+            <span data-tippy-content="Valeur minimale autorisée"
+              >Valeur minimale</span
+            >
+          </th>
+          <th>
+            <span data-tippy-content="Valeur maximale autorisée"
+              >Valeur maximale</span
+            >
+          </th>
+          <th>
+            <span data-tippy-content="Condition d'activation">Condition</span>
+          </th>
+          <th>
+            <span
+              data-tippy-content="Temps d'attente entre chaque activations (en secondes)"
+              >Période</span
+            >
+          </th>
+          <th>
+            <span data-tippy-content="Durée d'activation (en secondes)"
+              >Durée</span
+            >
+          </th>
+          <th>Actif</th>
+          <th>Dernière activation</th>
+        </tr>
       </thead>
       <tbody>
         @if(actuators.length === 0){
@@ -56,11 +86,11 @@
             <select
               [(ngModel)]="actuator.activation_condition"
               name="condition_{{ actuator.actuator_id }}"
-              class="bg-transparent"
+              class="select select-bordered select-sm"
               required
             >
-              <option value="low">Low</option>
               <option value="high">High</option>
+              <option value="low">Low</option>
             </select>
           </td>
           <td>
@@ -82,15 +112,20 @@
             />
           </td>
           <td>
-            <input
-              [(ngModel)]="actuator.enabled"
-              type="checkbox"
-              class="checkbox checkbox-primary"
-              name="enabled_{{ actuator.actuator_id }}"
-            />
+            <div class="form-control">
+              <label class="label cursor-pointer w-min">
+                <input
+                  [(ngModel)]="actuator.enabled"
+                  type="checkbox"
+                  class="toggle toggle-primary"
+                  checked="checked"
+                  name="enabled_{{ actuator.actuator_id }}"
+                />
+              </label>
+            </div>
           </td>
           <td>
-            {{ actuator.last_activated | date: 'short'}}
+            {{ actuator.last_activated | date : "short" }}
           </td>
         </tr>
         }
@@ -135,4 +170,4 @@
   </div>
 </dialog>
 
-<app-modal #responseModal/>
+<app-modal #responseModal />
