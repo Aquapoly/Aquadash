@@ -33,6 +33,7 @@ export type ChartOptions = {
   stroke: ApexStroke;
   title: ApexTitleSubtitle;
   colors: string[];
+  annotations: ApexAnnotations;
 };
 
 @Component({
@@ -76,6 +77,7 @@ export class LineChartComponent implements AfterViewInit {
         align: 'left',
       },
       colors: [],
+      annotations: {},
     };
     effect(() => {
       const timeDelta = this.sensorService.time_delta();
@@ -84,6 +86,7 @@ export class LineChartComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    console.log(this.sensor);
     this.loadInitialData();
   }
 
@@ -146,6 +149,7 @@ export class LineChartComponent implements AfterViewInit {
       title: {
         text: this.chartTitle,
       },
+      annotations: this.createThresholdAnnotations(this.sensor),
     };
 
     this.chart.updateOptions(this.chartOptions);
@@ -229,5 +233,72 @@ export class LineChartComponent implements AfterViewInit {
         max: end.getTime(),
       },
     });
+  }
+
+  private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
+    return {
+      yaxis: [
+        {
+          y: sensor.threshold_critically_low,
+          borderColor: '#ff0000',
+          strokeDashArray: 0,
+          label: {
+            borderColor: '#ff0000',
+            text: 'Seuil critique bas',
+            style: {
+              color: '#fff',
+              background: '#ff0000',
+              fontSize: '12px',
+            },
+            position: 'left',
+          },
+        },
+        {
+          y: sensor.threshold_low,
+          borderColor: '#ffa500',
+          strokeDashArray: 5,
+          label: {
+            borderColor: '#ffa500',
+            text: 'Seuil bas',
+            style: {
+              color: '#000',
+              background: '#ffa500',
+              fontSize: '12px',
+            },
+            position: 'left',
+          },
+        },
+        {
+          y: sensor.threshold_high,
+          borderColor: '#ffa500',
+          strokeDashArray: 5,
+          label: {
+            borderColor: '#ffa500',
+            text: 'Seuil haut',
+            style: {
+              color: '#000',
+              background: '#ffa500',
+              fontSize: '12px',
+            },
+            position: 'right',
+          },
+        },
+        {
+          y: sensor.threshold_critically_high,
+          borderColor: '#ff0000',
+          strokeDashArray: 0,
+          label: {
+            borderColor: '#ff0000',
+            text: 'Seuil critique haut',
+            style: {
+              color: '#fff',
+              background: '#ff0000',
+              fontSize: '12px',
+            },
+            position: 'right',
+          },
+        },
+      ],
+    };
   }
 }
