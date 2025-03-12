@@ -104,7 +104,10 @@ export class LineChartComponent implements AfterViewInit {
       series: [
         {
           name: this.sensor.sensor_unit,
-          data: measurements.map((msr) => msr.value),
+          data: measurements.map((msr) => ({
+            x: new Date(msr.timestamp).getTime(),
+            y: msr.value,
+          })),
         },
       ],
       chart: {
@@ -113,7 +116,6 @@ export class LineChartComponent implements AfterViewInit {
       },
       xaxis: {
         type: 'datetime',
-        categories: measurements.map((msr) => new Date(msr.timestamp)),
       },
       dataLabels: {
         enabled: false,
