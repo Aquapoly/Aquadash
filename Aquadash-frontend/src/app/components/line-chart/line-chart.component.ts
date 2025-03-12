@@ -1,36 +1,141 @@
-import { AfterViewInit, Component, Input, OnInit, effect } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  Input,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { Measurement } from '@app/interfaces/measurement';
 import { Sensor } from '@app/interfaces/sensor';
 import { TimeDelta } from '@app/interfaces/time-delta';
 import { SensorService } from '@app/services/sensor.service';
-import { Chart } from 'chart.js/auto';
-// import { Math } from 'core-js';
 import { oklch, formatHex } from 'culori';
+import {
+  ChartComponent,
+  ApexAxisChartSeries,
+  ApexChart,
+  ApexXAxis,
+  ApexDataLabels,
+  ApexTitleSubtitle,
+  ApexStroke,
+  ApexGrid,
+  ApexAnnotations,
+  NgApexchartsModule,
+} from 'ng-apexcharts';
+
+export type ChartOptions = {
+  series: ApexAxisChartSeries;
+  chart: ApexChart;
+  xaxis: ApexXAxis;
+  dataLabels: ApexDataLabels;
+  grid: ApexGrid;
+  stroke: ApexStroke;
+  title: ApexTitleSubtitle;
+  colors: string[];
+};
 
 @Component({
-    selector: 'app-line-chart',
-    imports: [],
-    templateUrl: './line-chart.component.html',
-    styleUrl: './line-chart.component.scss'
+  selector: 'app-line-chart',
+  standalone: true,
+  imports: [NgApexchartsModule],
+  templateUrl: './line-chart.component.html',
+  styleUrls: ['./line-chart.component.scss'],
 })
-export class LineChartComponent implements OnInit, AfterViewInit {
-  public chart: Chart = {} as Chart;
+export class LineChartComponent implements AfterViewInit {
+  @ViewChild('chart') chart!: ChartComponent;
+  public chartOptions: ChartOptions;
+
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
 
-  chartId: string = '';
   constructor(private sensorService: SensorService) {
-    effect(() => {
-      this.updateChart(this.sensorService.time_delta());
-    });
-  }
-
-  ngOnInit() {
-    this.chartId = Math.floor(Math.random() * 100000).toString();
+    this.chartOptions = {
+      series: [],
+      chart: {
+        height: 250,
+        type: 'line',
+      },
+      xaxis: {
+        type: 'datetime',
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      grid: {
+        padding: {
+          right: 30,
+          left: 20,
+        },
+      },
+      stroke: {
+        curve: 'straight',
+      },
+      title: {
+        text: '',
+        align: 'left',
+      },
+      colors: [],
+    };
   }
 
   ngAfterViewInit(): void {
-    this.createChart();
+    this.loadInitialData();
+  }
+
+  private async loadInitialData() {
+    const measurements = await this.sensorService.getSensorMeasurementsDelta(
+      this.sensor.sensor_id,
+      this.sensorService.time_delta()
+    );
+    console.log('Measurements: ', measurements);
+    this.updateChartData(measurements);
+  }
+
+  public updateChart(timeDelta: TimeDelta) {
+    this.sensorService
+      .getSensorMeasurementsDelta(this.sensor.sensor_id, timeDelta)
+      .then((measurements) => this.updateChartData(measurements));
+  }
+
+  private updateChartData(measurements: Measurement[]) {
+    const color = this.getColor(this.sensor.sensor_id);
+    console.log(measurements.map((msr) => msr.value));
+    this.chartOptions = {
+      series: [
+        {
+          name: this.sensor.sensor_unit,
+          data: measurements.map((msr) => msr.value),
+        },
+      ],
+      chart: {
+        height: 250,
+        type: 'line',
+      },
+      xaxis: {
+        type: 'datetime',
+        categories: measurements.map((msr) => new Date(msr.timestamp)),
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      grid: {
+        padding: {
+          right: 30,
+          left: 20,
+        },
+      },
+      stroke: {
+        curve: 'straight',
+      },
+      colors: [color],
+      title: {
+        text: this.chartTitle,
+      },
+    };
+
+    this.chart.updateOptions(this.chartOptions);
+    console.log(this.chartOptions);
+    console.log(this.chart.series);
   }
 
   private getColor(sensorId: number): string {
@@ -53,45 +158,15 @@ export class LineChartComponent implements OnInit, AfterViewInit {
 
     const color = this.getColor(this.sensor.sensor_id);
 
-    this.chart = new Chart(this.chartId, {
-      type: 'line', //this denotes tha type of chart
-
-      data: {
-        // values on X-Axis
-        labels: measurements.map((msr) => this.shortenTimestamp(msr.timestamp)),
-        datasets: [
-          {
-            label: this.sensor.sensor_unit,
-            data: measurements.map((msr) => msr.value),
-            borderColor: color,
-            backgroundColor: color + '40',
-          },
-        ],
-      },
-
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            onClick: null as any,
-            position: 'bottom',
-          },
+    if (this.chartOptions) {
+      this.chartOptions.series = [
+        {
+          name: this.sensor.sensor_unit,
+          data: measurements.map((msr) => msr.value),
         },
-      },
-    });
-  }
-
-  updateChart(time_delta: TimeDelta) {
-    this.sensorService
-      .getSensorMeasurementsDelta(this.sensor.sensor_id, time_delta)
-      .then((measurements) => {
-        this.chart.data.labels = measurements.map((msr) =>
-          this.shortenTimestamp(msr.timestamp)
-        );
-        this.chart.data.datasets[0].data = measurements.map((msr) => msr.value);
-        this.chart.update();
-      });
+      ];
+    }
+    console.log(this.chartOptions);
   }
 
   shortenTimestamp(timestamp: string) {
