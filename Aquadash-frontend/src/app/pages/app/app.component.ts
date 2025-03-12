@@ -7,18 +7,17 @@ import { StatusPageComponent } from '@app/pages/status-page/status-page.componen
 import { SettingsPageComponent } from '@app/pages/settings-page/settings-page.component';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    RouterOutlet,
-    NavigationBarComponent,
-    LineChartComponent,
-    StatusPageComponent,
-    SettingsPageComponent,
-    FontAwesomeModule,
-  ],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+    selector: 'app-root',
+    imports: [
+        RouterOutlet,
+        NavigationBarComponent,
+        LineChartComponent,
+        StatusPageComponent,
+        SettingsPageComponent,
+        FontAwesomeModule,
+    ],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss'
 })
 export class AppComponent {
   title = 'aquadash';

@@ -3,11 +3,10 @@ import { Sensor } from '@app/interfaces/sensor';
 import { SensorService } from '@app/services/sensor.service';
 
 @Component({
-  selector: 'app-gauge-chart',
-  standalone: true,
-  imports: [],
-  templateUrl: './gauge-chart.component.html',
-  styleUrl: './gauge-chart.component.scss',
+    selector: 'app-gauge-chart',
+    imports: [],
+    templateUrl: './gauge-chart.component.html',
+    styleUrl: './gauge-chart.component.scss'
 })
 export class GaugeChartComponent implements OnInit {
   @Input() sensor: Sensor = {} as Sensor;

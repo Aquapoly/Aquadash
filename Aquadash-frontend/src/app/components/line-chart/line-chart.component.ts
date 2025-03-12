@@ -8,11 +8,10 @@ import { Chart } from 'chart.js/auto';
 import { oklch, formatHex } from 'culori';
 
 @Component({
-  selector: 'app-line-chart',
-  standalone: true,
-  imports: [],
-  templateUrl: './line-chart.component.html',
-  styleUrl: './line-chart.component.scss',
+    selector: 'app-line-chart',
+    imports: [],
+    templateUrl: './line-chart.component.html',
+    styleUrl: './line-chart.component.scss'
 })
 export class LineChartComponent implements OnInit, AfterViewInit {
   public chart: Chart = {} as Chart;

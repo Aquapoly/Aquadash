@@ -9,11 +9,10 @@ import tippy from 'tippy.js';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-actuator-page',
-  standalone: true,
-  templateUrl: './settings-page.component.html',
-  styleUrl: './settings-page.component.scss',
-  imports: [FormsModule, ModalComponent, CommonModule],
+    selector: 'app-actuator-page',
+    templateUrl: './settings-page.component.html',
+    styleUrl: './settings-page.component.scss',
+    imports: [FormsModule, ModalComponent, CommonModule]
 })
 export class SettingsPageComponent implements OnInit {
   actuators: Actuator[] = [];

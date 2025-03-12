@@ -8,11 +8,10 @@ import { TimeDelta } from '@app/interfaces/time-delta';
 import { Measurement } from '@app/interfaces/measurement';
 
 @Component({
-  selector: 'app-status-page',
-  standalone: true,
-  templateUrl: './status-page.component.html',
-  styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, GaugeChartComponent, FormsModule],
+    selector: 'app-status-page',
+    templateUrl: './status-page.component.html',
+    styleUrl: './status-page.component.scss',
+    imports: [LineChartComponent, GaugeChartComponent, FormsModule]
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
