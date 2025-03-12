@@ -11,7 +11,7 @@ import { Measurement } from '@app/interfaces/measurement';
   selector: 'app-status-page',
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, GaugeChartComponent, FormsModule],
+  imports: [LineChartComponent, FormsModule],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
