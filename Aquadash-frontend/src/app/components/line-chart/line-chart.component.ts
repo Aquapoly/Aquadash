@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   Component,
+  effect,
   Input,
   OnInit,
   ViewChild,
@@ -76,6 +77,10 @@ export class LineChartComponent implements AfterViewInit {
       },
       colors: [],
     };
+    effect(() => {
+      const timeDelta = this.sensorService.time_delta();
+      this.updateZoomRange(timeDelta);
+    });
   }
 
   ngAfterViewInit(): void {
@@ -99,6 +104,9 @@ export class LineChartComponent implements AfterViewInit {
 
   private updateChartData(measurements: Measurement[]) {
     const color = this.getColor(this.sensor.sensor_id);
+    const { start, end } = this.calculateDateRange(
+      this.sensorService.time_delta()
+    );
     console.log(measurements.map((msr) => msr.value));
     this.chartOptions = {
       series: [
@@ -116,6 +124,11 @@ export class LineChartComponent implements AfterViewInit {
       },
       xaxis: {
         type: 'datetime',
+        min: start.getTime(),
+        max: end.getTime(),
+        labels: {
+          formatter: (val) => this.formatDateLabel(new Date(val)),
+        },
       },
       dataLabels: {
         enabled: false,
@@ -136,6 +149,8 @@ export class LineChartComponent implements AfterViewInit {
     };
 
     this.chart.updateOptions(this.chartOptions);
+    this.chart?.render();
+
     console.log(this.chartOptions);
     console.log(this.chart.series);
   }
@@ -177,5 +192,42 @@ export class LineChartComponent implements AfterViewInit {
       8,
       10
     )} - ${timeSplit[1].substring(0, 2)}h${timeSplit[1].substring(3, 5)}`;
+  }
+
+  private formatDateLabel(date: Date): string {
+    return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}h${date
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`;
+  }
+
+  private calculateDateRange(timeDelta: TimeDelta): { start: Date; end: Date } {
+    const endDate = new Date();
+    const startDate = new Date(
+      endDate.getTime() - this.timeDeltaToMs(timeDelta)
+    );
+    return { start: startDate, end: endDate };
+  }
+
+  private timeDeltaToMs(timeDelta: TimeDelta): number {
+    return (
+      timeDelta.days * 86400000 +
+      timeDelta.hours * 3600000 +
+      timeDelta.minutes * 60000 +
+      timeDelta.seconds * 1000
+    );
+  }
+
+  private updateZoomRange(timeDelta: TimeDelta) {
+    if (!this.chart) return;
+
+    const { start, end } = this.calculateDateRange(timeDelta);
+
+    this.chart.updateOptions({
+      xaxis: {
+        min: start.getTime(),
+        max: end.getTime(),
+      },
+    });
   }
 }

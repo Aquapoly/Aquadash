@@ -8,17 +8,17 @@ import { TimeDelta } from '@app/interfaces/time-delta';
 import { Measurement } from '@app/interfaces/measurement';
 
 @Component({
-    selector: 'app-status-page',
-    templateUrl: './status-page.component.html',
-    styleUrl: './status-page.component.scss',
-    imports: [LineChartComponent, GaugeChartComponent, FormsModule]
+  selector: 'app-status-page',
+  templateUrl: './status-page.component.html',
+  styleUrl: './status-page.component.scss',
+  imports: [LineChartComponent, GaugeChartComponent, FormsModule],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
   public sensorLastMeasurements: [key: number, value: number][] = [];
   public columnCount = 2;
   public chartSize: number = 100;
-  selectedRange: TimeDelta = this.rangeSelect[0].value;
+  selectedRange: TimeDelta = this.rangeSelect[3].value;
 
   constructor(private sensorService: SensorService) {}
 
