@@ -24,8 +24,12 @@ services:
       dockerfile: app.Dockerfile
     environment:
       DOCKER: 1
+    devices:
+      - /dev/video0:/dev/video0
+    volumes:
+      - .:/usr/src/app
     restart: always
-    depends_on: 
+    depends_on:
       - db
     links:
       - db:db

@@ -6,13 +6,14 @@ import { GaugeChartComponent } from '@app/components/gauge-chart/gauge-chart.com
 import { FormsModule } from '@angular/forms';
 import { TimeDelta } from '@app/interfaces/time-delta';
 import { Measurement } from '@app/interfaces/measurement';
+import { CameraPictureComponent } from "@app/components/camera-picture/camera-picture.component";
 
 @Component({
-  selector: 'app-status-page',
-  standalone: true,
-  templateUrl: './status-page.component.html',
-  styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, GaugeChartComponent, FormsModule],
+    selector: 'app-status-page',
+    standalone: true,
+    templateUrl: './status-page.component.html',
+    styleUrl: './status-page.component.scss',
+    imports: [LineChartComponent, GaugeChartComponent, FormsModule, CameraPictureComponent]
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];

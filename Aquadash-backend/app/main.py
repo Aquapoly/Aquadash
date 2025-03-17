@@ -1,18 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse
 # from fastapi_utils.openapi import simplify_operation_ids
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import datetime, timedelta
+import io
 # from jose import JWTError, jwt
 
 
 from . import crud, models, schemas
 from .database import engine, get_db
-#from .services import camera
 from .classes.sensor_type import SensorType
+from .services import camera
 from .services.actuator import get_actuator_activation
 from .security import authentification
 from .security import permissions
@@ -216,9 +218,12 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
     return crud.get_actuators(db=db, prototype_id=prototype_id)
 
 
-@app.get("/picture", response_model=schemas.Picture)
+@app.get("/picture", response_class=StreamingResponse)
 async def picture():
-    return camera.get_image()
+    try:
+        return StreamingResponse(io.BytesIO(camera.get_image()), media_type="image/png")
+    except OSError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not available.")
 
 
 # auth stuff
