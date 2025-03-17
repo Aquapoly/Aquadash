@@ -24,8 +24,7 @@ services:
       dockerfile: app.Dockerfile
     environment:
       DOCKER: 1
-    devices:
-      - /dev/video0:/dev/video0
+      ENABLE_CAMERA: ${ENABLE_CAMERA:-false}
     volumes:
       - .:/usr/src/app
     restart: always
