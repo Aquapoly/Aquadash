@@ -1,5 +1,7 @@
 Application to monitor and control the hydroponics system.
 
+**Recommendation (windows):** Use Git Bash terminal on Windows as some commands may not work using PowerShell.
+
 ## Setup
 
 ### Python
@@ -25,9 +27,23 @@ Install dependencies (in the virtual environment):
 ```bash
 pip install -r requirements.txt
 ```
-Pour utiliser Docker (optionel):
+
+### When using Docker (optional)
+
+Activate the camera:
 ```bash
-docker compose up --build
+export ENABLE_CAMERA=true
+```
+
+Deactivate the camera:
+```bash
+export ENABLE_CAMERA=false
+```
+
+Make the script executable and start the container:
+```bash
+sudo chmod +x start_container.sh
+./backend-launcher.sh
 ```
 
 ### Database (Linux)
