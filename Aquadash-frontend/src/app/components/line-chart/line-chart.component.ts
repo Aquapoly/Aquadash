@@ -46,6 +46,41 @@ export type ChartOptions = {
   tooltip: ApexTooltip;
 };
 
+export enum Theme {
+  Light = 'light',
+  Dark = 'dark',
+}
+
+export const BASE_CHART_OPTIONS: ChartOptions = {
+  series: [],
+  chart: {
+    height: 250,
+    type: 'area',
+    foreColor: '#222',
+  },
+  xaxis: {
+    type: 'datetime',
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  grid: {
+    padding: {},
+  },
+  stroke: {
+    curve: 'smooth',
+  },
+  title: {
+    text: '',
+    align: 'left',
+  },
+  colors: [],
+  annotations: {},
+  tooltip: {
+    theme: Theme.Light,
+  },
+};
+
 @Component({
   selector: 'app-line-chart',
   standalone: true,
@@ -55,9 +90,9 @@ export type ChartOptions = {
 })
 export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild('chart') chart!: ChartComponent;
-  public chartOptions: ChartOptions;
+  public chartOptions: ChartOptions = { ...BASE_CHART_OPTIONS };
   private themeSubscription!: Subscription;
-  private theme: string = 'light';
+  private theme: string = Theme.Light;
 
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
@@ -65,48 +100,16 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
   constructor(
     private sensorService: SensorService,
     private globalSettings: GlobalSettingsService
-  ) {
-    this.chartOptions = {
-      series: [],
-      chart: {
-        height: 250,
-        type: 'area',
-        foreColor: this.globalSettings.getTheme() ? '#ddd' : '#222',
-      },
-      xaxis: {
-        type: 'datetime',
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      grid: {
-        padding: {},
-      },
-      stroke: {
-        curve: 'smooth',
-      },
-      title: {
-        text: '',
-        align: 'left',
-      },
-      colors: [],
-      annotations: {},
-      tooltip: {
-        theme: globalSettings.getTheme() ? 'dark' : 'light',
-      },
-    };
-    effect(() => {
-      const timeDelta = this.sensorService.time_delta();
-      this.updateZoomRange(timeDelta);
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.theme = this.globalSettings.getThemeName();
+    this.chartOptions.chart.foreColor = this.getForeColor();
+    this.chartOptions.tooltip.theme = this.getTooltipTheme();
+
     this.loadInitialData();
     this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
       this.theme = theme;
-      console.log('Theme updated:', theme);
       if (this.chart) this.updateChartColors();
     });
   }
@@ -130,33 +133,22 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     this.chartOptions.annotations = this.createThresholdAnnotations(
       this.sensor
     );
-    this.chartOptions.chart.foreColor = this.globalSettings.getTheme()
-      ? '#ddd'
-      : '#222';
-    this.chartOptions.tooltip.theme = this.globalSettings.getTheme()
-      ? 'dark'
-      : 'light';
+    const foreColor = this.getForeColor();
+    const tooltipTheme = this.getTooltipTheme();
 
     this.chart.updateOptions({
+      colors: [THEME_COLOR[this.theme].lineColor],
       annotations: this.createThresholdAnnotations(this.sensor),
       chart: {
-        height: 250,
-        type: 'area',
-        foreColor: this.globalSettings.getTheme() ? '#ddd' : '#222',
+        foreColor,
       },
       tooltip: {
-        theme: this.globalSettings.getTheme() ? 'dark' : 'light',
+        theme: tooltipTheme,
       },
     });
-
-    console.log(
-      'Chart colors updated:',
-      THEME_COLOR[this.theme].lineColor,
-      this.chartOptions
-    );
   }
 
-  public async loadInitialData() {
+  private async loadInitialData() {
     console.log('Loading initial data');
     const measurements = await this.sensorService.getSensorMeasurementsDelta(
       this.sensor.sensor_id,
@@ -177,18 +169,13 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
-  public updateChart(timeDelta: TimeDelta) {
-    this.sensorService
-      .getSensorMeasurementsDelta(this.sensor.sensor_id, timeDelta)
-      .then((measurements) => this.updateChartData(measurements));
-  }
-
   private updateChartData(measurements: Measurement[]) {
     const { start, end } = this.calculateDateRange(
       this.sensorService.time_delta()
     );
-    console.log(measurements.map((msr) => msr.value));
+
     this.chartOptions = {
+      ...BASE_CHART_OPTIONS,
       series: [
         {
           name: this.sensor.sensor_unit,
@@ -198,27 +185,13 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
           })),
         },
       ],
-      chart: {
-        height: 250,
-        type: 'area',
-        foreColor: this.globalSettings.getTheme() ? '#ddd' : '#222',
-      },
       xaxis: {
-        type: 'datetime',
+        ...BASE_CHART_OPTIONS.xaxis,
         min: start.getTime(),
         max: end.getTime(),
         labels: {
           formatter: (val) => this.formatDateLabel(new Date(val)),
         },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      grid: {
-        padding: {},
-      },
-      stroke: {
-        curve: 'smooth',
       },
       colors: [THEME_COLOR[this.theme].lineColor],
       title: {
@@ -226,30 +199,72 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
       },
       annotations: this.createThresholdAnnotations(this.sensor),
       tooltip: {
-        theme: this.globalSettings.getTheme() ? 'dark' : 'light',
+        theme: this.getTooltipTheme(),
       },
     };
 
     console.log(this.chartOptions);
   }
 
-  async createChart() {
-    const measurements: Measurement[] =
-      await this.sensorService.getSensorMeasurementsDelta(
-        this.sensor.sensor_id,
-        this.sensorService.time_delta()
-      );
+  private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
+    return {
+      yaxis: [
+        this.createCriticalLowAnnotation(sensor),
+        this.createNormalRangeAnnotation(sensor),
+        this.createCriticalHighAnnotation(sensor),
+      ],
+    };
+  }
 
-    if (this.chartOptions) {
-      this.chartOptions.series = [
-        {
-          name: this.sensor.sensor_unit,
-          data: measurements.map((msr) => msr.value),
+  private createCriticalLowAnnotation(sensor: Sensor) {
+    return this.createAnnotation(
+      sensor.threshold_critically_low,
+      sensor.threshold_low,
+      THEME_COLOR[this.theme].warning
+    );
+  }
+
+  private createNormalRangeAnnotation(sensor: Sensor) {
+    return this.createAnnotation(
+      sensor.threshold_low,
+      sensor.threshold_high,
+      THEME_COLOR[this.theme].success,
+      'Normal'
+    );
+  }
+
+  private createCriticalHighAnnotation(sensor: Sensor) {
+    return this.createAnnotation(
+      sensor.threshold_high,
+      sensor.threshold_critically_high,
+      THEME_COLOR[this.theme].warning
+    );
+  }
+
+  private createAnnotation(
+    y: number,
+    y2: number,
+    fillColor: string,
+    labelText?: string
+  ) {
+    const opacity = 0.1;
+    return {
+      y,
+      y2,
+      fillColor,
+      borderColor: THEME_COLOR[this.theme].success,
+      opacity,
+      ...(labelText && {
+        label: {
+          text: labelText,
+          offsetY: 20,
+          style: {
+            color: '#fff',
+            background: fillColor,
+          },
         },
-      ];
-    }
-    console.log(this.chartOptions);
-    console.log(this.chart);
+      }),
+    };
   }
 
   private formatDateLabel(date: Date): string {
@@ -276,51 +291,11 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     );
   }
 
-  private updateZoomRange(timeDelta: TimeDelta) {
-    // if (!this.chart) return;
-    // const { start, end } = this.calculateDateRange(timeDelta);
-    // this.chart.updateOptions({
-    //   xaxis: {
-    //     min: start.getTime(),
-    //     max: end.getTime(),
-    //   },
-    // });
+  private getForeColor(): string {
+    return this.theme === DARK_THEME ? '#ddd' : '#222';
   }
 
-  private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
-    const opacity = 0.1;
-    const lowAnnotation = {
-      y: sensor.threshold_critically_low,
-      y2: sensor.threshold_low,
-      fillColor: THEME_COLOR[this.theme].warning,
-      borderColor: THEME_COLOR[this.theme].success,
-      opacity: opacity,
-    };
-    const normalAnnotation = {
-      y: sensor.threshold_low,
-      y2: sensor.threshold_high,
-      fillColor: THEME_COLOR[this.theme].success,
-      borderColor: THEME_COLOR[this.theme].success,
-      opacity: opacity + 0.05,
-      label: {
-        text: 'Normal',
-        offsetY: 20,
-        style: {
-          color: '#fff',
-          background: THEME_COLOR[this.theme].success,
-        },
-      },
-    };
-    const highAnnotation = {
-      y: sensor.threshold_high,
-      y2: sensor.threshold_critically_high,
-      fillColor: THEME_COLOR[this.theme].warning,
-      borderColor: THEME_COLOR[this.theme].success,
-      opacity: opacity,
-    };
-
-    return {
-      yaxis: [lowAnnotation, normalAnnotation, highAnnotation],
-    };
+  private getTooltipTheme(): string {
+    return this.theme === DARK_THEME ? 'dark' : 'light';
   }
 }
