@@ -25,6 +25,10 @@ export class GlobalSettingsService {
 
   applyTheme(): void {
     document.documentElement.setAttribute('data-theme', this.getThemeName());
+    document.documentElement.setAttribute(
+      'class',
+      this.getTheme() ? 'dark' : 'light'
+    );
     this.themeSubject.next(this.getThemeName());
   }
 

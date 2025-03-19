@@ -13,7 +13,7 @@
     <span class="loading loading-infinity loading-lg text-success"></span>
   </div>
   } @for (sensor of sensors; track sensor.sensor_id) {
-  <div class="stats shadow text-center col-span-12 lg:col-span-3">
+  <div class="stats shadow text-center col-span-12 lg:col-span-3 bg-base-200">
     <div class="stat">
       <div class="stat-title">{{ this.getSensorTitle(sensor) }}</div>
       <div>
@@ -44,7 +44,9 @@
       </div>
     </div>
   </div>
-  <div class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72">
+  <div
+    class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72 bg-base-200"
+  >
     <app-line-chart
       [chartTitle]="this.getSensorTitle(sensor)"
       [sensor]="sensor"
