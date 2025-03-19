@@ -1,6 +1,13 @@
-<div class="h-full">
-    <h2 class="text-center h-1/6">{{ chartTitle }}</h2>
-    <div class="h-5/6">
-        <canvas id="{{chartId}}" ></canvas>
-    </div>
+<div class="h-full flex flex-col justify-center">
+  <apx-chart
+    #chart
+    [series]="chartOptions.series"
+    [chart]="chartOptions.chart"
+    [xaxis]="chartOptions.xaxis"
+    [dataLabels]="chartOptions.dataLabels"
+    [grid]="chartOptions.grid"
+    [stroke]="chartOptions.stroke"
+    [title]="chartOptions.title"
+    [colors]="chartOptions.colors"
+  ></apx-chart>
 </div>

@@ -13,14 +13,14 @@ import { CameraPictureComponent } from "@app/components/camera-picture/camera-pi
     standalone: true,
     templateUrl: './status-page.component.html',
     styleUrl: './status-page.component.scss',
-    imports: [LineChartComponent, GaugeChartComponent, FormsModule, CameraPictureComponent]
+    imports: [LineChartComponent, FormsModule, CameraPictureComponent]
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
   public sensorLastMeasurements: [key: number, value: number][] = [];
   public columnCount = 2;
   public chartSize: number = 100;
-  selectedRange: TimeDelta = this.rangeSelect[0].value;
+  selectedRange: TimeDelta = this.rangeSelect[3].value;
 
   constructor(private sensorService: SensorService) {}
 

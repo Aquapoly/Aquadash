@@ -8,15 +8,7 @@ import { SettingsPageComponent } from '@app/pages/settings-page/settings-page.co
 
 @Component({
   selector: 'app-root',
-  standalone: true,
-  imports: [
-    RouterOutlet,
-    NavigationBarComponent,
-    LineChartComponent,
-    StatusPageComponent,
-    SettingsPageComponent,
-    FontAwesomeModule,
-  ],
+  imports: [RouterOutlet, NavigationBarComponent, FontAwesomeModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
