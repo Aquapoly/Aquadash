@@ -1,21 +1,16 @@
-import cv2
-import os
-import glob
-import base64
-from pathlib import Path
-from datetime import datetime
+import imageio.v3 as iio
 
-_dir = os.path.join(Path.home(), "camera")
+import time
+
+_last_image = None
+IMAGE_EXPIRE_TIME = 5
+
 
 def get_image():
-    list_png_files = glob.glob(os.path.join(_dir, "*.png"))
-    latest_image = cv2.imread(max(list_png_files, key=os.path.getctime))
+    global _last_image
+    if _last_image is None or _last_image[1] < time.time():
+        im = iio.imread("<video0>", index=0)
+        im = iio.imwrite("<bytes>", im, extension=".png")
+        _last_image = (im, time.time() + IMAGE_EXPIRE_TIME)
 
-    is_sucess, im_buf_arr = cv2.imencode(".png", latest_image)
-    byte_im = im_buf_arr.tobytes()
-
-    data = "data:image/png;base64," + base64.b64encode(byte_im).decode()
-    picture = {
-         "data": data
-    }
-    return picture
+    return _last_image[0]

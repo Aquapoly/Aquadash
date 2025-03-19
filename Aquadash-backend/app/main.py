@@ -1,18 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse
 # from fastapi_utils.openapi import simplify_operation_ids
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import datetime, timedelta
+import io
 # from jose import JWTError, jwt
 
 
 from . import crud, models, schemas
 from .database import engine, get_db
-#from .services import camera
 from .classes.sensor_type import SensorType
+from .services import camera
 from .services.actuator import get_actuator_activation
 from .security import authentification
 from .security import permissions
@@ -216,9 +218,12 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
     return crud.get_actuators(db=db, prototype_id=prototype_id)
 
 
-@app.get("/picture", response_model=schemas.Picture)
+@app.get("/picture", response_class=StreamingResponse)
 async def picture():
-    return camera.get_image()
+    try:
+        return StreamingResponse(io.BytesIO(camera.get_image()), media_type="image/png")
+    except OSError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not available.")
 
 
 # auth stuff
@@ -279,3 +284,31 @@ async def read_items(token: Annotated[str, Depends(authentification.oauth2_schem
     return {"token": token}
 
 # simplify_operation_ids(app)
+
+@app.post("/Measurement/Random", 
+          tags = ["Measurements"])
+async def post_random_measurements(
+   
+    datas:schemas.RandomMeasurements,
+    db: Session = Depends(get_db)
+):
+    try:
+        db.query(models.Measurement).delete()
+        db.commit()
+        return {"message": "Données remplacées avec succès."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        measurements = crud.generate_meas(datas.nb_measurements, 
+                                          datas.yearly_measurements_ratio,
+                                          datas.dayly_measurements_ratio,
+                                          datas.hourly_measurements_ratio, 
+                                          datas.deviation_rate, 
+                                          datas.smoothing_factor, 
+                                          datas.drift_adjustment, db)
+        for meas in measurements:
+            db_Measurement = models.Measurement(sensor_id=meas[0], value=meas[1], timestamp=meas[2])
+            db.add(db_Measurement)
+            db.commit()
+            db.refresh(db_Measurement)

@@ -7,3 +7,5 @@ python-multipart
 python-jose
 pytz
 gunicorn
+imageio
+imageio-ffmpeg

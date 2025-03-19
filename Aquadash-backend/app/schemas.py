@@ -96,3 +96,12 @@ class UserInDB(User):
     pw_hash: str
     pw_salt: str
     id: int
+
+class RandomMeasurements(BaseModel):
+    nb_measurements:int = 500
+    yearly_measurements_ratio:float = 0.80
+    dayly_measurements_ratio:float = 0.1
+    hourly_measurements_ratio:float = 0.1
+    deviation_rate:float = 0.20
+    smoothing_factor:float = 0.50
+    drift_adjustment:float = 0.15
