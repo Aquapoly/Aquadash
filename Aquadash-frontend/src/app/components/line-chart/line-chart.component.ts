@@ -247,7 +247,7 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     fillColor: string,
     labelText?: string
   ) {
-    const opacity = 0.1;
+    const opacity = labelText ? 0.3 : 0.1;
     return {
       y,
       y2,
@@ -257,10 +257,10 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
       ...(labelText && {
         label: {
           text: labelText,
-          offsetY: 20,
+          offsetY: 0,
           style: {
             color: '#fff',
-            background: fillColor,
+            background: fillColor + '80',
           },
         },
       }),
