@@ -27,11 +27,11 @@ export const THEME_COLOR: { [key in string]: colors } = {
     base100: '#282a36',
     baseContent: '#f8f8f2',
     info: '#8be9fd',
-    success: '#33e8a3',
+    success: '#60cc96',
     warning: '#f1fa8c',
     error: '#ff5555',
     infoContent: '#071316',
-    lineColor: '#ccdef7',
+    lineColor: '#0aa9ff',
   },
   [LIGHT_THEME]: {
     colorScheme: 'light',
@@ -46,6 +46,6 @@ export const THEME_COLOR: { [key in string]: colors } = {
     warning: '#ffbf00',
     error: '#ff6368',
     infoContent: '#042e49',
-    lineColor: '#4a5059',
+    lineColor: '#0aa9ff',
   },
 };

@@ -24,9 +24,14 @@ import {
   ApexAnnotations,
   NgApexchartsModule,
 } from 'ng-apexcharts';
-import { LIGHT_THEME, THEME_COLOR } from '../../../constants/constants';
+import {
+  DARK_THEME,
+  LIGHT_THEME,
+  THEME_COLOR,
+} from '../../../constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { Subscription } from 'rxjs';
+import { h } from '@angular/core/navigation_types.d-u4EOrrdZ';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries;
@@ -38,6 +43,7 @@ export type ChartOptions = {
   title: ApexTitleSubtitle;
   colors: string[];
   annotations: ApexAnnotations;
+  tooltip: ApexTooltip;
 };
 
 @Component({
@@ -64,7 +70,8 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
       series: [],
       chart: {
         height: 250,
-        type: 'line',
+        type: 'area',
+        foreColor: this.globalSettings.getTheme() ? '#ddd' : '#222',
       },
       xaxis: {
         type: 'datetime',
@@ -84,6 +91,9 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
       },
       colors: [],
       annotations: {},
+      tooltip: {
+        theme: globalSettings.getTheme() ? 'dark' : 'light',
+      },
     };
     effect(() => {
       const timeDelta = this.sensorService.time_delta();
@@ -93,16 +103,21 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.theme = this.globalSettings.getThemeName();
+    this.loadInitialData();
     this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
       this.theme = theme;
       console.log('Theme updated:', theme);
-      this.updateChartColors();
+      if (this.chart) this.updateChartColors();
     });
   }
 
   ngAfterViewInit(): void {
-    console.log('ngAfterViewInit', this.sensor);
-    this.loadInitialData();
+    if (!this.chart) {
+      console.log('NO CHART');
+      return;
+    }
+    this.updateChartColors();
+    this.chart?.render();
   }
 
   ngOnDestroy(): void {
@@ -112,16 +127,26 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   private updateChartColors(): void {
-    if (!this.chart) return;
-
     this.chartOptions.annotations = this.createThresholdAnnotations(
       this.sensor
     );
-    this.chartOptions.colors = [THEME_COLOR[this.theme].lineColor];
+    this.chartOptions.chart.foreColor = this.globalSettings.getTheme()
+      ? '#ddd'
+      : '#222';
+    this.chartOptions.tooltip.theme = this.globalSettings.getTheme()
+      ? 'dark'
+      : 'light';
 
     this.chart.updateOptions({
-      colors: [THEME_COLOR[this.theme].lineColor],
       annotations: this.createThresholdAnnotations(this.sensor),
+      chart: {
+        height: 250,
+        type: 'area',
+        foreColor: this.globalSettings.getTheme() ? '#ddd' : '#222',
+      },
+      tooltip: {
+        theme: this.globalSettings.getTheme() ? 'dark' : 'light',
+      },
     });
 
     console.log(
@@ -129,19 +154,27 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
       THEME_COLOR[this.theme].lineColor,
       this.chartOptions
     );
-
-    this.chart.render();
   }
 
   public async loadInitialData() {
+    console.log('Loading initial data');
     const measurements = await this.sensorService.getSensorMeasurementsDelta(
       this.sensor.sensor_id,
       this.sensorService.time_delta()
     );
+    console.log('Data loaded');
 
     this.updateChartData(measurements);
     this.updateChartColors();
-    this.chart?.render();
+
+    if (!this.chart) {
+      console.log('NO CHART');
+      return;
+    } else {
+      console.log('Rendering chart with ', this.chartOptions);
+      this.chart.updateOptions(this.chartOptions);
+      this.chart.render();
+    }
   }
 
   public updateChart(timeDelta: TimeDelta) {
@@ -167,7 +200,8 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
       ],
       chart: {
         height: 250,
-        type: 'line',
+        type: 'area',
+        foreColor: this.globalSettings.getTheme() ? '#ddd' : '#222',
       },
       xaxis: {
         type: 'datetime',
@@ -191,12 +225,12 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
         text: this.chartTitle,
       },
       annotations: this.createThresholdAnnotations(this.sensor),
+      tooltip: {
+        theme: this.globalSettings.getTheme() ? 'dark' : 'light',
+      },
     };
 
     console.log(this.chartOptions);
-
-    this.chart.updateOptions(this.chartOptions);
-    this.chart?.render();
   }
 
   async createChart() {
@@ -243,44 +277,50 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   private updateZoomRange(timeDelta: TimeDelta) {
-    if (!this.chart) return;
-
-    const { start, end } = this.calculateDateRange(timeDelta);
-
-    this.chart.updateOptions({
-      xaxis: {
-        min: start.getTime(),
-        max: end.getTime(),
-      },
-    });
+    // if (!this.chart) return;
+    // const { start, end } = this.calculateDateRange(timeDelta);
+    // this.chart.updateOptions({
+    //   xaxis: {
+    //     min: start.getTime(),
+    //     max: end.getTime(),
+    //   },
+    // });
   }
 
   private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
-    const opacity = this.theme === LIGHT_THEME ? 0.1 : 0.05;
+    const opacity = 0.1;
+    const lowAnnotation = {
+      y: sensor.threshold_critically_low,
+      y2: sensor.threshold_low,
+      fillColor: THEME_COLOR[this.theme].warning,
+      borderColor: THEME_COLOR[this.theme].success,
+      opacity: opacity,
+    };
+    const normalAnnotation = {
+      y: sensor.threshold_low,
+      y2: sensor.threshold_high,
+      fillColor: THEME_COLOR[this.theme].success,
+      borderColor: THEME_COLOR[this.theme].success,
+      opacity: opacity + 0.05,
+      label: {
+        text: 'Normal',
+        offsetY: 20,
+        style: {
+          color: '#fff',
+          background: THEME_COLOR[this.theme].success,
+        },
+      },
+    };
+    const highAnnotation = {
+      y: sensor.threshold_high,
+      y2: sensor.threshold_critically_high,
+      fillColor: THEME_COLOR[this.theme].warning,
+      borderColor: THEME_COLOR[this.theme].success,
+      opacity: opacity,
+    };
+
     return {
-      yaxis: [
-        {
-          y: sensor.threshold_critically_low,
-          y2: sensor.threshold_low,
-          fillColor: THEME_COLOR[this.theme].warning,
-          borderColor: THEME_COLOR[this.theme].success,
-          opacity: opacity,
-        },
-        {
-          y: sensor.threshold_low,
-          y2: sensor.threshold_high,
-          fillColor: THEME_COLOR[this.theme].success,
-          borderColor: THEME_COLOR[this.theme].success,
-          opacity: opacity + 0.1,
-        },
-        {
-          y: sensor.threshold_high,
-          y2: sensor.threshold_critically_high,
-          fillColor: THEME_COLOR[this.theme].warning,
-          borderColor: THEME_COLOR[this.theme].success,
-          opacity: opacity,
-        },
-      ],
+      yaxis: [lowAnnotation, normalAnnotation, highAnnotation],
     };
   }
 }
