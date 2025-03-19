@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
 import { DARK_THEME, LIGHT_THEME } from '../../../constants/constants';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class GlobalSettingsService {
   private darkMode = false;
+
+  private themeSubject = new BehaviorSubject<string>(this.getThemeName());
+  theme$ = this.themeSubject.asObservable();
 
   constructor() {
     const savedTheme = localStorage.getItem('theme');
@@ -21,13 +25,14 @@ export class GlobalSettingsService {
 
   applyTheme(): void {
     document.documentElement.setAttribute('data-theme', this.getThemeName());
+    this.themeSubject.next(this.getThemeName());
   }
 
   getTheme(): boolean {
     return this.darkMode;
   }
 
-  private getThemeName(): string {
+  getThemeName(): string {
     return this.darkMode ? DARK_THEME : LIGHT_THEME;
   }
 }

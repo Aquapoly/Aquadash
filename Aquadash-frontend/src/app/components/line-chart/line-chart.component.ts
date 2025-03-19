@@ -3,6 +3,7 @@ import {
   Component,
   effect,
   Input,
+  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -23,6 +24,9 @@ import {
   ApexAnnotations,
   NgApexchartsModule,
 } from 'ng-apexcharts';
+import { LIGHT_THEME, THEME_COLOR } from '../../../constants/constants';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
+import { Subscription } from 'rxjs';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries;
@@ -43,14 +47,19 @@ export type ChartOptions = {
   templateUrl: './line-chart.component.html',
   styleUrls: ['./line-chart.component.scss'],
 })
-export class LineChartComponent implements AfterViewInit {
+export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild('chart') chart!: ChartComponent;
   public chartOptions: ChartOptions;
+  private themeSubscription!: Subscription;
+  private theme: string = 'light';
 
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
 
-  constructor(private sensorService: SensorService) {
+  constructor(
+    private sensorService: SensorService,
+    private globalSettings: GlobalSettingsService
+  ) {
     this.chartOptions = {
       series: [],
       chart: {
@@ -64,13 +73,10 @@ export class LineChartComponent implements AfterViewInit {
         enabled: false,
       },
       grid: {
-        padding: {
-          right: 30,
-          left: 20,
-        },
+        padding: {},
       },
       stroke: {
-        curve: 'straight',
+        curve: 'smooth',
       },
       title: {
         text: '',
@@ -85,18 +91,57 @@ export class LineChartComponent implements AfterViewInit {
     });
   }
 
+  ngOnInit(): void {
+    this.theme = this.globalSettings.getThemeName();
+    this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
+      this.theme = theme;
+      console.log('Theme updated:', theme);
+      this.updateChartColors();
+    });
+  }
+
   ngAfterViewInit(): void {
-    console.log(this.sensor);
+    console.log('ngAfterViewInit', this.sensor);
     this.loadInitialData();
   }
 
-  private async loadInitialData() {
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+  }
+
+  private updateChartColors(): void {
+    if (!this.chart) return;
+
+    this.chartOptions.annotations = this.createThresholdAnnotations(
+      this.sensor
+    );
+    this.chartOptions.colors = [THEME_COLOR[this.theme].lineColor];
+
+    this.chart.updateOptions({
+      colors: [THEME_COLOR[this.theme].lineColor],
+      annotations: this.createThresholdAnnotations(this.sensor),
+    });
+
+    console.log(
+      'Chart colors updated:',
+      THEME_COLOR[this.theme].lineColor,
+      this.chartOptions
+    );
+
+    this.chart.render();
+  }
+
+  public async loadInitialData() {
     const measurements = await this.sensorService.getSensorMeasurementsDelta(
       this.sensor.sensor_id,
       this.sensorService.time_delta()
     );
-    console.log('Measurements: ', measurements);
+
     this.updateChartData(measurements);
+    this.updateChartColors();
+    this.chart?.render();
   }
 
   public updateChart(timeDelta: TimeDelta) {
@@ -106,7 +151,6 @@ export class LineChartComponent implements AfterViewInit {
   }
 
   private updateChartData(measurements: Measurement[]) {
-    const color = this.getColor(this.sensor.sensor_id);
     const { start, end } = this.calculateDateRange(
       this.sensorService.time_delta()
     );
@@ -137,37 +181,22 @@ export class LineChartComponent implements AfterViewInit {
         enabled: false,
       },
       grid: {
-        padding: {
-          right: 30,
-          left: 20,
-        },
+        padding: {},
       },
       stroke: {
-        curve: 'straight',
+        curve: 'smooth',
       },
-      colors: [color],
+      colors: [THEME_COLOR[this.theme].lineColor],
       title: {
         text: this.chartTitle,
       },
       annotations: this.createThresholdAnnotations(this.sensor),
     };
 
+    console.log(this.chartOptions);
+
     this.chart.updateOptions(this.chartOptions);
     this.chart?.render();
-
-    console.log(this.chartOptions);
-    console.log(this.chart.series);
-  }
-
-  private getColor(sensorId: number): string {
-    var elem = document.getElementById(`sensor${sensorId}`);
-    const color = elem
-      ? formatHex(
-          oklch(window.getComputedStyle(elem).getPropertyValue('color'))
-        )
-      : '#000000';
-    console.log(color);
-    return color || '#000000';
   }
 
   async createChart() {
@@ -176,8 +205,6 @@ export class LineChartComponent implements AfterViewInit {
         this.sensor.sensor_id,
         this.sensorService.time_delta()
       );
-
-    const color = this.getColor(this.sensor.sensor_id);
 
     if (this.chartOptions) {
       this.chartOptions.series = [
@@ -188,14 +215,7 @@ export class LineChartComponent implements AfterViewInit {
       ];
     }
     console.log(this.chartOptions);
-  }
-
-  shortenTimestamp(timestamp: string) {
-    const timeSplit: string[] = timestamp.split('T');
-    return `${timeSplit[0].substring(5, 7)}/${timeSplit[0].substring(
-      8,
-      10
-    )} - ${timeSplit[1].substring(0, 2)}h${timeSplit[1].substring(3, 5)}`;
+    console.log(this.chart);
   }
 
   private formatDateLabel(date: Date): string {
@@ -236,67 +256,29 @@ export class LineChartComponent implements AfterViewInit {
   }
 
   private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
+    const opacity = this.theme === LIGHT_THEME ? 0.1 : 0.05;
     return {
       yaxis: [
         {
           y: sensor.threshold_critically_low,
-          borderColor: '#ff0000',
-          strokeDashArray: 0,
-          label: {
-            borderColor: '#ff0000',
-            text: 'Seuil critique bas',
-            style: {
-              color: '#fff',
-              background: '#ff0000',
-              fontSize: '12px',
-            },
-            position: 'left',
-          },
+          y2: sensor.threshold_low,
+          fillColor: THEME_COLOR[this.theme].warning,
+          borderColor: THEME_COLOR[this.theme].success,
+          opacity: opacity,
         },
         {
           y: sensor.threshold_low,
-          borderColor: '#ffa500',
-          strokeDashArray: 5,
-          label: {
-            borderColor: '#ffa500',
-            text: 'Seuil bas',
-            style: {
-              color: '#000',
-              background: '#ffa500',
-              fontSize: '12px',
-            },
-            position: 'left',
-          },
+          y2: sensor.threshold_high,
+          fillColor: THEME_COLOR[this.theme].success,
+          borderColor: THEME_COLOR[this.theme].success,
+          opacity: opacity + 0.1,
         },
         {
           y: sensor.threshold_high,
-          borderColor: '#ffa500',
-          strokeDashArray: 5,
-          label: {
-            borderColor: '#ffa500',
-            text: 'Seuil haut',
-            style: {
-              color: '#000',
-              background: '#ffa500',
-              fontSize: '12px',
-            },
-            position: 'right',
-          },
-        },
-        {
-          y: sensor.threshold_critically_high,
-          borderColor: '#ff0000',
-          strokeDashArray: 0,
-          label: {
-            borderColor: '#ff0000',
-            text: 'Seuil critique haut',
-            style: {
-              color: '#fff',
-              background: '#ff0000',
-              fontSize: '12px',
-            },
-            position: 'right',
-          },
+          y2: sensor.threshold_critically_high,
+          fillColor: THEME_COLOR[this.theme].warning,
+          borderColor: THEME_COLOR[this.theme].success,
+          opacity: opacity,
         },
       ],
     };
