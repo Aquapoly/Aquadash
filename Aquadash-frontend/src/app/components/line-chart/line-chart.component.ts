@@ -44,6 +44,7 @@ export type ChartOptions = {
   colors: string[];
   annotations: ApexAnnotations;
   tooltip: ApexTooltip;
+  markers: ApexMarkers;
 };
 
 export enum Theme {
@@ -57,6 +58,13 @@ export const BASE_CHART_OPTIONS: ChartOptions = {
     height: 250,
     type: 'area',
     foreColor: '#222',
+    fontFamily: 'Inter',
+  },
+  markers: {
+    size: 4,
+    hover: {
+      size: 6,
+    },
   },
   xaxis: {
     type: 'datetime',
