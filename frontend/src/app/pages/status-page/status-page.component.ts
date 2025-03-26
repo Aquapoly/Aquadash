@@ -12,7 +12,7 @@ import { CameraPictureComponent } from '@app/components/camera-picture/camera-pi
   selector: 'app-status-page',
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule],
+  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
