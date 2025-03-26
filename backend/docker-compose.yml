@@ -24,8 +24,11 @@ services:
       dockerfile: app.Dockerfile
     environment:
       DOCKER: 1
+      ENABLE_CAMERA: ${ENABLE_CAMERA:-false}
+    volumes:
+      - .:/usr/src/app
     restart: always
-    depends_on: 
+    depends_on:
       - db
     links:
       - db:db
