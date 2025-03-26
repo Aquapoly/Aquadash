@@ -46,6 +46,6 @@ export const THEME_COLOR: { [key in string]: colors } = {
     warning: '#ffbf00',
     error: '#ff6368',
     infoContent: '#042e49',
-    lineColor: '#0aa9ff',
+    lineColor: '#0067cd',
   },
 };

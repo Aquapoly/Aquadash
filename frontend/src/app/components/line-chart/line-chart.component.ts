@@ -124,11 +124,9 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
 
   ngAfterViewInit(): void {
     if (!this.chart) {
-      console.log('NO CHART');
       return;
     }
     this.updateChartColors();
-    this.chart?.render();
   }
 
   ngOnDestroy(): void {
@@ -137,14 +135,14 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
-  private updateChartColors(): void {
+  private async updateChartColors(): Promise<void> {
     this.chartOptions.annotations = this.createThresholdAnnotations(
       this.sensor
     );
     const foreColor = this.getForeColor();
     const tooltipTheme = this.getTooltipTheme();
 
-    this.chart.updateOptions({
+    await this.chart.updateOptions({
       colors: [THEME_COLOR[this.theme].lineColor],
       annotations: this.createThresholdAnnotations(this.sensor),
       chart: {
@@ -154,6 +152,7 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
         theme: tooltipTheme,
       },
     });
+    await this.chart.render();
   }
 
   private async loadInitialData() {
@@ -165,15 +164,14 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     console.log('Data loaded');
 
     this.updateChartData(measurements);
-    this.updateChartColors();
+    await this.updateChartColors();
 
     if (!this.chart) {
-      console.log('NO CHART');
       return;
     } else {
       console.log('Rendering chart with ', this.chartOptions);
-      this.chart.updateOptions(this.chartOptions);
-      this.chart.render();
+      await this.chart.updateOptions(this.chartOptions);
+      await this.chart.render();
     }
   }
 
@@ -210,18 +208,17 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
         theme: this.getTooltipTheme(),
       },
     };
-
-    console.log(this.chartOptions);
   }
 
   private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
-    return {
-      yaxis: [
-        this.createCriticalLowAnnotation(sensor),
-        this.createNormalRangeAnnotation(sensor),
-        this.createCriticalHighAnnotation(sensor),
-      ],
-    };
+    return {};
+    // return {
+    //   yaxis: [
+    //     this.createCriticalLowAnnotation(sensor),
+    //     this.createNormalRangeAnnotation(sensor),
+    //     this.createCriticalHighAnnotation(sensor),
+    //   ],
+    // };
   }
 
   private createCriticalLowAnnotation(sensor: Sensor) {
@@ -255,7 +252,7 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
     fillColor: string,
     labelText?: string
   ) {
-    const opacity = labelText ? 0.3 : 0.1;
+    const opacity = labelText ? 0.2 : 0.05;
     return {
       y,
       y2,
