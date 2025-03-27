@@ -1,106 +1,39 @@
-import {
-  AfterViewInit,
-  Component,
-  effect,
-  Input,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
-import { Measurement } from '@app/interfaces/measurement';
+import { Component, Input } from '@angular/core';
 import { Sensor } from '@app/interfaces/sensor';
-import { TimeDelta } from '@app/interfaces/time-delta';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { SensorService } from '@app/services/sensor.service';
-import { oklch, formatHex } from 'culori';
+import { Subscription } from 'rxjs';
 import {
-  ChartComponent,
-  ApexAxisChartSeries,
-  ApexChart,
-  ApexXAxis,
-  ApexDataLabels,
-  ApexTitleSubtitle,
-  ApexStroke,
-  ApexGrid,
-  ApexAnnotations,
-  NgApexchartsModule,
-} from 'ng-apexcharts';
-import {
-  DARK_THEME,
+  ChartThresholdDisplay,
   LIGHT_THEME,
   THEME_COLOR,
 } from '../../../constants/constants';
-import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
-import { Subscription } from 'rxjs';
-import { h } from '@angular/core/navigation_types.d-u4EOrrdZ';
-
-export type ChartOptions = {
-  series: ApexAxisChartSeries;
-  chart: ApexChart;
-  xaxis: ApexXAxis;
-  dataLabels: ApexDataLabels;
-  grid: ApexGrid;
-  stroke: ApexStroke;
-  title: ApexTitleSubtitle;
-  colors: string[];
-  annotations: ApexAnnotations;
-  tooltip: ApexTooltip;
-  markers: ApexMarkers;
-};
-
-export enum Theme {
-  Light = 'light',
-  Dark = 'dark',
-}
-
-export const BASE_CHART_OPTIONS: ChartOptions = {
-  series: [],
-  chart: {
-    height: 250,
-    type: 'area',
-    foreColor: '#222',
-    fontFamily: 'Inter',
-  },
-  markers: {
-    size: 4,
-    hover: {
-      size: 6,
-    },
-  },
-  xaxis: {
-    type: 'datetime',
-  },
-  dataLabels: {
-    enabled: false,
-  },
-  grid: {
-    padding: {},
-  },
-  stroke: {
-    curve: 'smooth',
-  },
-  title: {
-    text: '',
-    align: 'left',
-  },
-  colors: [],
-  annotations: {},
-  tooltip: {
-    theme: Theme.Light,
-  },
-};
+import { Measurement } from '@app/interfaces/measurement';
+import { HighchartsChartModule } from 'highcharts-angular';
+import * as Highcharts from 'highcharts';
+import DarkBlueTheme from 'highcharts/themes/dark-blue';
+import GridLightTheme from 'highcharts/themes/brand-light';
+import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-line-chart',
-  standalone: true,
-  imports: [NgApexchartsModule],
+  imports: [HighchartsChartModule],
   templateUrl: './line-chart.component.html',
-  styleUrls: ['./line-chart.component.scss'],
+  styleUrl: './line-chart.component.scss',
 })
-export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
-  @ViewChild('chart') chart!: ChartComponent;
-  public chartOptions: ChartOptions = { ...BASE_CHART_OPTIONS };
+export class LineChartComponent {
   private themeSubscription!: Subscription;
-  private theme: string = Theme.Light;
+  private thresholdDisplaySubscription!: Subscription;
+  private thresholdDisplay: ChartThresholdDisplay =
+    ChartThresholdDisplay.ColoredBackgroundWithLine;
+  protected theme: string = LIGHT_THEME;
+
+  Highcharts: typeof Highcharts = Highcharts;
+  chartConstructor: string = 'chart';
+  chartOptions: Highcharts.Options = {};
+  updateFlag: boolean = false;
+  oneToOneFlag: boolean = true;
+  runOutsideAngular: boolean = false;
 
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
@@ -112,195 +45,202 @@ export class LineChartComponent implements AfterViewInit, OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.theme = this.globalSettings.getThemeName();
-    this.chartOptions.chart.foreColor = this.getForeColor();
-    this.chartOptions.tooltip.theme = this.getTooltipTheme();
 
     this.loadInitialData();
     this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
       this.theme = theme;
-      if (this.chart) this.updateChartColors();
+      this.loadInitialData();
     });
+    this.thresholdDisplaySubscription =
+      this.globalSettings.thresholdDisplay$.subscribe((display) => {
+        this.thresholdDisplay = display as ChartThresholdDisplay;
+        this.loadInitialData();
+      });
   }
 
-  ngAfterViewInit(): void {
-    if (!this.chart) {
-      return;
-    }
-    this.updateChartColors();
-  }
+  ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
     }
-  }
-
-  private async updateChartColors(): Promise<void> {
-    this.chartOptions.annotations = this.createThresholdAnnotations(
-      this.sensor
-    );
-    const foreColor = this.getForeColor();
-    const tooltipTheme = this.getTooltipTheme();
-
-    await this.chart.updateOptions({
-      colors: [THEME_COLOR[this.theme].lineColor],
-      annotations: this.createThresholdAnnotations(this.sensor),
-      chart: {
-        foreColor,
-      },
-      tooltip: {
-        theme: tooltipTheme,
-      },
-    });
-    await this.chart.render();
+    if (this.thresholdDisplaySubscription) {
+      this.thresholdDisplaySubscription.unsubscribe();
+    }
   }
 
   private async loadInitialData() {
-    console.log('Loading initial data');
     const measurements = await this.sensorService.getSensorMeasurementsDelta(
       this.sensor.sensor_id,
       this.sensorService.time_delta()
     );
-    console.log('Data loaded');
 
     this.updateChartData(measurements);
-    await this.updateChartColors();
-
-    if (!this.chart) {
-      return;
-    } else {
-      console.log('Rendering chart with ', this.chartOptions);
-      await this.chart.updateOptions(this.chartOptions);
-      await this.chart.render();
-    }
   }
 
   private updateChartData(measurements: Measurement[]) {
-    const { start, end } = this.calculateDateRange(
-      this.sensorService.time_delta()
-    );
+    const backgroundThresholdOn: boolean =
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackground ||
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackgroundWithLine;
+    const zonesOn: boolean =
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredLine ||
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackgroundWithLine;
 
     this.chartOptions = {
-      ...BASE_CHART_OPTIONS,
+      chart: {
+        type: 'spline',
+        zooming: {
+          type: 'x',
+        },
+        backgroundColor: '#0000',
+      },
+      title: {
+        text: this.chartTitle,
+        align: 'left',
+        style: {
+          color: THEME_COLOR[this.theme].baseContent,
+        },
+      },
+      xAxis: {
+        type: 'datetime',
+        labels: {
+          style: {
+            color: THEME_COLOR[this.theme].baseContent + 'a0',
+          },
+        },
+      },
+      yAxis: {
+        title: {
+          text: this.sensor.sensor_unit,
+        },
+        minorGridLineWidth: 0,
+        gridLineWidth: 0,
+        plotBands: backgroundThresholdOn
+          ? this.createThresholds(this.sensor)
+          : [],
+        labels: {
+          style: {
+            color: THEME_COLOR[this.theme].baseContent + 'a0',
+          },
+        },
+      },
+      legend: {
+        enabled: false,
+      },
+      tooltip: {
+        valueSuffix: this.sensor.sensor_unit,
+      },
+      plotOptions: {
+        spline: {
+          lineWidth: 8,
+          states: {
+            hover: {
+              lineWidth: 12,
+            },
+          },
+          marker: {
+            enabled: true,
+          },
+        },
+      },
+
       series: [
         {
-          name: this.sensor.sensor_unit,
+          type: 'line',
+          color: THEME_COLOR[this.theme].lineColor,
+          name: this.sensor.sensor_type,
           data: measurements.map((msr) => ({
             x: new Date(msr.timestamp).getTime(),
             y: msr.value,
           })),
+          lineWidth: 3,
+          zones: zonesOn ? this.getZones() : [],
         },
       ],
-      xaxis: {
-        ...BASE_CHART_OPTIONS.xaxis,
-        min: start.getTime(),
-        max: end.getTime(),
-        labels: {
-          formatter: (val) => this.formatDateLabel(new Date(val)),
-        },
-      },
-      colors: [THEME_COLOR[this.theme].lineColor],
-      title: {
-        text: this.chartTitle,
-      },
-      annotations: this.createThresholdAnnotations(this.sensor),
-      tooltip: {
-        theme: this.getTooltipTheme(),
-      },
     };
   }
 
-  private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
-    return {};
-    // return {
-    //   yaxis: [
-    //     this.createCriticalLowAnnotation(sensor),
-    //     this.createNormalRangeAnnotation(sensor),
-    //     this.createCriticalHighAnnotation(sensor),
-    //   ],
-    // };
+  private getZones(): Highcharts.SeriesZonesOptionsObject[] {
+    return [
+      {
+        value: this.sensor.threshold_critically_low,
+        color: THEME_COLOR[this.theme].danger,
+      },
+      {
+        value: this.sensor.threshold_low,
+        color: THEME_COLOR[this.theme].warning,
+      },
+      {
+        value: this.sensor.threshold_high,
+        color: THEME_COLOR[this.theme].success,
+      },
+      {
+        value: this.sensor.threshold_critically_high,
+        color: THEME_COLOR[this.theme].warning,
+      },
+      {
+        color: THEME_COLOR[this.theme].danger,
+      },
+    ];
   }
 
-  private createCriticalLowAnnotation(sensor: Sensor) {
-    return this.createAnnotation(
-      sensor.threshold_critically_low,
-      sensor.threshold_low,
-      THEME_COLOR[this.theme].warning
-    );
-  }
-
-  private createNormalRangeAnnotation(sensor: Sensor) {
-    return this.createAnnotation(
-      sensor.threshold_low,
-      sensor.threshold_high,
-      THEME_COLOR[this.theme].success,
-      'Normal'
-    );
-  }
-
-  private createCriticalHighAnnotation(sensor: Sensor) {
-    return this.createAnnotation(
-      sensor.threshold_high,
-      sensor.threshold_critically_high,
-      THEME_COLOR[this.theme].warning
-    );
-  }
-
-  private createAnnotation(
-    y: number,
-    y2: number,
-    fillColor: string,
-    labelText?: string
-  ) {
-    const opacity = labelText ? 0.2 : 0.05;
-    return {
-      y,
-      y2,
-      fillColor,
-      borderColor: THEME_COLOR[this.theme].success,
-      opacity,
-      ...(labelText && {
+  private createThresholds(sensor: Sensor): Highcharts.YAxisPlotBandsOptions[] {
+    return [
+      {
+        from: sensor.threshold_critically_low - 100,
+        to: sensor.threshold_critically_low,
+        color: THEME_COLOR[this.theme].danger + '20',
         label: {
-          text: labelText,
-          offsetY: 0,
+          text: 'Critically Low',
           style: {
-            color: '#fff',
-            background: fillColor + '80',
+            color: THEME_COLOR[this.theme].danger,
           },
         },
-      }),
-    };
-  }
-
-  private formatDateLabel(date: Date): string {
-    return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}h${date
-      .getMinutes()
-      .toString()
-      .padStart(2, '0')}`;
-  }
-
-  private calculateDateRange(timeDelta: TimeDelta): { start: Date; end: Date } {
-    const endDate = new Date();
-    const startDate = new Date(
-      endDate.getTime() - this.timeDeltaToMs(timeDelta)
-    );
-    return { start: startDate, end: endDate };
-  }
-
-  private timeDeltaToMs(timeDelta: TimeDelta): number {
-    return (
-      timeDelta.days * 86400000 +
-      timeDelta.hours * 3600000 +
-      timeDelta.minutes * 60000 +
-      timeDelta.seconds * 1000
-    );
-  }
-
-  private getForeColor(): string {
-    return this.theme === DARK_THEME ? '#ddd' : '#222';
-  }
-
-  private getTooltipTheme(): string {
-    return this.theme === DARK_THEME ? 'dark' : 'light';
+      },
+      {
+        from: sensor.threshold_critically_low,
+        to: sensor.threshold_low,
+        color: THEME_COLOR[this.theme].warning + '10',
+        label: {
+          text: 'Low',
+          style: {
+            color: THEME_COLOR[this.theme].warning,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_low,
+        to: sensor.threshold_high,
+        color: THEME_COLOR[this.theme].success + '10',
+        label: {
+          text: 'Normal',
+          style: {
+            color: THEME_COLOR[this.theme].success,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_high,
+        to: sensor.threshold_critically_high,
+        color: THEME_COLOR[this.theme].warning + '10',
+        label: {
+          text: 'High',
+          style: {
+            color: THEME_COLOR[this.theme].warning,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_critically_high,
+        to: sensor.threshold_critically_high + 100,
+        color: THEME_COLOR[this.theme].danger + '20',
+        label: {
+          text: 'Critically High',
+          style: {
+            color: THEME_COLOR[this.theme].danger,
+          },
+        },
+      },
+    ];
   }
 }

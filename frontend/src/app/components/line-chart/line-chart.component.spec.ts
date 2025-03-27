@@ -11,7 +11,7 @@ describe('LineChartComponent', () => {
       imports: [LineChartComponent]
     })
     .compileComponents();
-    
+
     fixture = TestBed.createComponent(LineChartComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

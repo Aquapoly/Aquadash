@@ -1,25 +1,22 @@
 import { Component, OnInit } from '@angular/core';
-import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 import { Sensor } from '@app/interfaces/sensor';
 import { SensorService } from '@app/services/sensor.service';
-import { GaugeChartComponent } from '@app/components/gauge-chart/gauge-chart.component';
 import { FormsModule } from '@angular/forms';
-import { TimeDelta } from '@app/interfaces/time-delta';
 import { Measurement } from '@app/interfaces/measurement';
 import { CameraPictureComponent } from '@app/components/camera-picture/camera-picture.component';
-import { AreaChartComponent } from '@app/components/area-chart/area-chart.component';
 import {
   CHART_CHOICES,
   ChartThresholdDisplay,
 } from '../../../constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
+import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [AreaChartComponent, FormsModule, CameraPictureComponent],
+  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
