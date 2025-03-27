@@ -3,7 +3,11 @@ import { Sensor } from '@app/interfaces/sensor';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { SensorService } from '@app/services/sensor.service';
 import { Subscription } from 'rxjs';
-import { LIGHT_THEME, THEME_COLOR } from '../../../constants/constants';
+import {
+  ChartThresholdDisplay,
+  LIGHT_THEME,
+  THEME_COLOR,
+} from '../../../constants/constants';
 import { Measurement } from '@app/interfaces/measurement';
 import { HighchartsChartModule } from 'highcharts-angular';
 import * as Highcharts from 'highcharts';
@@ -19,6 +23,9 @@ import { NgClass } from '@angular/common';
 })
 export class AreaChartComponent {
   private themeSubscription!: Subscription;
+  private thresholdDisplaySubscription!: Subscription;
+  private thresholdDisplay: ChartThresholdDisplay =
+    ChartThresholdDisplay.ColoredBackgroundWithLine;
   protected theme: string = LIGHT_THEME;
 
   Highcharts: typeof Highcharts = Highcharts;
@@ -44,6 +51,11 @@ export class AreaChartComponent {
       this.theme = theme;
       this.loadInitialData();
     });
+    this.thresholdDisplaySubscription =
+      this.globalSettings.thresholdDisplay$.subscribe((display) => {
+        this.thresholdDisplay = display as ChartThresholdDisplay;
+        this.loadInitialData();
+      });
   }
 
   ngAfterViewInit(): void {}
@@ -51,6 +63,9 @@ export class AreaChartComponent {
   ngOnDestroy(): void {
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
+    }
+    if (this.thresholdDisplaySubscription) {
+      this.thresholdDisplaySubscription.unsubscribe();
     }
   }
 
@@ -64,6 +79,13 @@ export class AreaChartComponent {
   }
 
   private updateChartData(measurements: Measurement[]) {
+    const backgroundThresholdOn: boolean =
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackground ||
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackgroundWithLine;
+    const zonesOn: boolean =
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredLine ||
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackgroundWithLine;
+
     this.chartOptions = {
       chart: {
         type: 'spline',
@@ -93,7 +115,9 @@ export class AreaChartComponent {
         },
         minorGridLineWidth: 0,
         gridLineWidth: 0,
-        plotBands: this.createThresholds(this.sensor),
+        plotBands: backgroundThresholdOn
+          ? this.createThresholds(this.sensor)
+          : [],
         labels: {
           style: {
             color: THEME_COLOR[this.theme].baseContent + 'a0',
@@ -130,30 +154,34 @@ export class AreaChartComponent {
             y: msr.value,
           })),
           lineWidth: 3,
-          zones: [
-            {
-              value: this.sensor.threshold_critically_low,
-              color: THEME_COLOR[this.theme].danger,
-            },
-            {
-              value: this.sensor.threshold_low,
-              color: THEME_COLOR[this.theme].warning,
-            },
-            {
-              value: this.sensor.threshold_high,
-              color: THEME_COLOR[this.theme].success,
-            },
-            {
-              value: this.sensor.threshold_critically_high,
-              color: THEME_COLOR[this.theme].warning,
-            },
-            {
-              color: THEME_COLOR[this.theme].danger,
-            },
-          ],
+          zones: zonesOn ? this.getZones() : [],
         },
       ],
     };
+  }
+
+  private getZones(): Highcharts.SeriesZonesOptionsObject[] {
+    return [
+      {
+        value: this.sensor.threshold_critically_low,
+        color: THEME_COLOR[this.theme].danger,
+      },
+      {
+        value: this.sensor.threshold_low,
+        color: THEME_COLOR[this.theme].warning,
+      },
+      {
+        value: this.sensor.threshold_high,
+        color: THEME_COLOR[this.theme].success,
+      },
+      {
+        value: this.sensor.threshold_critically_high,
+        color: THEME_COLOR[this.theme].warning,
+      },
+      {
+        color: THEME_COLOR[this.theme].danger,
+      },
+    ];
   }
 
   private createThresholds(sensor: Sensor): Highcharts.YAxisPlotBandsOptions[] {

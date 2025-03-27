@@ -8,6 +8,11 @@ import { TimeDelta } from '@app/interfaces/time-delta';
 import { Measurement } from '@app/interfaces/measurement';
 import { CameraPictureComponent } from '@app/components/camera-picture/camera-picture.component';
 import { AreaChartComponent } from '@app/components/area-chart/area-chart.component';
+import {
+  CHART_CHOICES,
+  ChartThresholdDisplay,
+} from '../../../constants/constants';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 
 @Component({
   selector: 'app-status-page',
@@ -21,12 +26,16 @@ export class StatusPageComponent implements OnInit {
   public sensorLastMeasurements: [key: number, value: number][] = [];
   public columnCount = 2;
   public chartSize: number = 100;
-  selectedRange: TimeDelta = this.rangeSelect[3].value;
+  selectedThresholdsDisplay: ChartThresholdDisplay =
+    ChartThresholdDisplay.ColoredBackgroundWithLine;
 
-  constructor(private sensorService: SensorService) {}
+  constructor(
+    private sensorService: SensorService,
+    private globalSettings: GlobalSettingsService
+  ) {}
 
-  get rangeSelect() {
-    return this.sensorService.rangeSelect;
+  get chartChoices(): string[] {
+    return Object.values(CHART_CHOICES);
   }
 
   async ngOnInit() {
@@ -78,16 +87,7 @@ export class StatusPageComponent implements OnInit {
     return validity;
   }
 
-  async setDelta() {
-    console.log(this.selectedRange);
-    this.sensorService.time_delta.set(this.selectedRange);
-    // Update last measurement in case it changed
-    this.sensorLastMeasurements = await Promise.all(
-      this.sensors.map(async (sensor) => {
-        const last_measurement: Measurement =
-          await this.sensorService.getLastMeasurement(sensor.sensor_id);
-        return [sensor.sensor_id, last_measurement?.value];
-      })
-    );
+  updateThresholdDisplay() {
+    this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
   }
 }

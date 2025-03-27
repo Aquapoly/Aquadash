@@ -32,7 +32,7 @@ export const THEME_COLOR: { [key in string]: colors } = {
     warning: '#f1fa8c',
     error: '#ff5555',
     infoContent: '#071316',
-    lineColor: '#0aa9ff',
+    lineColor: '#d3edff',
     danger: '#ff5555',
   },
   [LIGHT_THEME]: {
@@ -51,4 +51,19 @@ export const THEME_COLOR: { [key in string]: colors } = {
     lineColor: '#0067cd',
     danger: '#ff5555',
   },
+};
+
+export enum ChartThresholdDisplay {
+  NoThreshold,
+  ColoredLine,
+  ColoredBackground,
+  ColoredBackgroundWithLine,
+}
+
+export const CHART_CHOICES: { [key in ChartThresholdDisplay]: string } = {
+  [ChartThresholdDisplay.NoThreshold]: 'Pas de seuil',
+  [ChartThresholdDisplay.ColoredLine]: 'Seuils colorés sur la ligne',
+  [ChartThresholdDisplay.ColoredBackground]: 'Seuils colorés sur le fond',
+  [ChartThresholdDisplay.ColoredBackgroundWithLine]:
+    'Seuils colorés sur la ligne et le fond',
 };
