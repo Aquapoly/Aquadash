@@ -3,15 +3,13 @@ import { Sensor } from '@app/interfaces/sensor';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { SensorService } from '@app/services/sensor.service';
 import { Subscription } from 'rxjs';
-import { THEME_COLOR } from '../../../constants/constants';
+import { LIGHT_THEME, THEME_COLOR } from '../../../constants/constants';
 import { Measurement } from '@app/interfaces/measurement';
 import { HighchartsChartModule } from 'highcharts-angular';
 import * as Highcharts from 'highcharts';
-
-export enum Theme {
-  Light = 'light',
-  Dark = 'dark',
-}
+import DarkBlueTheme from 'highcharts/themes/dark-blue';
+import GridLightTheme from 'highcharts/themes/brand-light';
+import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-area-chart',
@@ -21,7 +19,7 @@ export enum Theme {
 })
 export class AreaChartComponent {
   private themeSubscription!: Subscription;
-  private theme: string = Theme.Light;
+  protected theme: string = LIGHT_THEME;
 
   Highcharts: typeof Highcharts = Highcharts;
   chartConstructor: string = 'chart';
@@ -44,15 +42,11 @@ export class AreaChartComponent {
     this.loadInitialData();
     this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
       this.theme = theme;
-      // if (this.chart) this.updateChartColors();
+      this.loadInitialData();
     });
   }
 
-  ngAfterViewInit(): void {
-    // if (!this.chart) return;
-
-    this.updateChartColors();
-  }
+  ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
     if (this.themeSubscription) {
@@ -60,43 +54,13 @@ export class AreaChartComponent {
     }
   }
 
-  private async updateChartColors(): Promise<void> {
-    // this.chartOptions.annotations = this.createThresholdAnnotations(
-    //   this.sensor
-    // );
-    // const foreColor = this.getForeColor();
-    // const tooltipTheme = this.getTooltipTheme();
-    // await this.chart.updateOptions({
-    //   colors: [THEME_COLOR[this.theme].lineColor],
-    //   annotations: this.createThresholdAnnotations(this.sensor),
-    //   chart: {
-    //     foreColor,
-    //   },
-    //   tooltip: {
-    //     theme: tooltipTheme,
-    //   },
-    // });
-    // await this.chart.render();
-  }
-
   private async loadInitialData() {
-    console.log('Loading initial data');
     const measurements = await this.sensorService.getSensorMeasurementsDelta(
       this.sensor.sensor_id,
       this.sensorService.time_delta()
     );
-    console.log('Data loaded');
 
     this.updateChartData(measurements);
-    await this.updateChartColors();
-
-    // if (!this.chart) {
-    //   return;
-    // } else {
-    //   console.log('Rendering chart with ', this.chartOptions);
-    //   await this.chart.updateOptions(this.chartOptions);
-    //   await this.chart.render();
-    // }
   }
 
   private updateChartData(measurements: Measurement[]) {
@@ -106,13 +70,22 @@ export class AreaChartComponent {
         zooming: {
           type: 'x',
         },
+        backgroundColor: '#0000',
       },
       title: {
         text: this.chartTitle,
         align: 'left',
+        style: {
+          color: THEME_COLOR[this.theme].baseContent,
+        },
       },
       xAxis: {
         type: 'datetime',
+        labels: {
+          style: {
+            color: THEME_COLOR[this.theme].baseContent + 'a0',
+          },
+        },
       },
       yAxis: {
         title: {
@@ -121,6 +94,11 @@ export class AreaChartComponent {
         minorGridLineWidth: 0,
         gridLineWidth: 0,
         plotBands: this.createThresholds(this.sensor),
+        labels: {
+          style: {
+            color: THEME_COLOR[this.theme].baseContent + 'a0',
+          },
+        },
       },
       legend: {
         enabled: false,
@@ -139,8 +117,6 @@ export class AreaChartComponent {
           marker: {
             enabled: true,
           },
-          pointInterval: 3600000, // one hour
-          pointStart: '2014-02-29',
         },
       },
 
@@ -196,7 +172,7 @@ export class AreaChartComponent {
       {
         from: sensor.threshold_critically_low,
         to: sensor.threshold_low,
-        color: THEME_COLOR[this.theme].warning + '0a',
+        color: THEME_COLOR[this.theme].warning + '10',
         label: {
           text: 'Low',
           style: {
@@ -218,7 +194,7 @@ export class AreaChartComponent {
       {
         from: sensor.threshold_high,
         to: sensor.threshold_critically_high,
-        color: THEME_COLOR[this.theme].warning + '0a',
+        color: THEME_COLOR[this.theme].warning + '10',
         label: {
           text: 'High',
           style: {
@@ -239,98 +215,4 @@ export class AreaChartComponent {
       },
     ];
   }
-
-  private createThresholdAnnotations(sensor: Sensor): ApexAnnotations {
-    return {};
-    // return {
-    //   yaxis: [
-    //     this.createCriticalLowAnnotation(sensor),
-    //     this.createNormalRangeAnnotation(sensor),
-    //     this.createCriticalHighAnnotation(sensor),
-    //   ],
-    // };
-  }
-
-  private createCriticalLowAnnotation(sensor: Sensor) {
-    return this.createAnnotation(
-      sensor.threshold_critically_low,
-      sensor.threshold_low,
-      THEME_COLOR[this.theme].warning
-    );
-  }
-
-  private createNormalRangeAnnotation(sensor: Sensor) {
-    return this.createAnnotation(
-      sensor.threshold_low,
-      sensor.threshold_high,
-      THEME_COLOR[this.theme].success,
-      'Normal'
-    );
-  }
-
-  private createCriticalHighAnnotation(sensor: Sensor) {
-    return this.createAnnotation(
-      sensor.threshold_high,
-      sensor.threshold_critically_high,
-      THEME_COLOR[this.theme].warning
-    );
-  }
-
-  private createAnnotation(
-    y: number,
-    y2: number,
-    fillColor: string,
-    labelText?: string
-  ) {
-    const opacity = labelText ? 0.2 : 0.05;
-    return {
-      y,
-      y2,
-      fillColor,
-      borderColor: THEME_COLOR[this.theme].success,
-      opacity,
-      ...(labelText && {
-        label: {
-          text: labelText,
-          offsetY: 0,
-          style: {
-            color: '#fff',
-            background: fillColor + '80',
-          },
-        },
-      }),
-    };
-  }
-
-  private formatDateLabel(date: Date): string {
-    return `${date.getDate()}/${date.getMonth() + 1} ${date.getHours()}h${date
-      .getMinutes()
-      .toString()
-      .padStart(2, '0')}`;
-  }
-
-  // private calculateDateRange(timeDelta: TimeDelta): { start: Date; end: Date } {
-  //   const endDate = new Date();
-  //   const startDate = new Date(
-  //     endDate.getTime() - this.timeDeltaToMs(timeDelta)
-  //   );
-  //   return { start: startDate, end: endDate };
-  // }
-
-  // private timeDeltaToMs(timeDelta: TimeDelta): number {
-  //   return (
-  //     timeDelta.days * 86400000 +
-  //     timeDelta.hours * 3600000 +
-  //     timeDelta.minutes * 60000 +
-  //     timeDelta.seconds * 1000
-  //   );
-  // }
-
-  // private getForeColor(): string {
-  //   return this.theme === DARK_THEME ? '#ddd' : '#222';
-  // }
-
-  // private getTooltipTheme(): string {
-  //   return this.theme === DARK_THEME ? 'dark' : 'light';
-  // }
 }
