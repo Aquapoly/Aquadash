@@ -1,105 +1,246 @@
-import { AfterViewInit, Component, Input, OnInit, effect } from '@angular/core';
-import { Measurement } from '@app/interfaces/measurement';
+import { Component, Input } from '@angular/core';
 import { Sensor } from '@app/interfaces/sensor';
-import { TimeDelta } from '@app/interfaces/time-delta';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { SensorService } from '@app/services/sensor.service';
-import { Chart } from 'chart.js/auto';
-// import { Math } from 'core-js';
-import { oklch, formatHex } from 'culori';
+import { Subscription } from 'rxjs';
+import {
+  ChartThresholdDisplay,
+  LIGHT_THEME,
+  THEME_COLOR,
+} from '../../../constants/constants';
+import { Measurement } from '@app/interfaces/measurement';
+import { HighchartsChartModule } from 'highcharts-angular';
+import * as Highcharts from 'highcharts';
+import DarkBlueTheme from 'highcharts/themes/dark-blue';
+import GridLightTheme from 'highcharts/themes/brand-light';
+import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-line-chart',
-  standalone: true,
-  imports: [],
+  imports: [HighchartsChartModule],
   templateUrl: './line-chart.component.html',
   styleUrl: './line-chart.component.scss',
 })
-export class LineChartComponent implements OnInit, AfterViewInit {
-  public chart: Chart = {} as Chart;
+export class LineChartComponent {
+  private themeSubscription!: Subscription;
+  private thresholdDisplaySubscription!: Subscription;
+  private thresholdDisplay: ChartThresholdDisplay =
+    ChartThresholdDisplay.ColoredBackgroundWithLine;
+  protected theme: string = LIGHT_THEME;
+
+  Highcharts: typeof Highcharts = Highcharts;
+  chartConstructor: string = 'chart';
+  chartOptions: Highcharts.Options = {};
+  updateFlag: boolean = false;
+  oneToOneFlag: boolean = true;
+  runOutsideAngular: boolean = false;
+
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
 
-  chartId: string = '';
-  constructor(private sensorService: SensorService) {
-    effect(() => {
-      this.updateChart(this.sensorService.time_delta());
+  constructor(
+    private sensorService: SensorService,
+    private globalSettings: GlobalSettingsService
+  ) {}
+
+  ngOnInit(): void {
+    this.theme = this.globalSettings.getThemeName();
+
+    this.loadInitialData();
+    this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
+      this.theme = theme;
+      this.loadInitialData();
     });
-  }
-
-  ngOnInit() {
-    this.chartId = Math.floor(Math.random() * 100000).toString();
-  }
-
-  ngAfterViewInit(): void {
-    this.createChart();
-  }
-
-  private getColor(sensorId: number): string {
-    var elem = document.getElementById(`sensor${sensorId}`);
-    const color = elem
-      ? formatHex(
-          oklch(window.getComputedStyle(elem).getPropertyValue('color'))
-        )
-      : '#000000';
-    console.log(color);
-    return color || '#000000';
-  }
-
-  async createChart() {
-    const measurements: Measurement[] =
-      await this.sensorService.getSensorMeasurementsDelta(
-        this.sensor.sensor_id,
-        this.sensorService.time_delta()
-      );
-
-    const color = this.getColor(this.sensor.sensor_id);
-
-    this.chart = new Chart(this.chartId, {
-      type: 'line', //this denotes tha type of chart
-
-      data: {
-        // values on X-Axis
-        labels: measurements.map((msr) => this.shortenTimestamp(msr.timestamp)),
-        datasets: [
-          {
-            label: this.sensor.sensor_unit,
-            data: measurements.map((msr) => msr.value),
-            borderColor: color,
-            backgroundColor: color + '40',
-          },
-        ],
-      },
-
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            onClick: null as any,
-            position: 'bottom',
-          },
-        },
-      },
-    });
-  }
-
-  updateChart(time_delta: TimeDelta) {
-    this.sensorService
-      .getSensorMeasurementsDelta(this.sensor.sensor_id, time_delta)
-      .then((measurements) => {
-        this.chart.data.labels = measurements.map((msr) =>
-          this.shortenTimestamp(msr.timestamp)
-        );
-        this.chart.data.datasets[0].data = measurements.map((msr) => msr.value);
-        this.chart.update();
+    this.thresholdDisplaySubscription =
+      this.globalSettings.thresholdDisplay$.subscribe((display) => {
+        this.thresholdDisplay = display as ChartThresholdDisplay;
+        this.loadInitialData();
       });
   }
 
-  shortenTimestamp(timestamp: string) {
-    const timeSplit: string[] = timestamp.split('T');
-    return `${timeSplit[0].substring(5, 7)}/${timeSplit[0].substring(
-      8,
-      10
-    )} - ${timeSplit[1].substring(0, 2)}h${timeSplit[1].substring(3, 5)}`;
+  ngAfterViewInit(): void {}
+
+  ngOnDestroy(): void {
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
+    }
+    if (this.thresholdDisplaySubscription) {
+      this.thresholdDisplaySubscription.unsubscribe();
+    }
+  }
+
+  private async loadInitialData() {
+    const measurements = await this.sensorService.getSensorMeasurementsDelta(
+      this.sensor.sensor_id,
+      this.sensorService.time_delta()
+    );
+
+    this.updateChartData(measurements);
+  }
+
+  private updateChartData(measurements: Measurement[]) {
+    const backgroundThresholdOn: boolean =
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackground ||
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackgroundWithLine;
+    const zonesOn: boolean =
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredLine ||
+      this.thresholdDisplay === ChartThresholdDisplay.ColoredBackgroundWithLine;
+
+    this.chartOptions = {
+      chart: {
+        type: 'spline',
+        zooming: {
+          type: 'x',
+        },
+        backgroundColor: '#0000',
+      },
+      title: {
+        text: this.chartTitle,
+        align: 'left',
+        style: {
+          color: THEME_COLOR[this.theme].baseContent,
+        },
+      },
+      xAxis: {
+        type: 'datetime',
+        labels: {
+          style: {
+            color: THEME_COLOR[this.theme].baseContent + 'a0',
+          },
+        },
+      },
+      yAxis: {
+        title: {
+          text: this.sensor.sensor_unit,
+        },
+        minorGridLineWidth: 0,
+        gridLineWidth: 0,
+        plotBands: backgroundThresholdOn
+          ? this.createThresholds(this.sensor)
+          : [],
+        labels: {
+          style: {
+            color: THEME_COLOR[this.theme].baseContent + 'a0',
+          },
+        },
+      },
+      legend: {
+        enabled: false,
+      },
+      tooltip: {
+        valueSuffix: this.sensor.sensor_unit,
+      },
+      plotOptions: {
+        spline: {
+          lineWidth: 8,
+          states: {
+            hover: {
+              lineWidth: 12,
+            },
+          },
+          marker: {
+            enabled: true,
+          },
+        },
+      },
+
+      series: [
+        {
+          type: 'line',
+          color: THEME_COLOR[this.theme].lineColor,
+          name: this.sensor.sensor_type,
+          data: measurements.map((msr) => ({
+            x: new Date(msr.timestamp).getTime(),
+            y: msr.value,
+          })),
+          lineWidth: 3,
+          zones: zonesOn ? this.getZones() : [],
+        },
+      ],
+    };
+  }
+
+  private getZones(): Highcharts.SeriesZonesOptionsObject[] {
+    return [
+      {
+        value: this.sensor.threshold_critically_low,
+        color: THEME_COLOR[this.theme].danger,
+      },
+      {
+        value: this.sensor.threshold_low,
+        color: THEME_COLOR[this.theme].warning,
+      },
+      {
+        value: this.sensor.threshold_high,
+        color: THEME_COLOR[this.theme].success,
+      },
+      {
+        value: this.sensor.threshold_critically_high,
+        color: THEME_COLOR[this.theme].warning,
+      },
+      {
+        color: THEME_COLOR[this.theme].danger,
+      },
+    ];
+  }
+
+  private createThresholds(sensor: Sensor): Highcharts.YAxisPlotBandsOptions[] {
+    return [
+      {
+        from: sensor.threshold_critically_low - 100,
+        to: sensor.threshold_critically_low,
+        color: THEME_COLOR[this.theme].danger + '20',
+        label: {
+          text: 'Critically Low',
+          style: {
+            color: THEME_COLOR[this.theme].danger,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_critically_low,
+        to: sensor.threshold_low,
+        color: THEME_COLOR[this.theme].warning + '10',
+        label: {
+          text: 'Low',
+          style: {
+            color: THEME_COLOR[this.theme].warning,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_low,
+        to: sensor.threshold_high,
+        color: THEME_COLOR[this.theme].success + '10',
+        label: {
+          text: 'Normal',
+          style: {
+            color: THEME_COLOR[this.theme].success,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_high,
+        to: sensor.threshold_critically_high,
+        color: THEME_COLOR[this.theme].warning + '10',
+        label: {
+          text: 'High',
+          style: {
+            color: THEME_COLOR[this.theme].warning,
+          },
+        },
+      },
+      {
+        from: sensor.threshold_critically_high,
+        to: sensor.threshold_critically_high + 100,
+        color: THEME_COLOR[this.theme].danger + '20',
+        label: {
+          text: 'Critically High',
+          style: {
+            color: THEME_COLOR[this.theme].danger,
+          },
+        },
+      },
+    ];
   }
 }

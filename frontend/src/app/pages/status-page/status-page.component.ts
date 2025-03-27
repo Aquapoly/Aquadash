@@ -1,31 +1,38 @@
 import { Component, OnInit } from '@angular/core';
-import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 import { Sensor } from '@app/interfaces/sensor';
 import { SensorService } from '@app/services/sensor.service';
-import { GaugeChartComponent } from '@app/components/gauge-chart/gauge-chart.component';
 import { FormsModule } from '@angular/forms';
-import { TimeDelta } from '@app/interfaces/time-delta';
 import { Measurement } from '@app/interfaces/measurement';
-import { CameraPictureComponent } from "@app/components/camera-picture/camera-picture.component";
+import { CameraPictureComponent } from '@app/components/camera-picture/camera-picture.component';
+import {
+  CHART_CHOICES,
+  ChartThresholdDisplay,
+} from '../../../constants/constants';
+import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
+import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 
 @Component({
-    selector: 'app-status-page',
-    standalone: true,
-    templateUrl: './status-page.component.html',
-    styleUrl: './status-page.component.scss',
-    imports: [LineChartComponent, GaugeChartComponent, FormsModule, CameraPictureComponent]
+  selector: 'app-status-page',
+  standalone: true,
+  templateUrl: './status-page.component.html',
+  styleUrl: './status-page.component.scss',
+  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
   public sensorLastMeasurements: [key: number, value: number][] = [];
   public columnCount = 2;
   public chartSize: number = 100;
-  selectedRange: TimeDelta = this.rangeSelect[0].value;
+  selectedThresholdsDisplay: ChartThresholdDisplay =
+    ChartThresholdDisplay.ColoredBackgroundWithLine;
 
-  constructor(private sensorService: SensorService) {}
+  constructor(
+    private sensorService: SensorService,
+    private globalSettings: GlobalSettingsService
+  ) {}
 
-  get rangeSelect() {
-    return this.sensorService.rangeSelect;
+  get chartChoices(): string[] {
+    return Object.values(CHART_CHOICES);
   }
 
   async ngOnInit() {
@@ -77,16 +84,7 @@ export class StatusPageComponent implements OnInit {
     return validity;
   }
 
-  async setDelta() {
-    console.log(this.selectedRange);
-    this.sensorService.time_delta.set(this.selectedRange);
-    // Update last measurement in case it changed
-    this.sensorLastMeasurements = await Promise.all(
-      this.sensors.map(async (sensor) => {
-        const last_measurement: Measurement =
-          await this.sensorService.getLastMeasurement(sensor.sensor_id);
-        return [sensor.sensor_id, last_measurement?.value];
-      })
-    );
+  updateThresholdDisplay() {
+    this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
   }
 }
