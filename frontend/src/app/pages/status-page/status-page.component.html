@@ -1,6 +1,6 @@
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem] m-auto">
   <select [(ngModel)]="selectedThresholdsDisplay" (change)="updateThresholdDisplay()"
-    class="col-span-12 select w-full max-w-xs">
+    class="col-span-12 select w-full max-w-xs selectDiv">
     @for (choice of chartChoices; track choice) {
     <option [ngValue]="chartChoices.indexOf(choice)">{{ choice }}</option>
     }
