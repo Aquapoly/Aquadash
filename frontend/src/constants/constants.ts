@@ -15,6 +15,7 @@ interface colors {
   error: string;
   infoContent: string;
   lineColor: string;
+  danger: string;
 }
 
 export const THEME_COLOR: { [key in string]: colors } = {
@@ -32,6 +33,7 @@ export const THEME_COLOR: { [key in string]: colors } = {
     error: '#ff5555',
     infoContent: '#071316',
     lineColor: '#0aa9ff',
+    danger: '#ff5555',
   },
   [LIGHT_THEME]: {
     colorScheme: 'light',
@@ -47,5 +49,6 @@ export const THEME_COLOR: { [key in string]: colors } = {
     error: '#ff6368',
     infoContent: '#042e49',
     lineColor: '#0067cd',
+    danger: '#ff5555',
   },
 };

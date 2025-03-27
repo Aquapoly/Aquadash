@@ -1,9 +1,5 @@
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem] m-auto">
-  <select
-    [(ngModel)]="selectedRange"
-    (change)="setDelta()"
-    class="col-span-12 select w-full max-w-xs"
-  >
+  <select [(ngModel)]="selectedRange" (change)="setDelta()" class="col-span-12 select w-full max-w-xs">
     @for (range of rangeSelect; track range.name) {
     <option [ngValue]="range.value">{{ range.name }}</option>
     }
@@ -17,10 +13,7 @@
     <div class="stat">
       <div class="stat-title">{{ this.getSensorTitle(sensor) }}</div>
       <div>
-        <div
-          [class]="['text-' + this.getSensorValidity(sensor), 'stat-value']"
-          [id]="['sensor' + sensor.sensor_id]"
-        >
+        <div [class]="['text-' + this.getSensorValidity(sensor), 'stat-value']" [id]="['sensor' + sensor.sensor_id]">
           {{ this.getLastMeasurement(sensor) }}
         </div>
         <div class="stat-desc">{{ sensor.sensor_unit }}</div>
@@ -44,15 +37,9 @@
       </div>
     </div>
   </div>
-  <div
-    class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72 bg-base-200"
-  >
-    <app-line-chart
-      [chartTitle]="this.getSensorTitle(sensor)"
-      [sensor]="sensor"
-      class="h-full"
-    >
-    </app-line-chart>
+  <div class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72 bg-base-200">
+    <app-area-chart [chartTitle]="this.getSensorTitle(sensor)" [sensor]="sensor" class="h-full">
+    </app-area-chart>
   </div>
   }
 </div>
