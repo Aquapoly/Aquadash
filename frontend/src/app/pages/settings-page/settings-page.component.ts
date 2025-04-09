@@ -19,7 +19,7 @@ export class SettingsPageComponent implements OnInit {
   actuators: Actuator[] = [];
   @ViewChild('responseModal') modal: ModalComponent | undefined;
 
-  constructor(private api: ApiService) {}
+  constructor(private readonly api: ApiService) {}
 
   ngOnInit(): void {
     this.api.getActuators(0).subscribe((res) => {
@@ -40,19 +40,17 @@ export class SettingsPageComponent implements OnInit {
 
   onSubmit() {
     this.api.patchActuators(this.actuators).subscribe((res) => {
-      if (res.status == HttpStatusCode.Ok) {
+      if (res.status === HttpStatusCode.Ok) {
         if (this.modal) {
           this.modal.title = 'Succès';
           this.modal.content = 'Les paramètres ont été mis à jour avec succès';
           this.modal.showModal();
         }
-      } else {
-        if (this.modal) {
-          this.modal.title = 'Erreur';
-          this.modal.content =
-            'Une erreur est survenue lors de la mise à jour des paramètres';
-          this.modal.showModal();
-        }
+      } else if (this.modal) {
+        this.modal.title = 'Erreur';
+        this.modal.content =
+          'Une erreur est survenue lors de la mise à jour des paramètres';
+        this.modal.showModal();
       }
     });
   }

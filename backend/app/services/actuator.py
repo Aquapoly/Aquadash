@@ -48,7 +48,7 @@ def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (model
     #####
 
     activate = activation_map[actuator.activation_condition](
-        last_measurement.value, actuator.low, actuator.high)
+        last_measurement.value, actuator.condition_value)
 
     return schemas.ActuatorActivation(
         activate=activate, status="OK", duration=actuator.activation_duration, period=actuator.activation_period)

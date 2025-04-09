@@ -4,6 +4,8 @@ export const DARK_THEME: string = 'dracula';
 export const ActuatorTypeToName: { [key: string]: string } = {
   acid_pump: 'Pompe à acide',
   base_pump: 'Pompe à base',
+  nutrients_A_pump: 'Pompe à nutriments A',
+  nutrients_B_pump: 'Pompe à nutriments B',
 };
 
 interface Colors {

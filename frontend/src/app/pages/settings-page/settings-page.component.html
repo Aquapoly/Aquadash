@@ -53,7 +53,7 @@
               <option value="always">Toujours</option>
             </select>
             @if(actuator.activation_condition !== 'always'){
-            <input [(ngModel)]="actuator.low" name="low_{{ actuator.actuator_id }}" type="number"
+            <input [(ngModel)]="actuator.condition_value" name="low_{{ actuator.actuator_id }}" type="number"
               class="bg-transparent w-14" required step="0.5" />}
           </td>
           <td>
