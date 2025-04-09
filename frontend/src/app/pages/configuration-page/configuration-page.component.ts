@@ -1,11 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Actuator } from '../../interfaces/actuator';
 import { FormsModule } from '@angular/forms';
-import { ViewChild } from '@angular/core';
 import { ApiService } from '../../services/api.service';
 import { ModalComponent } from '@app/components/modal/modal.component';
 import { HttpStatusCode } from '@angular/common/http';
 import tippy from 'tippy.js';
+import 'tippy.js/themes/light.css';
 import { CommonModule } from '@angular/common';
 import { ActuatorTypeToName } from '../../../constants/constants';
 
@@ -29,8 +29,10 @@ export class ConfigurationPageComponent implements OnInit {
   // Pour bien placer les infobulles
   ngAfterViewInit(): void {
     tippy('[data-tippy-content]', {
-      placement: 'bottom',
-      animation: 'fade',
+      placement: 'top',
+      animation: 'scale-subtle',
+      theme: 'light',
+      arrow: true,
     });
   }
 
