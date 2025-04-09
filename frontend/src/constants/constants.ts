@@ -1,7 +1,12 @@
 export const LIGHT_THEME: string = 'light';
 export const DARK_THEME: string = 'dracula';
 
-interface colors {
+export const ActuatorTypeToName: { [key: string]: string } = {
+  acid_pump: 'Pompe à acide',
+  base_pump: 'Pompe à base',
+};
+
+interface Colors {
   colorScheme: string;
   primary: string;
   secondary: string;
@@ -18,7 +23,7 @@ interface colors {
   danger: string;
 }
 
-export const THEME_COLOR: { [key in string]: colors } = {
+export const THEME_COLOR: { [key in string]: Colors } = {
   [DARK_THEME]: {
     colorScheme: 'dark',
     primary: '#1DB88E',

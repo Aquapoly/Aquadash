@@ -7,12 +7,13 @@ import { ModalComponent } from '@app/components/modal/modal.component';
 import { HttpStatusCode } from '@angular/common/http';
 import tippy from 'tippy.js';
 import { CommonModule } from '@angular/common';
+import { ActuatorTypeToName } from '../../../constants/constants';
 
 @Component({
-    selector: 'app-actuator-page',
-    templateUrl: './settings-page.component.html',
-    styleUrl: './settings-page.component.scss',
-    imports: [FormsModule, ModalComponent, CommonModule]
+  selector: 'app-actuator-page',
+  templateUrl: './settings-page.component.html',
+  styleUrl: './settings-page.component.scss',
+  imports: [FormsModule, ModalComponent, CommonModule],
 })
 export class SettingsPageComponent implements OnInit {
   actuators: Actuator[] = [];
@@ -31,6 +32,10 @@ export class SettingsPageComponent implements OnInit {
       placement: 'bottom',
       animation: 'fade',
     });
+  }
+
+  protected getNameFromType(type: string): string {
+    return ActuatorTypeToName[type] || type;
   }
 
   onSubmit() {

@@ -12,40 +12,22 @@
       <thead>
         <tr>
           <th>
-            <span
-              data-tippy-content="Contrôle l'équipement pour ajuster l'eau, les nutriments et les conditions de croissance des plantes."
-              >Actuateur</span
-            >
+            <span data-tippy-content="Nom de l'actuateur (ex: pompe, vannes, lumière)">Actuateur</span>
           </th>
           <th>
             <span
-              data-tippy-content="Type d'actuateur (ex: pompe, vannes, lumière)"
-              >Type</span
-            >
-          </th>
-          <th>
-            <span data-tippy-content="Valeur minimale autorisée"
-              >Valeur minimale</span
-            >
-          </th>
-          <th>
-            <span data-tippy-content="Valeur maximale autorisée"
-              >Valeur maximale</span
-            >
+              data-tippy-content="Valeur d'activation en fonction de la condition. Exemple : si la condition est high, alors l'actuateur se déclenchera si la valeur est dépassée.">Valeur
+              d'activation</span>
           </th>
           <th>
             <span data-tippy-content="Condition d'activation">Condition</span>
           </th>
           <th>
             <span
-              data-tippy-content="Temps d'attente entre chaque activations (en secondes)"
-              >Période</span
-            >
+              data-tippy-content="Période à laquelle on vérifie la mesure. Exemple : Vérifier la mesure toutes les 5 secondes.">Période</span>
           </th>
           <th>
-            <span data-tippy-content="Durée d'activation (en secondes)"
-              >Durée</span
-            >
+            <span data-tippy-content="Durée d'activation (en secondes)">Durée</span>
           </th>
           <th>Actif</th>
           <th>Dernière activation</th>
@@ -59,68 +41,33 @@
         } @for(actuator of actuators;track actuator.actuator_id){
         <tr class="hover">
           <td>
-            {{ actuator.actuator_name }}
+            {{ actuator.actuator_name || getNameFromType(actuator.actuator_type) }}
           </td>
           <td>
-            {{ actuator.actuator_type }}
+            <input [(ngModel)]="actuator.low" name="low_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-14" required step="0.5" />
           </td>
           <td>
-            <input
-              [(ngModel)]="actuator.low"
-              name="low_{{ actuator.actuator_id }}"
-              type="number"
-              class="bg-transparent w-14"
-              required
-            />
-          </td>
-          <td>
-            <input
-              [(ngModel)]="actuator.high"
-              name="high_{{ actuator.actuator_id }}"
-              type="number"
-              class="bg-transparent w-14"
-              required
-            />
-          </td>
-          <td>
-            <select
-              [(ngModel)]="actuator.activation_condition"
-              name="condition_{{ actuator.actuator_id }}"
-              class="select select-bordered select-sm"
-              required
-            >
+            <select [(ngModel)]="actuator.activation_condition" name="condition_{{ actuator.actuator_id }}"
+              class="select select-bordered select-sm" required>
               <option value="high">High</option>
               <option value="low">Low</option>
+              <option value="always">Always</option>
             </select>
           </td>
           <td>
-            <input
-              [(ngModel)]="actuator.activation_period"
-              name="period_{{ actuator.actuator_id }}"
-              type="number"
-              class="bg-transparent w-12"
-              required
-            />
+            <input [(ngModel)]="actuator.activation_period" name="period_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-12" required min="0" step="0.5" />
           </td>
           <td>
-            <input
-              [(ngModel)]="actuator.activation_duration"
-              name="duration_{{ actuator.actuator_id }}"
-              type="number"
-              class="bg-transparent w-12"
-              required
-            />
+            <input [(ngModel)]="actuator.activation_duration" name="duration_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-12" required min="0" />
           </td>
           <td>
             <div class="form-control">
               <label class="label cursor-pointer w-min">
-                <input
-                  [(ngModel)]="actuator.enabled"
-                  type="checkbox"
-                  class="toggle toggle-primary"
-                  checked="checked"
-                  name="enabled_{{ actuator.actuator_id }}"
-                />
+                <input [(ngModel)]="actuator.enabled" type="checkbox" class="toggle toggle-primary" checked="checked"
+                  name="enabled_{{ actuator.actuator_id }}" />
               </label>
             </div>
           </td>
@@ -134,20 +81,14 @@
   </div>
   <div class="flex justify-center p-4">
     @if(!settingsForm.dirty || !settingsForm.valid){
-    <div
-      class="tooltip tooltip-bottom"
-      data-tip="Vous devez apporter des modifications avant de sauvegarder"
-    >
+    <div class="tooltip tooltip-bottom" data-tip="Vous devez apporter des modifications avant de sauvegarder">
       <button class="btn btn-primary pointer-events-auto" disabled>
         Sauvegarder
       </button>
     </div>
     } @else {
     <div class="tooltip tooltip-bottom" data-tip="Sauvegarder">
-      <button
-        class="btn btn-primary pointer-events-auto"
-        onclick="confirm_modal.showModal()"
-      >
+      <button class="btn btn-primary pointer-events-auto" onclick="confirm_modal.showModal()">
         Sauvegarder
       </button>
     </div>
