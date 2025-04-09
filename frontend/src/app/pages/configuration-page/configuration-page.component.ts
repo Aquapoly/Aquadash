@@ -19,6 +19,9 @@ export class ConfigurationPageComponent implements OnInit {
   actuators: Actuator[] = [];
   @ViewChild('responseModal') modal: ModalComponent | undefined;
 
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
+
   constructor(private readonly api: ApiService) {}
 
   ngOnInit(): void {
@@ -54,6 +57,28 @@ export class ConfigurationPageComponent implements OnInit {
           'Une erreur est survenue lors de la mise à jour des paramètres';
         this.modal.showModal();
       }
+    });
+  }
+
+  sortTable(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+
+    this.actuators.sort((a, b) => {
+      const valueA = a[column as keyof Actuator];
+      const valueB = b[column as keyof Actuator];
+
+      if (valueA < valueB) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (valueA > valueB) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
     });
   }
 }

@@ -11,23 +11,44 @@
     <table class="table">
       <thead>
         <tr>
-          <th>
+          <th (click)="sortTable('actuator_name')">
             <span data-tippy-content="Nom de l'actuateur (ex: pompe, vannes, lumière)">Actuateur</span>
+            @if (sortColumn === 'actuator_name') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
           </th>
-          <th class="condition">
+          <th (click)="sortTable('activation_condition')" class="condition">
             <span
-              data-tippy-content="Quand activer l'actuateur (Exemple : Activer la pompe lorsque la valeur est > 0).">Condition
-              d'activation</span>
+              data-tippy-content="Quand activer l'actuateur (Exemple : Activer la pompe lorsque la valeur est > 0).">
+              Condition d'activation
+            </span>
+            @if (sortColumn === 'activation_condition') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
           </th>
-          <th>
+          <th (click)="sortTable('activation_period')">
             <span
-              data-tippy-content="Période à laquelle on vérifie la mesure (Exemple : Vérifier la mesure toutes les 5 secondes).">Période</span>
+              data-tippy-content="Période à laquelle on vérifie la mesure (Exemple : Vérifier la mesure toutes les 5 secondes).">
+              Période
+            </span>
+            @if (sortColumn === 'activation_period') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
           </th>
-          <th>
+          <th (click)="sortTable('activation_duration')">
             <span data-tippy-content="Durée d'activation (en secondes)">Durée</span>
+            @if (sortColumn === 'activation_duration') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
           </th>
-          <th>Actif</th>
-          <th>Dernière activation</th>
+          <th (click)="sortTable('enabled')">Actif@if (sortColumn === 'enabled') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+          <th (click)="sortTable('last_activated')">Dernière activation@if (sortColumn === 'last_activated') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
         </tr>
       </thead>
       <tbody>
