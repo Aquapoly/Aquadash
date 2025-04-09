@@ -11,11 +11,11 @@ import { ActuatorTypeToName } from '../../../constants/constants';
 
 @Component({
   selector: 'app-actuator-page',
-  templateUrl: './settings-page.component.html',
-  styleUrl: './settings-page.component.scss',
+  templateUrl: './configuration-page.component.html',
+  styleUrl: './configuration-page.component.scss',
   imports: [FormsModule, ModalComponent, CommonModule],
 })
-export class SettingsPageComponent implements OnInit {
+export class ConfigurationPageComponent implements OnInit {
   actuators: Actuator[] = [];
   @ViewChild('responseModal') modal: ModalComponent | undefined;
 
