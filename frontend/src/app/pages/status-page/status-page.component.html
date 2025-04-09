@@ -1,11 +1,8 @@
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5">
-  <select
-    [(ngModel)]="selectedRange"
-    (change)="setDelta()"
-    class="col-span-12 select w-full max-w-xs"
-  >
-    @for (range of rangeSelect; track range.name) {
-    <option [ngValue]="range.value">{{ range.name }}</option>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem] m-auto">
+  <select [(ngModel)]="selectedThresholdsDisplay" (change)="updateThresholdDisplay()"
+    class="col-span-12 select w-full max-w-xs selectDiv">
+    @for (choice of chartChoices; track choice) {
+    <option [ngValue]="chartChoices.indexOf(choice)">{{ choice }}</option>
     }
   </select>
   @if (sensors.length == 0) {
@@ -13,14 +10,11 @@
     <span class="loading loading-infinity loading-lg text-success"></span>
   </div>
   } @for (sensor of sensors; track sensor.sensor_id) {
-  <div class="stats shadow text-center col-span-12 lg:col-span-3">
+  <div class="stats shadow text-center col-span-12 lg:col-span-3 bg-base-200">
     <div class="stat">
       <div class="stat-title">{{ this.getSensorTitle(sensor) }}</div>
       <div>
-        <div
-          [class]="['text-' + this.getSensorValidity(sensor), 'stat-value']"
-          [id]="['sensor' + sensor.sensor_id]"
-        >
+        <div [class]="['text-' + this.getSensorValidity(sensor), 'stat-value']" [id]="['sensor' + sensor.sensor_id]">
           {{ this.getLastMeasurement(sensor) }}
         </div>
         <div class="stat-desc">{{ sensor.sensor_unit }}</div>
@@ -44,12 +38,8 @@
       </div>
     </div>
   </div>
-  <div class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72">
-    <app-line-chart
-      [chartTitle]="this.getSensorTitle(sensor)"
-      [sensor]="sensor"
-      class="h-full"
-    >
+  <div class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72 bg-base-200">
+    <app-line-chart [chartTitle]="this.getSensorTitle(sensor)" [sensor]="sensor" class="h-full">
     </app-line-chart>
   </div>
   }
