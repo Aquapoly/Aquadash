@@ -14,13 +14,13 @@
           <th>
             <span data-tippy-content="Nom de l'actuateur (ex: pompe, vannes, lumière)">Actuateur</span>
           </th>
-          <th>
+          <!-- <th>
             <span
               data-tippy-content="Valeur d'activation en fonction de la condition. Exemple : si la condition est high, alors l'actuateur se déclenchera si la valeur est dépassée.">Valeur
               d'activation</span>
-          </th>
-          <th>
-            <span data-tippy-content="Condition d'activation">Condition</span>
+          </th> -->
+          <th class="condition">
+            <span data-tippy-content="Condition d'activation">Condition d'activation</span>
           </th>
           <th>
             <span
@@ -43,17 +43,18 @@
           <td>
             {{ actuator.actuator_name || getNameFromType(actuator.actuator_type) }}
           </td>
-          <td>
-            <input [(ngModel)]="actuator.low" name="low_{{ actuator.actuator_id }}" type="number"
-              class="bg-transparent w-14" required step="0.5" />
-          </td>
-          <td>
+          <td class="flex activation-condition">
             <select [(ngModel)]="actuator.activation_condition" name="condition_{{ actuator.actuator_id }}"
-              class="select select-bordered select-sm" required>
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="always">Always</option>
+              class="select select-bordered select-sm s" required
+              [ngClass]="{'always' : actuator.activation_condition === 'always'}">
+              <option value="high">></option>
+              <option value="low">
+                &lt; </option>
+              <option value="always">Toujours</option>
             </select>
+            @if(actuator.activation_condition !== 'always'){
+            <input [(ngModel)]="actuator.low" name="low_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-14" required step="0.5" />}
           </td>
           <td>
             <input [(ngModel)]="actuator.activation_period" name="period_{{ actuator.actuator_id }}" type="number"
