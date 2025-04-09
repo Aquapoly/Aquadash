@@ -47,14 +47,14 @@
             <select [(ngModel)]="actuator.activation_condition" name="condition_{{ actuator.actuator_id }}"
               class="select select-bordered select-sm s" required
               [ngClass]="{'always' : actuator.activation_condition === 'always'}">
-              <option value="high">></option>
+              <option value="high">❯</option>
               <option value="low">
-                &lt; </option>
+                ❮ </option>
               <option value="always">Toujours</option>
             </select>
             @if(actuator.activation_condition !== 'always'){
             <input [(ngModel)]="actuator.condition_value" name="low_{{ actuator.actuator_id }}" type="number"
-              class="bg-transparent w-14" required step="0.5" />}
+              class="bg-transparent w-10" required step="0.5" />}
           </td>
           <td>
             <input [(ngModel)]="actuator.activation_period" name="period_{{ actuator.actuator_id }}" type="number"
