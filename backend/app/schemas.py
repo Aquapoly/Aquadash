@@ -49,8 +49,7 @@ class Measurement(MeasurementBase):
 class ActuatorBase(BaseModel):
     actuator_type: ActuatorType
     sensor_id: int
-    low: float
-    high: float
+    condition_value: float
     activation_condition: ActivationCondition
     activation_period: float # in seconds
     activation_duration: float # in seconds

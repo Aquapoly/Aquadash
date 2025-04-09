@@ -1,0 +1,133 @@
+<form #settingsForm="ngForm">
+  <div class="collapse collapse-open w-11/12 m-auto shadow px-8">
+    <div class="py-6 px-4 sm:px-0">
+      <h3 class="text-base/7 font-semibold">Actuateurs</h3>
+      <p class="mt-1 text-sm/6 text-gray-400">
+        Les actuateurs sont des dispositifs qui contrôlent les équipements du
+        système hydroponique (pompes, lumières, etc.).
+      </p>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th (click)="sortTable('actuator_name')">
+            <span data-tippy-content="Nom de l'actuateur (ex: pompe, vannes, lumière)">Actuateur</span>
+            @if (sortColumn === 'actuator_name') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+          <th (click)="sortTable('activation_condition')" class="condition">
+            <span
+              data-tippy-content="Quand activer l'actuateur (Exemple : Activer la pompe lorsque la valeur est > 0).">
+              Condition d'activation
+            </span>
+            @if (sortColumn === 'activation_condition') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+          <th (click)="sortTable('activation_period')">
+            <span
+              data-tippy-content="Période à laquelle on vérifie la mesure (Exemple : Vérifier la mesure toutes les 5 secondes).">
+              Période
+            </span>
+            @if (sortColumn === 'activation_period') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+          <th (click)="sortTable('activation_duration')">
+            <span data-tippy-content="Durée d'activation (en secondes)">Durée</span>
+            @if (sortColumn === 'activation_duration') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+          <th (click)="sortTable('enabled')">Actif@if (sortColumn === 'enabled') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+          <th (click)="sortTable('last_activated')">Dernière activation@if (sortColumn === 'last_activated') {
+            <span> {{ sortDirection === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @if(actuators.length === 0){
+        <tr>
+          <td class="text-center" colspan="4">Aucun actuateur</td>
+        </tr>
+        } @for(actuator of actuators;track actuator.actuator_id){
+        <tr class="hover">
+          <td>
+            {{ actuator.actuator_name || getNameFromType(actuator.actuator_type) }}
+          </td>
+          <td class="flex activation-condition">
+            <select [(ngModel)]="actuator.activation_condition" name="condition_{{ actuator.actuator_id }}"
+              class="select select-bordered select-sm s" required
+              [ngClass]="{'always' : actuator.activation_condition === 'always'}">
+              <option value="high">❯</option>
+              <option value="low">
+                ❮ </option>
+              <option value="always">Toujours</option>
+            </select>
+            @if(actuator.activation_condition !== 'always'){
+            <input [(ngModel)]="actuator.condition_value" name="low_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-10" required step="0.5" />}
+          </td>
+          <td>
+            <input [(ngModel)]="actuator.activation_period" name="period_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-12" required min="0" step="0.5" />
+          </td>
+          <td>
+            <input [(ngModel)]="actuator.activation_duration" name="duration_{{ actuator.actuator_id }}" type="number"
+              class="bg-transparent w-12" required min="0" />
+          </td>
+          <td>
+            <div class="form-control">
+              <label class="label cursor-pointer w-min">
+                <input [(ngModel)]="actuator.enabled" type="checkbox" class="toggle toggle-primary" checked="checked"
+                  name="enabled_{{ actuator.actuator_id }}" />
+              </label>
+            </div>
+          </td>
+          <td>
+            {{ actuator.last_activated | date : "short" }}
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="flex justify-center p-4">
+    @if(!settingsForm.dirty || !settingsForm.valid){
+    <div class="tooltip tooltip-bottom" data-tip="Vous devez apporter des modifications avant de sauvegarder">
+      <button class="btn btn-primary pointer-events-auto" disabled>
+        Sauvegarder
+      </button>
+    </div>
+    } @else {
+    <div class="tooltip tooltip-bottom" data-tip="Sauvegarder">
+      <button class="btn btn-primary pointer-events-auto" onclick="confirm_modal.showModal()">
+        Sauvegarder
+      </button>
+    </div>
+    }
+  </div>
+</form>
+
+<dialog id="confirm_modal" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Attention</h3>
+    <p class="py-4">Etes vous sûr de vouloir sauvegarder les modifications?</p>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-primary mx-2" (click)="onSubmit()">
+          Sauvegarder
+        </button>
+        <button class="btn">Annuler</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<app-modal #responseModal />

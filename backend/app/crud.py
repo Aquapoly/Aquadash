@@ -296,8 +296,7 @@ def default_populate_database(db: Session):
         actuator_data = schemas.ActuatorBase(
             actuator_type=ActuatorType.acid_pump,  
             sensor_id=sensors[0].sensor_id,  
-            low=0.0,  
-            high=1.0,
+            condition_value=0.0,  
             activation_condition=ActivationCondition.low,  
             activation_period=5.0,  
             activation_duration=2.0,  

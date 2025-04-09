@@ -1,0 +1,29 @@
+td,
+th {
+  text-align: center;
+}
+
+.form-control {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+}
+
+td.activation-condition {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 1em;
+
+  select {
+    width: 4rem;
+  }
+  select.always {
+    width: auto;
+  }
+}
+
+th.condition {
+  width: 320px;
+}
