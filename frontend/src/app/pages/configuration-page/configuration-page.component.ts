@@ -69,16 +69,13 @@ export class ConfigurationPageComponent implements OnInit {
     }
 
     this.actuators.sort((a, b) => {
-      const valueA = a[column as keyof Actuator];
-      const valueB = b[column as keyof Actuator];
-
-      if (valueA < valueB) {
-        return this.sortDirection === 'asc' ? -1 : 1;
-      }
-      if (valueA > valueB) {
-        return this.sortDirection === 'asc' ? 1 : -1;
-      }
-      return 0;
+      const [valueA, valueB] = [
+        a[column as keyof Actuator],
+        b[column as keyof Actuator],
+      ];
+      return (
+        (valueA > valueB ? 1 : -1) * (this.sortDirection === 'asc' ? 1 : -1)
+      );
     });
   }
 }
