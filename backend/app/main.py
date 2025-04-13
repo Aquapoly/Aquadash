@@ -312,3 +312,48 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
+
+# Notifications requests
+
+@app.get(
+    "/notifications",
+    tags=["Notifications"],
+    response_model=list[schemas.NotificationSchema],
+)
+async def get_notifications(
+    notification_id: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve all notifications or a specific notification by ID.
+    """
+    return queries.get_notifications(db=db, notification_id=notification_id)
+
+
+@app.post(
+    "/notifications",
+    tags=["Notifications"],
+    response_model=schemas.NotificationSchema,
+)
+async def post_notification(
+    notification: schemas.NotificationSchema,
+    db: Session = Depends(get_db),
+):
+    """
+    Create a new notification.
+    """
+    return queries.post_notification(db=db, notification=notification)
+
+
+@app.delete(
+    "/notifications/{notification_id}",
+    tags=["Notifications"],
+)
+async def delete_notification(
+    notification_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a notification by ID.
+    """
+    return queries.delete_notification(db=db, notification_id=notification_id)

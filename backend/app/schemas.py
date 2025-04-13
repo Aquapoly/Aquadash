@@ -107,10 +107,11 @@ class RandomMeasurements(BaseModel):
     drift_adjustment:float = 0.15
 
 class NotificationSchema(BaseModel):
-    id: str
+    notification_id: int
     timestamp: datetime
     message_type: str  # 'warning' or 'issue'
     critical_level: str | None = None
+    description: str 
 
     class Config:
         from_attributes = True

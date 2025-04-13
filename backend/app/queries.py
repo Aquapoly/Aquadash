@@ -150,6 +150,55 @@ def post_measurement(db: Session, measurement: schemas.MeasurementBase):
     db.commit()
     return result
 
+def get_notifications(db: Session, notification_id: str | None = None):
+    """
+    Récupère une ou plusieurs notifications.
+    Si `notification_id` est fourni, retourne une notification spécifique.
+    """
+    query = select(models.Notification)
+    if notification_id:
+        query = query.where(models.Notification.id == notification_id)
+    return db.execute(query).scalars().all()
+
+
+def post_notification(db: Session, notification: schemas.NotificationSchema):
+    """
+    Ajoute une nouvelle notification dans la base de données.
+    """
+    query = (
+        insert(models.Notification)
+        .values(**notification.model_dump())
+        .returning(models.Notification)
+    )
+    try:
+        result = db.execute(query).scalars().first()
+    except IntegrityError as err:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Conflict in database: {err}",
+        )
+    db.commit()
+    return result
+
+
+def delete_notification(db: Session, notification_id: str):
+    """
+    Supprime une notification spécifique par son ID.
+    """
+    query = (
+        select(models.Notification)
+        .where(models.Notification.id == notification_id)
+    )
+    notification = db.execute(query).scalars().first()
+    if not notification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notification with id {notification_id} not found",
+        )
+    db.delete(notification)
+    db.commit()
+    return {"detail": f"Notification with id {notification_id} deleted successfully"}
 
 def post_user(db: Session, username: str, password: str):
     perm = permissions.Permissions()
