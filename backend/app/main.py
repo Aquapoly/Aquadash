@@ -11,7 +11,7 @@ import io
 # from jose import JWTError, jwt
 
 
-from . import crud, models, schemas
+from . import models, queries, schemas
 from .database import engine, get_db
 from .classes.sensor_type import SensorType
 from .services import camera
@@ -28,7 +28,7 @@ sensors_data = dict()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db = next(get_db())  
-    crud.default_populate_database(db)  
+    queries.default_populate_database(db)  
     yield
 
 
@@ -55,7 +55,7 @@ async def post_prototype(
     prototype: schemas.Prototype,
     db: Session = Depends(get_db),
 ):
-    return crud.post_prototype(db=db, prototype=prototype)
+    return queries.post_prototype(db=db, prototype=prototype)
 
 
 
@@ -64,7 +64,7 @@ async def post_sensor(
     sensor: schemas.SensorBase, 
     db: Session = Depends(get_db)
 ):
-    return crud.post_sensor(
+    return queries.post_sensor(
         db=db,
         sensor=sensor,
     )
@@ -74,7 +74,7 @@ async def sensors(
     prototype_id: int,
     db: Session = Depends(get_db),
 ):
-    return crud.get_sensors(db=db, prototype_id=prototype_id)
+    return queries.get_sensors(db=db, prototype_id=prototype_id)
 
 
 @app.post(
@@ -88,7 +88,7 @@ async def post_measurement(
     measurement: schemas.MeasurementBase,
     db: Session = Depends(get_db),
 ):
-    return crud.post_measurement(
+    return queries.post_measurement(
         db=db, measurement=measurement
     )
 
@@ -102,7 +102,7 @@ async def post_actuator(
     actuator: schemas.ActuatorBase,
     db: Session = Depends(get_db),
 ):
-    return crud.post_actuator(db=db, actuator=actuator)
+    return queries.post_actuator(db=db, actuator=actuator)
 
 @app.patch(
     "/actuators",
@@ -114,7 +114,7 @@ async def update_actuators(
     actuators: list[schemas.Actuator],
     db: Session = Depends(get_db),
 ):
-    return crud.update_actuators(db=db, actuators=actuators)
+    return queries.update_actuators(db=db, actuators=actuators)
 
 @app.patch(
     "/sensors",
@@ -126,7 +126,7 @@ async def update_sensors(
     sensors: list[schemas.Sensor],
     db: Session = Depends(get_db),
 ):
-    return crud.update_sensors(db=db, sensors=sensors)
+    return queries.update_sensors(db=db, sensors=sensors)
 
 @app.get(
         "/actuators/{actuator_id}/state",
@@ -138,10 +138,10 @@ async def get_actuator_state(
     actuator_id: int,
     db: Session = Depends(get_db)
 ):
-    actuator: schemas.Actuator = crud.get_actuator(db=db, actuator_id=actuator_id)
+    actuator: schemas.Actuator = queries.get_actuator(db=db, actuator_id=actuator_id)
     if actuator is None:
         raise HTTPException(status_code=404, detail="Actuator with this ID not found")
-    last_measurement = crud.get_last_measurement(db=db, sensor_id = actuator.sensor_id)
+    last_measurement = queries.get_last_measurement(db=db, sensor_id = actuator.sensor_id)
 
     return get_actuator_activation(actuator, last_measurement)
 
@@ -152,18 +152,18 @@ async def get_actuator_state(
         response_model=schemas.Actuator,
 )
 async def update_actuator_last_activated(actuator_id: int, db: Session = Depends(get_db)):
-    return crud.update_actuator_last_activated(db=db, actuator_id=actuator_id)
+    return queries.update_actuator_last_activated(db=db, actuator_id=actuator_id)
 
 
 @app.get("/prototypes", tags=["Prototypes"], response_model=list[schemas.Prototype])
 async def prototypes(db: Session = Depends(get_db)):
-    return crud.get_prototypes(db=db)
+    return queries.get_prototypes(db=db)
 
 @app.get(
     "/prototypes/{prototype_id}", tags=["Prototypes"], response_model=schemas.Prototype
 )
 async def prototype(prototype_id: int, db: Session = Depends(get_db)):
-    prototype = crud.get_prototypes(db=db, prototype_id = prototype_id)
+    prototype = queries.get_prototypes(db=db, prototype_id = prototype_id)
     if len(prototype) > 0:
         return prototype[0]
     else:
@@ -182,13 +182,13 @@ async def get_measurement(
         raise HTTPException(status_code=400, detail="You cannot use both time_delta and start_timestamp")
     
     if time_delta:
-        measurements = crud.get_measurements_delta(
+        measurements = queries.get_measurements_delta(
             db=db,
             sensor_id=sensor_id,
             time_delta=time_delta,
         )
     else: 
-        measurements = crud.get_measurements(
+        measurements = queries.get_measurements(
             db=db,
             sensor_id=sensor_id,
             start_time=start_time,
@@ -204,7 +204,7 @@ async def get_measurement(
 async def get_last_measurement(
     sensor_id: int, db: Session = Depends(get_db)
 ):
-    result = crud.get_last_measurement(db, sensor_id)
+    result = queries.get_last_measurement(db, sensor_id)
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sensor ID has no measurements.")
     return result
@@ -215,7 +215,7 @@ async def get_last_measurement(
     response_model=list[schemas.Actuator],
 )
 async def actuator(prototype_id: int, db: Session = Depends(get_db)):
-    return crud.get_actuators(db=db, prototype_id=prototype_id)
+    return queries.get_actuators(db=db, prototype_id=prototype_id)
 
 
 @app.get("/picture", response_class=StreamingResponse)
@@ -258,7 +258,7 @@ async def create_user_access_token(
     db: Session = Depends(get_db),
 ):
     try:
-        crud.post_user(db, form_data.username, form_data.password)
+        queries.post_user(db, form_data.username, form_data.password)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -300,7 +300,7 @@ async def post_random_measurements(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        measurements = crud.generate_meas(datas.nb_measurements, 
+        measurements = queries.generate_meas(datas.nb_measurements, 
                                           datas.yearly_measurements_ratio,
                                           datas.dayly_measurements_ratio,
                                           datas.hourly_measurements_ratio, 
