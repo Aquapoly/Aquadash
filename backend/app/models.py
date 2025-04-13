@@ -52,6 +52,14 @@ class Measurement(Base):
     )
     value = Column(Float, nullable=False)
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(String, primary_key=True, nullable=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    message_type = Column(String, nullable=False)  # 'warning' or 'issue'
+    critical_level = Column(String, nullable=True)  # Optional field
+
 class Actuator(Base):
     __tablename__ = "actuators"
     actuator_id = Column(Integer, primary_key=True)

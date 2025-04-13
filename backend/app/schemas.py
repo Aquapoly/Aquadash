@@ -105,3 +105,12 @@ class RandomMeasurements(BaseModel):
     deviation_rate:float = 0.20
     smoothing_factor:float = 0.50
     drift_adjustment:float = 0.15
+
+class NotificationSchema(BaseModel):
+    id: str
+    timestamp: datetime
+    message_type: str  # 'warning' or 'issue'
+    critical_level: str | None = None
+
+    class Config:
+        from_attributes = True
