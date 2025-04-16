@@ -6,6 +6,7 @@ from .classes.activation_condition import ActivationCondition
 
 from .classes.actuator_type import ActuatorType
 from .classes.sensor_type import SensorType
+from .classes.notification_type import NotificationType
 
 
 class Prototype(BaseModel):
@@ -109,9 +110,9 @@ class RandomMeasurements(BaseModel):
 class NotificationSchema(BaseModel):
     notification_id: int
     timestamp: datetime
-    message_type: str  # 'warning' or 'issue'
-    critical_level: str | None = None
+    level: NotificationType
     description: str 
+    read: bool = Field(default=False)
 
     class Config:
         from_attributes = True
