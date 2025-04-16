@@ -1,6 +1,7 @@
 <div class="navbar-end flex items-center gap-4">
     <div class="dropdown dropdown-end dropdown-hover" aria-expanded="false">
-        <button role="button" tabindex="0" class="btn btn-ghost btn-circle relative" aria-label="Notifications">
+        <button role="button" tabindex="0" class="btn btn-ghost btn-circle relative" aria-label="Notifications"
+            (click)="toggleNotificationsMenu()">
             <svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"
                 class="lucide lucide-bell-icon lucide-bell">
@@ -16,11 +17,10 @@
             }
         </button>
         <ul id="notification-list" class="menu menu-sm dropdown-content z-[2] p-2 shadow rounded-box bg-base-200 ">
-            @for (notif of unreadNotifications; track $index) {
-            <div [ngClass]="{'read': notif.read, 'bg-red-400 bg-opacity-20 border border-red-400': notif.level === 'error'}"
-                id="toast-{{notif.level}}"
+            @for (notif of visibleNotifications; track $index) {
+            <div id="toast-{{notif.level}}"
                 class="flex items-center w-full max-w-xs p-3 bg-base-200 rounded-lg shadow-sm dark:text-gray-400 dark:bg-gray-800 relative"
-                role="alert">
+                role="alert" (mouseenter)="markAsRead(notif.id)">
                 <div class="inline-flex items-center justify-center rounded-lg shrink-0 w-8 h-8 bg-opacity-20"
                     [ngClass]="getNotificationIcon(notif).classes">
                     <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
@@ -35,8 +35,13 @@
                     </div>
                     <div>{{ notif.description }}</div>
                 </div>
-
-                <button (click)="deleteNotification(notif.id)" type="button"
+                @if (!notif.read) {
+                <div class="ms-auto -mx-1.5 -my-1.5">
+                    <span
+                        class="bg-primary bg-opacity-20 text-primary text-xs font-medium me-2 px-2.5 py-0.5 rounded-full border border-primary">New</span>
+                </div>
+                } @else {
+                <button (click)="dismissNotification(notif.id)" type="button"
                     class="ms-auto -mx-1.5 -my-1.5 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
                     aria-label="Close">
                     <span class="sr-only">Close</span>
@@ -45,10 +50,10 @@
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
-                </button>
+                </button>}
             </div>
             }
-            @if (unreadNotifications.length == 0) {
+            @if (visibleNotifications.length == 0) {
             <li class="text-center g-base-200">Aucune notification non lue</li>
             }
             <li class="text-center g-base-200 p-2">

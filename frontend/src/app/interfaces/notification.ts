@@ -11,6 +11,7 @@ export interface Notification {
   level: NotificationType;
   description: string;
   read?: boolean;
+  dismissed?: boolean;
 }
 
 export const mockNotifications: Notification[] = [
@@ -40,6 +41,6 @@ export const mockNotifications: Notification[] = [
     timestamp: new Date(),
     level: NotificationType.Success,
     description: 'Your actuator has been updated successfully.',
-    read: false,
+    read: true,
   },
 ];

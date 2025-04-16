@@ -15,8 +15,11 @@ import {
 export class NotificationsComponent {
   notifications: Notification[] = mockNotifications;
 
-  protected deleteNotification(notificationId: number) {
-    this.markAsRead(notificationId);
+  protected dismissNotification(notificationId: number) {
+    const notification = this.notifications.find(
+      (n) => n.id === notificationId
+    );
+    if (notification) notification.dismissed = true;
   }
 
   protected toggleNotificationsMenu() {
@@ -33,11 +36,11 @@ export class NotificationsComponent {
   }
 
   get unreadCount(): number {
-    return this.notifications.filter((n) => !n.read).length;
+    return this.notifications.filter((n) => !n.read && !n.dismissed).length;
   }
 
-  get unreadNotifications(): Notification[] {
-    return this.notifications.filter((n) => !n.read);
+  get visibleNotifications(): Notification[] {
+    return this.notifications.filter((n) => !n.dismissed);
   }
 
   protected viewAllNotifications() {
