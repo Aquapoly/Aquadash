@@ -7,7 +7,7 @@ on:
       - "frontend/"
   pull_request:
     paths:
-      - "frontend/**/*.js"
+      - "frontend/"
 
 jobs:
   frontend-lint:
