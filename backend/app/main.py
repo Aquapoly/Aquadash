@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 # from fastapi_utils.openapi import simplify_operation_ids
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
-from typing import Annotated
+from typing import Annotated, List
 from datetime import datetime, timedelta
 import io
 # from jose import JWTError, jwt
@@ -172,7 +172,7 @@ async def prototype(prototype_id: int, db: Session = Depends(get_db)):
 @app.get(
     "/measurements/{sensor_id}",
     tags=["Measurements"],
-    response_model=list[schemas.Measurement],
+    response_model=List[schemas.Measurement],
 )
 async def get_measurement(
     sensor_id:int, time_delta: timedelta | None = None, start_time: datetime | None = None, 
@@ -212,7 +212,7 @@ async def get_last_measurement(
 @app.get(
     "/actuators/{prototype_id}",
     tags=["Actuators"],
-    response_model=list[schemas.Actuator],
+    response_model=List[schemas.Actuator],
 )
 async def actuator(prototype_id: int, db: Session = Depends(get_db)):
     return crud.get_actuators(db=db, prototype_id=prototype_id)

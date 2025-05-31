@@ -1,0 +1,22 @@
+name: Frontend
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "frontend/"
+  pull_request:
+    paths:
+      - "frontend/**/*.js"
+
+jobs:
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install modules
+        run: cd frontend && npm ci
+      - name: Run ESLint
+        run: cd frontend && npm run lint
+      - name: Run Prettier check
+        run: cd frontend && npm run format-check
