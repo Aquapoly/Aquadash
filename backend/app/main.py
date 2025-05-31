@@ -44,6 +44,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def read_root():
+    return {"message": "Hello World"} 
 
 @app.post(
     "/prototypes",
