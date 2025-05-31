@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "frontend/"
+      - "frontend/**"
   pull_request:
     paths:
-      - "frontend/"
+      - "frontend/**"
 
 jobs:
   frontend-lint:
