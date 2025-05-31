@@ -1,26 +1,22 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Sensor } from '@app/interfaces/sensor';
-import { SensorService } from '@app/services/sensor.service';
+import { WHOLE_GAUGE_ROTATION_OFFSET } from '@app/constants/constants';
 
 @Component({
-    selector: 'app-gauge-chart',
-    imports: [],
-    templateUrl: './gauge-chart.component.html',
-    styleUrl: './gauge-chart.component.scss'
+  selector: 'app-gauge-chart',
+  imports: [],
+  templateUrl: './gauge-chart.component.html',
+  styleUrl: './gauge-chart.component.scss',
 })
 export class GaugeChartComponent implements OnInit {
   @Input() sensor: Sensor = {} as Sensor;
-  // Necessary because the whole gauge is rotated 45 degrees,
-  // for the rounded corner to be on top, giving the circular look in CSS:
-  WHOLE_GAUGE_ROTATION_OFFSET: number = 45;
-
   gaugeAngles: string[] = [];
   minValue: number = 0;
   maxValue: number = 14;
   currentValue: number = 7.1;
   gaugeCurrentColor: string = '';
 
-  constructor(private sensorService: SensorService) {}
+  constructor() {}
 
   ngOnInit(): void {
     // TODO: min/max values and ranges will be fetched from server/parent node as input, and unit
@@ -50,8 +46,6 @@ export class GaugeChartComponent implements OnInit {
         this.maxValue
       ).toString(),
     ];
-    // const values = this.sensorService.getSensorMeasurementsDelta(this.sensor.sensor_type, '');
-    // this.currentValue = values[values.length - 1].value;
 
     this.setGaugeColor(errorRange, warningRange);
   }
@@ -75,7 +69,7 @@ export class GaugeChartComponent implements OnInit {
   computeGaugeAngle(value: number, min: number, max: number): number {
     const fillPercentage = this.clamp((value - min) / (max - min), 0, 1);
     const angle = Math.round(fillPercentage * 180);
-    return angle - this.WHOLE_GAUGE_ROTATION_OFFSET;
+    return angle - WHOLE_GAUGE_ROTATION_OFFSET;
   }
 
   getCurrentGaugeAngle() {
