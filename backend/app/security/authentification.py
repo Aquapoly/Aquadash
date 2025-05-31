@@ -15,34 +15,33 @@ USER_ACCESS_TOKEN_EXPIRATION = 60
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# Vérifie si le mot de passe fourni correspond au hash stocké (avec sel).
+# Checks if the provided password matches the stored hash (with salt).
 def verify_password(plain_password: str, salt: str, hashed_password: str):
     return pwd_context.verify(plain_password + salt, hashed_password)
 
-# Retourne le hash du mot de passe fourni.
+# Returns the hash of the provided password.
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-# Récupère un utilisateur par nom d'utilisateur.
+# Retrieves a user by username.
 def get_user(db: Session, username: str):
     return db.query(models.User).filter_by(username=username).first()
 
-# Marque l'utilisateur comme connecté.
+# Marks the user as logged in.
 def log_in(db: Session, username: str):
     db.query(models.User).filter_by(username=username).update(
         {models.User.logged_in: True}
     )
     db.commit()
 
-# Marque l'utilisateur comme déconnecté.
+# Marks the user as logged out.
 def log_out(db: Session, username: str):
     db.query(models.User).filter_by(username=username).update(
         {models.User.logged_in: False}
     )
     db.commit()
 
-# Authentifie un utilisateur avec nom d'utilisateur et mot de passe.
+# Authenticates a user with username and password.
 def authenticate_user(db, username: str, password: str):
     user = get_user(db, username)
     if not user:
@@ -51,7 +50,7 @@ def authenticate_user(db, username: str, password: str):
         return False
     return user
 
-# Crée un Json Web Token d'accès pour l'utilisateur.
+# Creates a Json Web Token access token for the user.
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
