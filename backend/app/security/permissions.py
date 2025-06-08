@@ -73,17 +73,17 @@ def verify_token(
     needs_perm_modify_proto=False,
 ):
     """
-    Vérifie la validité du token, les permissions requises et si l'utilisateur est connecté.
+    Verifies the validity of the token, required permissions, and if the user is logged in.
     Args:
-        token (str): Le token JWT à vérifier.
-        db (Session): Session SQLAlchemy pour accéder à la base de données.
-        needs_perm_post_measure (bool): Permission requise pour poster une mesure.
-        needs_perm_get_measure (bool): Permission requise pour obtenir une mesure.
-        needs_perm_modify_proto (bool): Permission requise pour modifier un capteur ou un prototype.
+        token (str): The JWT token to verify.
+        db (Session): SQLAlchemy session to access the database.
+        needs_perm_post_measure (bool): Permission required to post a measurement.
+        needs_perm_get_measure (bool): Permission required to get a measurement.
+        needs_perm_modify_proto (bool): Permission required to modify a sensor or prototype.
     Raises:
-        TOKEN_EXPIRED_ERROR: Si le token a expiré ou si l'utilisateur n'est pas connecté.
-        TOKEN_INVALID_ERROR: Si le token est invalide.
-        TOKEN_NOT_AUTHORIZED_ERROR: Si les permissions sont insuffisantes.
+        TOKEN_EXPIRED_ERROR: If the token has expired or the user is not logged in.
+        TOKEN_INVALID_ERROR: If the token is invalid.
+        TOKEN_NOT_AUTHORIZED_ERROR: If the permissions are insufficient.
     """
     decoded_token = dict_from_token(token)
     verify_token_permission(
@@ -97,12 +97,12 @@ def verify_token(
 
 def verify_token_active(token: dict, db: Session):
     """
-    Vérifie si le token fourni correspond à un utilisateur actuellement connecté.
+    Checks if the provided token corresponds to a currently logged-in user.
     Args:
-        token (dict): Dictionnaire contenant les informations du token, dont le nom d'utilisateur sous la clé "user".
-        db (Session): Session SQLAlchemy pour accéder à la base de données.
+        token (dict): Dictionary containing the token information, including the username under the "user" key.
+        db (Session): SQLAlchemy session to access the database.
     Raises:
-        TOKEN_EXPIRED_ERROR: Si l'utilisateur correspondant au token n'est pas connecté (logged_in est False).
+        TOKEN_EXPIRED_ERROR: If the user corresponding to the token is not logged in (logged_in is False).
     """
     username = token["user"]
     if username is None:
@@ -119,14 +119,14 @@ def verify_token_permission(
     modify_sensor_and_prototype_permission_required: bool,
 ) -> bool:
     """
-    Vérifie si le token fourni possède les permissions nécessaires pour effectuer une action.
+    Checks if the provided token has the necessary permissions to perform an action.
     Args:
-        token (dict): Dictionnaire contenant les informations du token, dont les permissions sous la clé "permissions".
-        post_measurment_permission_required (bool): Permission requise pour poster une mesure.
-        get_measurement_permission_required (bool): Permission requise pour obtenir une mesure.
-        modify_sensor_and_prototype_permission_required (bool): Permission requise pour modifier un capteur ou un prototype.
+        token (dict): Dictionary containing the token information, including permissions under the "permissions" key.
+        post_measurment_permission_required (bool): Permission required to post a measurement.
+        get_measurement_permission_required (bool): Permission required to get a measurement.
+        modify_sensor_and_prototype_permission_required (bool): Permission required to modify a sensor or prototype.
     Raises:
-        TOKEN_NOT_AUTHORIZED_ERROR: Si le token ne possède pas les permissions nécessaires.
+        TOKEN_NOT_AUTHORIZED_ERROR: If the token does not have the required permissions.
     """
     permission_code = token["permissions"]
     perm = Permissions(permission_code)
@@ -143,15 +143,15 @@ def verify_token_permission(
 
 def dict_from_token(token: str) -> dict:
     """
-    Décode un token JWT en dictionnaire et gère les erreurs courantes.
+    Decodes a JWT token into a dictionary and handles common errors.
     Args:
-        token (str): Le token JWT à décoder.
+        token (str): The JWT token to decode.
     Returns:
-        dict: Le contenu décodé du token.
+        dict: The decoded content of the token.
     Raises:
-        TOKEN_EXPIRED_ERROR: Si le token a expiré.
-        TOKEN_INVALID_ERROR: Si le token est invalide.
-        HTTPException: Pour toute autre erreur lors du décodage.
+        TOKEN_EXPIRED_ERROR: If the token has expired.
+        TOKEN_INVALID_ERROR: If the token is invalid.
+        HTTPException: For any other error during decoding.
     """
     try:
         return jwt.decode(
