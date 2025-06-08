@@ -44,10 +44,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def read_root():
-    return {"message": "Hello World"} 
-
 @app.post(
     "/prototypes",
     tags=["Prototypes"],
@@ -86,7 +82,6 @@ async def sensors(
     # dependencies=[Depends(permissions.needs_measurements_post_permission)],
     response_model=schemas.Measurement,
 )
-
 async def post_measurement(
     measurement: schemas.MeasurementBase,
     db: Session = Depends(get_db),
