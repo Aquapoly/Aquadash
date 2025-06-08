@@ -1,97 +1,110 @@
-Application to monitor and control the hydroponics system.
+# Aquadash - Backend (FastAPI)
 
-**Recommendation (windows):** Use Git Bash terminal on Windows as some commands may not work using PowerShell.
+FastAPI backend for monitoring and controlling a hydroponics system.  
+**Developer Documentation** - Not for production use.
 
-## Setup
+---
 
-### Python
+## 🚀 Quick Start
 
-Create a virtual environment :
+### Prerequisites
+- Python 3.8+
+- PostgreSQL 12+
+- Git (Recommended: Git Bash for Windows users)
+
+---
+
+## 🛠 Development Setup
+
+### 1. Virtual Environment
+
 ```bash
-python3 -m venv .venv
-```
-or in vscode : \
-Ctrl+Shift+P -> Python: Select Interpreter -> Enter interpreter path -> Enter path to venv/bin/python3
+# Create
+python -m venv .venv
 
-Activate the virtual environment (Linux):
-```bash
-source ./.venv/bin/activate
-```
+# Activate (Linux/Mac)
+source .venv/bin/activate
 
-Activate the virtual environment (Windows):
-```
-./.venv/Scripts/activate
+# Activate (Windows)
+.\.venv\Scripts\activate
 ```
 
-Install dependencies (in the virtual environment):
+*VS Code Tip*:  
+`Ctrl+Shift+P` → `Python: Select Interpreter` → Enter path to `.venv/Scripts/python.exe`
+
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### When using Docker (optional)
+---
 
-Activate the camera:
+## 🗄 Database Configuration
+
+### Linux
 ```bash
-export ENABLE_CAMERA=true
-```
+# Install PostgreSQL
+sudo apt install postgresql postgresql-contrib
 
-Deactivate the camera:
-```bash
-export ENABLE_CAMERA=false
-```
+# Start service
+sudo systemctl start postgresql
 
-Make the script executable and start the container:
-```bash
-sudo chmod +x start_container.sh
-./backend-launcher.sh
-```
+# Set password (aquapoly)
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'aquapoly';"
 
-### Database (Linux)
-Install PostgreSQL :
-```
-sudo apt-get install postgresql postgresql-contrib
-```
-Start service 
-```
-sudo systemctl start postgresql.service
-```
-Set a password for the postgres user (pwd: aquapoly) :
-```
-sudo -u postgres psql postgres
-```
-```sql
-\password postgres
-```
-
-Create a database :
-```
+# Create database
 sudo -u postgres createdb aquapoly
 ```
 
-### Database (Windows)
-Install PostgreSQL : [Download](https://www.postgresql.org/download/windows/)
+### Windows
+1. Download [PostgreSQL](https://www.postgresql.org/download/windows/)
+2. Use pgAdmin4 to:
+   - Set password for `postgres` user (aquapoly)
+   - Create `aquapoly` database
 
-Open pgAdmin4 and set a password for the postgres user (pwd: aquapoly) \
-Create a database named aquapoly
+---
 
-## Usage
+## ⚡ Running the Server
 
-Start the server (at the root of the project):
-```
+```bash
 uvicorn app.main:app --reload
 ```
 
-To start the server with HTTPS:
+Access API docs:  
+🔗 [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## 🐋 Docker Setup (Optional)
+
+```bash
+# Camera control
+export ENABLE_CAMERA=true  # or false to disable
+
+# Make script executable (Linux)
+chmod +x backend-launcher.sh
+
+# Start container
+./backend-launcher.sh
 ```
-uvicorn app.main:app --ssl-keyfile /etc/ssl/private/table2.aquapoly.ca.key --ssl-certfile /etc/ssl/private/table2.aquapoly.ca.crt --host=0.0.0.0
+
+---
+
+## 📚 Developer Resources
+
+| Technology | Documentation |
+|------------|---------------|
+| FastAPI | https://fastapi.tiangolo.com |
+| SQLAlchemy | https://www.sqlalchemy.org |
+| Pydantic | https://pydantic-docs.helpmanual.io |
+| PostgreSQL | https://www.postgresql.org/docs |
+| Docker | https://www.docker.com/ |
+
+---
+
+## 💡 Troubleshooting
+
+- **Windows PS Issues**: Use Git Bash for all commands
+- **PostgreSQL Connection**: Verify password is set to 'aquapoly'
+- **Camera Errors**: Check `ENABLE_CAMERA` environment variable
 ```
-
-Open the docs in a browser :
-http://localhost:8000/docs
-
-## Resources
-
-[Fast API documentation](https://fastapi.tiangolo.com/) \
-[Fastapi sql db tutorial](https://fastapi.tiangolo.com/tutorial/sql-databases/) \
-[SQLAlchemy](https://www.sqlalchemy.org/) \
-[Pydantic](https://pydantic-docs.helpmanual.io/)
