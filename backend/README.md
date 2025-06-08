@@ -90,6 +90,40 @@ chmod +x backend-launcher.sh
 
 ---
 
+## Running Backend Test Cases
+
+The backend tests use `pytest`.
+
+### Running Tests in Docker
+
+1. **Start your backend container**:
+   ```bash
+   docker-compose up -d backend
+   ```
+
+2. **Access the container**:
+   - **Docker Desktop**: Click on your container → "Open in Terminal"
+   - **Command Line**:
+     ```bash
+     docker exec -it backend_container_name /bin/bash
+     ```
+
+3. **Navigate to the app directory**:
+   ```bash
+   cd /usr/src/app
+   ```
+
+4. **Run tests**:
+   - Run all tests:
+     ```bash
+     pytest
+     ```
+   - Run specific test file:
+     ```bash
+     pytest app/tests/test_example.py
+     ```
+---
+
 ## 📚 Developer Resources
 
 | Technology | Documentation |
@@ -99,6 +133,7 @@ chmod +x backend-launcher.sh
 | Pydantic | https://pydantic-docs.helpmanual.io |
 | PostgreSQL | https://www.postgresql.org/docs |
 | Docker | https://www.docker.com/ |
+| Pytest | https://docs.pytest.org/en/stable/ |
 
 ---
 
