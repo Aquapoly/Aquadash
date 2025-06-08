@@ -9,7 +9,7 @@ pytz
 gunicorn
 imageio
 imageio-ffmpeg
-pytest
+pytest # only for development, should not be in production
 httpx
-pytest-asyncio
-pytest-cov
+pytest-asyncio # only for development, should not be in production
+pytest-cov # only for development, should not be in production
