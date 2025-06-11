@@ -5,7 +5,7 @@ import { ApiService } from '../../services/api.service';
 import { ModalComponent } from '@app/components/modal/modal.component';
 import { HttpStatusCode } from '@angular/common/http';
 import tippy from 'tippy.js';
-import 'tippy.js/themes/light.css';
+// import 'tippy.js/themes/light.css'; pour le testing
 import { CommonModule } from '@angular/common';
 import { ActuatorTypeToName } from '../../../constants/constants';
 

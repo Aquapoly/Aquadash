@@ -30,12 +30,12 @@ export class CameraPictureComponent implements OnInit, OnDestroy {
     }
 
     this.reloadPicture();
-    this.id = setInterval(() => this.reloadPicture(), CameraPictureComponent.RELOAD_TIME_MS);
+    this.id = window.setInterval(() => this.reloadPicture(), CameraPictureComponent.RELOAD_TIME_MS);
   }
 
   ngOnInit() {
     this.reloadPicture();
-    this.id = setInterval(() => this.reloadPicture(), CameraPictureComponent.RELOAD_TIME_MS);
+    this.id = window.setInterval(() => this.reloadPicture(), CameraPictureComponent.RELOAD_TIME_MS);
   }
 
   ngOnDestroy() {
