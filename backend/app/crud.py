@@ -17,6 +17,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 def get_prototypes(db: Session, prototype_id: int | None = None):
+    """
+    Retrieves prototypes from the database, optionally filtered by prototype ID.
+    Args:
+        db (Session): SQLAlchemy session.
+        prototype_id (int | None, optional): If provided, filters results to the prototype with this ID.
+    Returns:
+        list[models.Prototype]: List of matching Prototype objects.
+    """
     query = select(models.Prototype)
     if prototype_id is not None:
         query = query.where(models.Prototype.prototype_id == prototype_id)
@@ -24,6 +32,16 @@ def get_prototypes(db: Session, prototype_id: int | None = None):
 
 
 def post_prototype(db: Session, prototype: schemas.Prototype):
+    """
+    Inserts a new prototype into the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        prototype (schemas.Prototype): Validated prototype data to add to the DB.
+    Returns:
+        models.Prototype: The created prototype.
+    Raises:
+        HTTPException: On integrity error (e.g., duplicate), raises 409 with details.
+    """
     query = (
         insert(models.Prototype)
         .values(prototype.model_dump())
@@ -43,6 +61,17 @@ def post_prototype(db: Session, prototype: schemas.Prototype):
 
 
 def get_sensors(db: Session, prototype_id: int | None = None):
+    """
+    Retrieves sensors from the database, optionally filtered by prototype ID.
+    Args:
+        db (Session): SQLAlchemy session.
+        prototype_id (int | None, optional): If provided, filters sensors by the given prototype ID.
+    Returns:
+        list[models.Sensor]: List of sensors matching the criteria.
+
+    Raises:
+        sqlalchemy.exc.SQLAlchemyError: If a database error occurs during the query.
+    """
     query = select(models.Sensor)
     if prototype_id is not None:
         query = query.where(models.Sensor.prototype_id == prototype_id)
@@ -50,6 +79,16 @@ def get_sensors(db: Session, prototype_id: int | None = None):
 
 
 def post_sensor(db: Session, sensor: schemas.SensorBase):
+    """
+    Inserts a new sensor into the database.
+    Args:
+        db (Session): SQLAlchemy session used for database operations.
+        sensor (schemas.SensorBase): Validated sensor data to be inserted.
+    Returns:
+        models.Sensor: The newly created sensor instance.
+    Raises:
+        HTTPException: If an integrity error occurs (e.g., duplicate entry), raises a 409 Conflict with error details.
+    """
     query = insert(models.Sensor).returning(models.Sensor)
     try:
         result = db.execute(query, sensor.model_dump()).scalars().first()
@@ -65,6 +104,14 @@ def post_sensor(db: Session, sensor: schemas.SensorBase):
 
 
 def get_actuators(db: Session, prototype_id: int):
+    """
+    Retrieves all actuators associated with the sensors of a given prototype.
+    Args:
+        db (Session): SQLAlchemy session.
+        prototype_id (int): The ID of the prototype whose actuators are to be fetched.
+    Returns:
+        list[models.Actuator]: List of actuators linked to the sensors of the specified prototype.
+    """
     sensor_ids: list[int] = [
         sensor.sensor_id for sensor in get_sensors(db, prototype_id=prototype_id)
     ]
@@ -73,12 +120,30 @@ def get_actuators(db: Session, prototype_id: int):
 
 
 def get_actuator(db: Session, actuator_id: int):
+    """
+    Retrieves an actuator from the database by its ID.
+    Args:
+        db (Session): SQLAlchemy session.
+        actuator_id (int): The unique identifier of the actuator to retrieve.
+    Returns:
+        models.Actuator | None: The actuator instance if found, otherwise None.
+    """
     query = select(models.Actuator).where(models.Actuator.actuator_id == actuator_id)
 
     return db.execute(query).scalars().first()
 
 
 def post_actuator(db: Session, actuator: schemas.ActuatorBase):
+    """
+    Inserts a new actuator into the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        actuator (schemas.ActuatorBase): Validated actuator data to add to the DB.
+    Returns:
+        models.Actuator: The created actuator.
+    Raises:
+        HTTPException: On integrity error (e.g., duplicate), raises 409 with details.
+    """
     query = insert(models.Actuator).returning(models.Actuator)
     try:
         result = db.scalars(query, actuator.model_dump()).first()
@@ -99,6 +164,16 @@ def get_measurements(
     start_time: datetime | None = None,
     end_time: datetime | None = None,
 ):
+    """
+    Retrieves measurements for a given sensor within an optional time range.
+    Args:
+        db (Session): SQLAlchemy session.
+        sensor_id (int): ID of the sensor to retrieve measurements for.
+        start_time (datetime, optional): Start of the time range (exclusive). Defaults to None.
+        end_time (datetime, optional): End of the time range (exclusive). Defaults to None.
+    Returns:
+        list[models.Measurement]: List of measurements matching the criteria.
+    """
     request = select(models.Measurement).where(
         models.Measurement.sensor_id == sensor_id
     )
@@ -116,6 +191,17 @@ def get_measurements_delta(
     sensor_id: int,
     time_delta: datetime,
 ):
+    """
+    Retrieves measurements for a given sensor within a specified time delta.
+    Args:
+        db (Session): SQLAlchemy session.
+        sensor_id (int): ID of the sensor to retrieve measurements for.
+        time_delta (datetime): Time interval to look back from the current time.
+    Returns:
+        List[models.Measurement]: List of measurements within the specified time delta.
+    Raises:
+        None
+    """
     end_time = datetime.now()
     start_time = end_time - time_delta
     return get_measurements(db=db, sensor_id=sensor_id, start_time=start_time)
@@ -125,6 +211,14 @@ def get_last_measurement(
     db: Session,
     sensor_id: int,
 ):
+    """
+    Retrieves the most recent measurement for a given sensor from the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        sensor_id (int): The ID of the sensor whose latest measurement is requested.
+    Returns:
+        models.Measurement | None: The latest measurement for the sensor, or None if not found.
+    """
     query = (
         select(models.Measurement)
         .where(models.Measurement.sensor_id == sensor_id)
@@ -134,6 +228,16 @@ def get_last_measurement(
 
 
 def post_measurement(db: Session, measurement: schemas.MeasurementBase):
+    """
+    Inserts a new measurement into the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        measurement (schemas.MeasurementBase): Validated measurement data to add to the DB.
+    Returns:
+        models.Measurement: The created measurement.
+    Raises:
+        HTTPException: On integrity error (e.g., sensor does not exist), raises 422 with details.
+    """
     query = (
         insert(models.Measurement)
         .values(**measurement.model_dump())
@@ -152,6 +256,17 @@ def post_measurement(db: Session, measurement: schemas.MeasurementBase):
 
 
 def post_user(db: Session, username: str, password: str):
+    """
+    Creates and inserts a new user into the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        username (str): Username for the new user.
+        password (str): Plaintext password for the new user.
+    Returns:
+        models.User: The created user instance.
+    Raises:
+        IntegrityError: If a user with the same username already exists.
+    """
     perm = permissions.Permissions()
     perm.modifify_sensors_and_prototype = True
     perm.get_measurment = True
@@ -170,6 +285,17 @@ def post_user(db: Session, username: str, password: str):
     return db_new_user
 
 def update_actuator(db: Session, actuator: schemas.Actuator):
+    """
+    Updates an existing actuator in the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        actuator (schemas.Actuator): Validated actuator data to update in the DB.
+    Returns:
+        models.Actuator: The updated actuator.
+    Raises:
+        HTTPException: If an integrity error occurs (e.g., constraint violation), raises 422 with details.
+        HTTPException: If the actuator_id does not exist, raises 400 with details.
+    """
     query = (
         update(models.Actuator).
         where(models.Actuator.actuator_id == actuator.actuator_id).
@@ -193,12 +319,32 @@ def update_actuator(db: Session, actuator: schemas.Actuator):
     return result
 
 def update_actuators(db: Session, actuators: list[schemas.Actuator]):
+    """
+    Updates multiple actuators in the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        actuators (list[schemas.Actuator]): List of validated actuator data to update in the DB.
+    Returns:
+        list[models.Actuator]: List of updated actuator objects.
+    Raises:
+        HTTPException: If an actuator update fails, raises an appropriate HTTPException with details.
+    """
     updated_actuators = []
     for actuator in actuators:
         updated_actuators.append(update_actuator(db, actuator))
     return updated_actuators
 
 def update_actuator_last_activated(db: Session, actuator_id: int):
+    """
+    Updates the 'last_activated' timestamp of a specific actuator in the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        actuator_id (int): The unique identifier of the actuator to update.
+    Returns:
+        models.Actuator: The updated actuator instance.
+    Raises:
+        HTTPException: If an integrity error occurs during the update (422) or if the actuator_id does not exist (400).
+    """
     query = (
         update(models.Actuator).
         where(models.Actuator.actuator_id == actuator_id).
@@ -222,6 +368,17 @@ def update_actuator_last_activated(db: Session, actuator_id: int):
     return result
 
 def update_sensor(db: Session, sensor: schemas.Sensor):
+    """
+    Updates an existing sensor in the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        sensor (schemas.Sensor): Validated sensor data to update in the DB.
+    Returns:
+        models.Sensor: The updated sensor object.
+    Raises:
+        HTTPException: If an integrity error occurs (e.g., constraint violation), raises 422 with details.
+        HTTPException: If the sensor_id does not exist, raises 400 with details.
+    """
     query = (
         update(models.Sensor).
         where(models.Sensor.sensor_id == sensor.sensor_id).
@@ -245,12 +402,31 @@ def update_sensor(db: Session, sensor: schemas.Sensor):
     return result
 
 def update_sensors(db: Session, sensors: list[schemas.Sensor]):
+    """
+    Updates multiple sensors in the database.
+    Args:
+        db (Session): SQLAlchemy session.
+        sensors (list[schemas.Sensor]): List of validated sensor data to update in the DB.
+    Returns:
+        list[models.Sensor]: List of updated sensor objects.
+    Raises:
+        HTTPException: If an update fails (e.g., sensor not found), raises appropriate HTTP error.
+    """
     updated_sensors = []
     for sensor in sensors:
         updated_sensors.append(update_sensor(db, sensor))
     return updated_sensors
 
 def default_populate_database(db: Session):
+    """
+    Populates the database with a default prototype, associated sensors, and an actuator if they do not already exist.
+    Args:
+        db (Session): SQLAlchemy session.
+    Returns:
+        dict: A dictionary containing the created or retrieved prototype, list of sensors, and actuator.
+    Raises:
+        HTTPException: If any database operation fails due to integrity errors or other issues.
+    """
     # Check if the prototype already exists
     existing_prototype = get_prototypes(db=db, prototype_id=0)
     if existing_prototype:
@@ -310,6 +486,18 @@ def default_populate_database(db: Session):
     }
 
 def generate_smooth_values(middle:float,rnge:float, nb_meas:int, alpha:float, threshold:float, drift_adjustment:float):
+    """
+    Generates a list of smoothed random values based on a Gaussian distribution and smoothing parameters.
+    Args:
+        middle (float): The mean value around which to generate measurements.
+        rnge (float): The standard deviation for the Gaussian distribution.
+        nb_meas (int): The number of measurements to generate.
+        alpha (float): Smoothing factor (between 0 and 1) for exponential smoothing.
+        threshold (float): Maximum allowed change between consecutive smoothed values.
+        drift_adjustment (float): Factor to adjust drift towards the mean.
+    Returns:
+        list[float]: List of smoothed and threshold-limited random values.
+    """
     values = []
     drift_adjustment = 0.20
     values.append(round(random.gauss(middle,rnge), 2))
@@ -322,6 +510,16 @@ def generate_smooth_values(middle:float,rnge:float, nb_meas:int, alpha:float, th
     return values
 
 def generate_timestamps(nb_meas:int, rnge:str):
+    """
+    Generates a sorted list of random timestamps within a specified time range.
+    Args:
+        nb_meas (int): Number of timestamps to generate.
+        rnge (str): Time range for the timestamps. Accepted values are "year", "day", or "hour".
+    Returns:
+        list: Sorted list of string representations of randomly generated timestamps within the specified range.
+    Raises:
+        ValueError: If the provided range is not one of "year", "day", or "hour".
+    """
     timestamps = []
     for i in range(nb_meas):
         now = datetime.now(pytz.UTC)
@@ -335,6 +533,22 @@ def generate_timestamps(nb_meas:int, rnge:str):
     return sorted_copy
 
 def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio: float, deviation_percent: float, smoothing_factor: float, drift_adjustment: float, db: Session):
+    """
+    Generates synthetic measurement data for all sensors in the database, distributing measurements across yearly, daily, and hourly intervals.
+    Args:
+        nb_meas (int): Total number of measurements to generate (will be adjusted to be divisible by the number of sensors).
+        year_ratio (float): Proportion of measurements to assign to the yearly interval.
+        day_ratio (float): Proportion of measurements to assign to the daily interval.
+        hour_ratio (float): Proportion of measurements to assign to the hourly interval.
+        deviation_percent (float): Percentage of deviation to apply to the generated values.
+        smoothing_factor (float): Factor controlling the smoothness of the generated values.
+        drift_adjustment (float): Adjustment factor for value drift over time.
+        db (Session): SQLAlchemy session for database access.
+    Returns:
+        list: A list of lists, each containing [sensor_id, value, timestamp] for each generated measurement.
+    Raises:
+        ValueError: If the number of sensors in the database is zero.
+    """
     request = db.query(models.Sensor).all()
     nb_sensors = len(request)
     while nb_meas % nb_sensors != 0: nb_meas += 1
@@ -345,6 +559,15 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
     nb_meas_per_sensor = (nb_year_meas + nb_day_meas + nb_hour_meas) // nb_sensors
 
     def generate_sensor_values(sensor):
+        """
+        Generates simulated sensor values based on sensor thresholds and configuration parameters.
+        Args:
+            sensor: An object representing the sensor, expected to have 'threshold_critically_high', 'threshold_critically_low', and 'sensor_id' attributes.
+        Returns:
+            tuple: A tuple containing the sensor ID and a list of generated smooth values.
+        Raises:
+            AttributeError: If the sensor object does not have the required attributes.
+        """
         value_range = ((sensor.threshold_critically_high - sensor.threshold_critically_low) * deviation_percent / 2)
         middle = (sensor.threshold_critically_high + sensor.threshold_critically_low) / 2
         threshold = value_range / 2
@@ -360,6 +583,17 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
     }
 
     def distribute_meas(nb, time_key):
+        """
+        Distributes measurement values and timestamps across sensors.
+        Args:
+            nb (int): Number of measurements to distribute.
+            time_key (str): Key to access the relevant timestamps.
+        Returns:
+            list: A list of lists, each containing [sensor_id, value, timestamp] for each measurement.
+        Raises:
+            KeyError: If a sensor_id or time_key does not exist in the corresponding dictionary.
+            IndexError: If the indices exceed the available values or timestamps.
+        """
         index, sensor_index = 0, 0
         result = []
         for i in range(nb):
