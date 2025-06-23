@@ -7,7 +7,9 @@ import { CameraPictureComponent } from '@app/components/camera-picture/camera-pi
 import {
   CHART_CHOICES,
   ChartThresholdDisplay,
-} from '../../../constants/constants';
+  STATUS_PAGE_DEFAULTS,
+  SENSOR_VALIDITY_CLASSES,
+} from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 
@@ -21,24 +23,28 @@ import { LineChartComponent } from '@app/components/line-chart/line-chart.compon
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
   public sensorLastMeasurements: [key: number, value: number][] = [];
-  public columnCount = 2;
-  public chartSize: number = 100;
+  public columnCount = STATUS_PAGE_DEFAULTS.COLUMN_COUNT;
+  public chartSize: number = STATUS_PAGE_DEFAULTS.CHART_SIZE_INITIAL;
   selectedThresholdsDisplay: ChartThresholdDisplay =
     ChartThresholdDisplay.ColoredBackgroundWithLine;
 
   constructor(
-    private sensorService: SensorService,
-    private globalSettings: GlobalSettingsService
+    private readonly sensorService: SensorService,
+    private readonly globalSettings: GlobalSettingsService
   ) {}
 
   get chartChoices(): string[] {
     return Object.values(CHART_CHOICES);
   }
+  ngOnInit() {
+    this.loadData();
+  }
 
-  async ngOnInit() {
+  private async loadData() {
     this.sensors = await this.sensorService.getSensors();
-    // if(this.sensors.length < 2) this.columnCount = '1'; //Yep we have a little hard-coded
-    this.chartSize = 78 / Math.ceil(this.sensors.length / this.columnCount);
+    this.chartSize =
+      STATUS_PAGE_DEFAULTS.CHART_SIZE_DIVISOR /
+      Math.ceil(this.sensors.length / this.columnCount);
     this.sensorLastMeasurements = await Promise.all(
       this.sensors.map(async (sensor) => {
         const last_measurement: Measurement =
@@ -48,40 +54,48 @@ export class StatusPageComponent implements OnInit {
     );
   }
 
+  private findSensorMeasurement(sensorId: number): number | undefined {
+    return this.sensorLastMeasurements.find((msr) => msr[0] === sensorId)?.[1];
+  }
+
   getSensorTitle(sensor: Sensor): string {
     return this.sensorService.getSensorTitle(sensor);
   }
 
   getLastMeasurement(sensor: Sensor): string {
-    const last_measurement = this.sensorLastMeasurements.find(
-      (msr) => msr[0] === sensor.sensor_id
-    );
-    // Display no data if sensor has no measurements instead of undefined
-    return last_measurement && last_measurement[1]
-      ? last_measurement[1]?.toString()
-      : 'No data';
+    const measurement = this.findSensorMeasurement(sensor.sensor_id);
+    return measurement?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
   }
 
   getSensorValidity(sensor: Sensor): string {
-    const get_measurement = this.sensorLastMeasurements.find(
-      (msr) => msr[0] === sensor.sensor_id
-    );
-    if (!get_measurement || !get_measurement[1]) {
-      return 'neutral-content';
+    const measurement = this.findSensorMeasurement(sensor.sensor_id);
+
+    if (!measurement) {
+      return SENSOR_VALIDITY_CLASSES.NEUTRAL;
     }
 
-    const last_measurement = get_measurement[1];
+    if (this.isCriticalThreshold(measurement, sensor)) {
+      return SENSOR_VALIDITY_CLASSES.ERROR;
+    }
 
-    const validity: string =
-      last_measurement < sensor.threshold_critically_low ||
-      last_measurement > sensor.threshold_critically_high
-        ? 'error'
-        : last_measurement < sensor.threshold_low ||
-          last_measurement > sensor.threshold_high
-        ? 'warning'
-        : 'success';
+    if (this.isWarningThreshold(measurement, sensor)) {
+      return SENSOR_VALIDITY_CLASSES.WARNING;
+    }
 
-    return validity;
+    return SENSOR_VALIDITY_CLASSES.SUCCESS;
+  }
+
+  private isCriticalThreshold(measurement: number, sensor: Sensor): boolean {
+    return (
+      measurement < sensor.threshold_critically_low ||
+      measurement > sensor.threshold_critically_high
+    );
+  }
+
+  private isWarningThreshold(measurement: number, sensor: Sensor): boolean {
+    return (
+      measurement < sensor.threshold_low || measurement > sensor.threshold_high
+    );
   }
 
   updateThresholdDisplay() {
