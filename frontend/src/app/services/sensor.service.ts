@@ -6,23 +6,43 @@ import { Sensor } from '@app/interfaces/sensor';
 import { SensorType } from '@app/interfaces/sensor-type';
 import { TimeDelta } from '@app/interfaces/time-delta';
 import { Observable, catchError, firstValueFrom, of } from 'rxjs';
+import {
+  SENSOR_SERVICE_DEFAULTS,
+  TIME_RANGE_OPTIONS,
+  SENSOR_TYPE_TITLES,
+  API_ENDPOINTS,
+} from '@app/constants/constants';
 
 @Injectable({
   providedIn: 'any',
 })
 export class SensorService {
-  serverUrl = SERVER_URL;
-  prototypeId = 0;
+  private readonly serverUrl = SERVER_URL;
+  private readonly prototypeId = SENSOR_SERVICE_DEFAULTS.PROTOTYPE_ID;
 
-  rangeSelect = [
-    { name: 'Dernière heure', value: new TimeDelta(0, 1, 0, 0) },
-    { name: 'Dernières 24h', value: new TimeDelta(1, 0, 0, 0) },
-    { name: 'Dernière semaine', value: new TimeDelta(7, 0, 0, 0) },
-    { name: 'Dernière année', value: new TimeDelta(365, 0, 0, 0) },
-  ];
-  time_delta: WritableSignal<TimeDelta> = signal(this.rangeSelect[3].value);
+  readonly rangeSelect = this.createTimeRangeOptions();
+  time_delta: WritableSignal<TimeDelta> = signal(
+    this.rangeSelect[SENSOR_SERVICE_DEFAULTS.DEFAULT_RANGE_INDEX].value
+  );
 
-  constructor(private httpClient: HttpClient) {}
+  constructor(private readonly httpClient: HttpClient) {}
+
+  private createTimeRangeOptions() {
+    return TIME_RANGE_OPTIONS.map((option) => ({
+      name: option.name,
+      value: new TimeDelta(
+        option.value.days,
+        option.value.hours,
+        option.value.minutes,
+        option.value.seconds
+      ),
+    }));
+  }
+
+  private padNumber(num: number): string {
+    const { PADDING_LENGTH, PADDING_CHAR } = SENSOR_SERVICE_DEFAULTS;
+    return num.toString().padStart(PADDING_LENGTH, PADDING_CHAR);
+  }
 
   timeToPythonString(
     days: number,
@@ -30,23 +50,24 @@ export class SensorService {
     minutes: number,
     seconds: number
   ): string {
-    return `${days.toString().padStart(2, '0')}d,${hours
-      .toString()
-      .padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
-      .toString()
-      .padStart(2, '0')}`;
+    return `${this.padNumber(days)}d,${this.padNumber(hours)}:${this.padNumber(
+      minutes
+    )}:${this.padNumber(seconds)}`;
+  }
+
+  private buildMeasurementsUrl(sensorId: number, queryParams: string): string {
+    return `${this.serverUrl}/${API_ENDPOINTS.MEASUREMENTS}/${sensorId}${queryParams}`;
   }
 
   getSensorMeasurementsDelta(
     sensor_id: number,
     time_delta: TimeDelta
   ): Promise<Measurement[]> {
-    const time_delta_str = time_delta.toString();
-    return firstValueFrom(
-      this.httpClient.get<Measurement[]>(
-        `${this.serverUrl}/measurements/${sensor_id}?time_delta=${time_delta_str}`
-      )
+    const url = this.buildMeasurementsUrl(
+      sensor_id,
+      `?time_delta=${time_delta.toString()}`
     );
+    return firstValueFrom(this.httpClient.get<Measurement[]>(url));
   }
 
   getSensorMeasurements(
@@ -54,51 +75,45 @@ export class SensorService {
     start_time: string,
     end_time: string
   ): Promise<Measurement[]> {
-    return firstValueFrom(
-      this.httpClient.get<Measurement[]>(
-        `${this.serverUrl}/measurements/${sensor_id}?start_time=${start_time}+end_time=${end_time}`
-      )
+    const url = this.buildMeasurementsUrl(
+      sensor_id,
+      `?start_time=${start_time}+end_time=${end_time}`
     );
+    return firstValueFrom(this.httpClient.get<Measurement[]>(url));
   }
 
   getLastMeasurement(sensor_id: number): Promise<Measurement> {
-    const observer = this.httpClient
-      .get<Measurement>(`${this.serverUrl}/measurements/${sensor_id}/last`)
-      .pipe(
-        catchError(
-          this.handleError<Measurement>(
-            `error getting measurement for sensor id ${sensor_id}`
+    const url = this.buildMeasurementsUrl(sensor_id, `/${API_ENDPOINTS.LAST}`);
+    return firstValueFrom(
+      this.httpClient
+        .get<Measurement>(url)
+        .pipe(
+          catchError(
+            this.handleError<Measurement>(
+              `error getting measurement for sensor id ${sensor_id}`
+            )
           )
         )
-      );
-    return firstValueFrom(observer);
+    );
   }
 
   async getSensors(): Promise<Sensor[]> {
-    const observer = this.httpClient
-      .get<Sensor[]>(`${this.serverUrl}/sensors/${this.prototypeId}`)
-      .pipe(
-        catchError(
-          this.handleError<Sensor[]>(
-            `error getting sensors for prototype ${this.prototypeId}`
+    const url = `${this.serverUrl}/${API_ENDPOINTS.SENSORS}/${this.prototypeId}`;
+    return firstValueFrom(
+      this.httpClient
+        .get<Sensor[]>(url)
+        .pipe(
+          catchError(
+            this.handleError<Sensor[]>(
+              `error getting sensors for prototype ${this.prototypeId}`
+            )
           )
         )
-      );
-    return firstValueFrom(observer);
+    );
   }
 
-  getSensorTitle(sensor: Sensor) {
-    const type = sensor.sensor_type;
-    let titleFromType: any = {};
-    titleFromType[SensorType.ec] = 'EC';
-    titleFromType[SensorType.ph] = 'pH';
-    titleFromType[SensorType.temperature] = 'Température';
-    titleFromType[SensorType.humidity] = 'Humidité';
-    titleFromType[SensorType.water_level] = "Niveau d'eau";
-    titleFromType[SensorType.boolean_water_level] = "Niveau d'eau";
-    titleFromType[SensorType.oxygen] = 'Oxygène';
-
-    return titleFromType[type];
+  getSensorTitle(sensor: Sensor): string {
+    return SENSOR_TYPE_TITLES[sensor.sensor_type];
   }
 
   private handleError<T>(

@@ -6,14 +6,14 @@ import { Subscription } from 'rxjs';
 import {
   ChartThresholdDisplay,
   LIGHT_THEME,
+  LIMIT as THRESHOLD_MARGIN,
   THEME_COLOR,
-} from '../../../constants/constants';
+  ThresholdNames,
+  ThresholdsBackgroundOpacity,
+} from '@app/constants/constants';
 import { Measurement } from '@app/interfaces/measurement';
 import { HighchartsChartModule } from 'highcharts-angular';
 import * as Highcharts from 'highcharts';
-import DarkBlueTheme from 'highcharts/themes/dark-blue';
-import GridLightTheme from 'highcharts/themes/brand-light';
-import { NgClass } from '@angular/common';
 
 @Component({
   selector: 'app-line-chart',
@@ -39,8 +39,8 @@ export class LineChartComponent {
   @Input() chartTitle: string = '';
 
   constructor(
-    private sensorService: SensorService,
-    private globalSettings: GlobalSettingsService
+    private readonly sensorService: SensorService,
+    private readonly globalSettings: GlobalSettingsService
   ) {}
 
   ngOnInit(): void {
@@ -53,12 +53,10 @@ export class LineChartComponent {
     });
     this.thresholdDisplaySubscription =
       this.globalSettings.thresholdDisplay$.subscribe((display) => {
-        this.thresholdDisplay = display as ChartThresholdDisplay;
+        this.thresholdDisplay = display;
         this.loadInitialData();
       });
   }
-
-  ngAfterViewInit(): void {}
 
   ngOnDestroy(): void {
     if (this.themeSubscription) {
@@ -187,11 +185,12 @@ export class LineChartComponent {
   private createThresholds(sensor: Sensor): Highcharts.YAxisPlotBandsOptions[] {
     return [
       {
-        from: sensor.threshold_critically_low - 100,
+        from: sensor.threshold_critically_low - THRESHOLD_MARGIN,
         to: sensor.threshold_critically_low,
-        color: THEME_COLOR[this.theme].danger + '20',
+        color:
+          THEME_COLOR[this.theme].danger + ThresholdsBackgroundOpacity.Critical,
         label: {
-          text: 'Critically Low',
+          text: ThresholdNames.CriticallyLow,
           style: {
             color: THEME_COLOR[this.theme].danger,
           },
@@ -200,9 +199,10 @@ export class LineChartComponent {
       {
         from: sensor.threshold_critically_low,
         to: sensor.threshold_low,
-        color: THEME_COLOR[this.theme].warning + '10',
+        color:
+          THEME_COLOR[this.theme].warning + ThresholdsBackgroundOpacity.Normal,
         label: {
-          text: 'Low',
+          text: ThresholdNames.Low,
           style: {
             color: THEME_COLOR[this.theme].warning,
           },
@@ -211,9 +211,10 @@ export class LineChartComponent {
       {
         from: sensor.threshold_low,
         to: sensor.threshold_high,
-        color: THEME_COLOR[this.theme].success + '10',
+        color:
+          THEME_COLOR[this.theme].success + ThresholdsBackgroundOpacity.Normal,
         label: {
-          text: 'Normal',
+          text: ThresholdNames.Normal,
           style: {
             color: THEME_COLOR[this.theme].success,
           },
@@ -222,9 +223,10 @@ export class LineChartComponent {
       {
         from: sensor.threshold_high,
         to: sensor.threshold_critically_high,
-        color: THEME_COLOR[this.theme].warning + '10',
+        color:
+          THEME_COLOR[this.theme].warning + ThresholdsBackgroundOpacity.Normal,
         label: {
-          text: 'High',
+          text: ThresholdNames.High,
           style: {
             color: THEME_COLOR[this.theme].warning,
           },
@@ -232,10 +234,11 @@ export class LineChartComponent {
       },
       {
         from: sensor.threshold_critically_high,
-        to: sensor.threshold_critically_high + 100,
-        color: THEME_COLOR[this.theme].danger + '20',
+        to: sensor.threshold_critically_high + THRESHOLD_MARGIN,
+        color:
+          THEME_COLOR[this.theme].danger + ThresholdsBackgroundOpacity.Critical,
         label: {
-          text: 'Critically High',
+          text: ThresholdNames.CriticallyHigh,
           style: {
             color: THEME_COLOR[this.theme].danger,
           },
