@@ -72,6 +72,19 @@ def verify_token(
     needs_perm_get_measure=False,
     needs_perm_modify_proto=False,
 ):
+    """
+    Verifies the validity of the token, required permissions, and if the user is logged in.
+    Args:
+        token (str): The JWT token to verify.
+        db (Session): SQLAlchemy session to access the database.
+        needs_perm_post_measure (bool): Permission required to post a measurement.
+        needs_perm_get_measure (bool): Permission required to get a measurement.
+        needs_perm_modify_proto (bool): Permission required to modify a sensor or prototype.
+    Raises:
+        TOKEN_EXPIRED_ERROR: If the token has expired or the user is not logged in.
+        TOKEN_INVALID_ERROR: If the token is invalid.
+        TOKEN_NOT_AUTHORIZED_ERROR: If the permissions are insufficient.
+    """
     decoded_token = dict_from_token(token)
     verify_token_permission(
         decoded_token,
@@ -83,6 +96,14 @@ def verify_token(
 
 
 def verify_token_active(token: dict, db: Session):
+    """
+    Checks if the provided token corresponds to a currently logged-in user.
+    Args:
+        token (dict): Dictionary containing the token information, including the username under the "user" key.
+        db (Session): SQLAlchemy session to access the database.
+    Raises:
+        TOKEN_EXPIRED_ERROR: If the user corresponding to the token is not logged in (logged_in is False).
+    """
     username = token["user"]
     if username is None:
         return
@@ -97,6 +118,16 @@ def verify_token_permission(
     get_measurement_permission_required: bool,
     modify_sensor_and_prototype_permission_required: bool,
 ) -> bool:
+    """
+    Checks if the provided token has the necessary permissions to perform an action.
+    Args:
+        token (dict): Dictionary containing the token information, including permissions under the "permissions" key.
+        post_measurment_permission_required (bool): Permission required to post a measurement.
+        get_measurement_permission_required (bool): Permission required to get a measurement.
+        modify_sensor_and_prototype_permission_required (bool): Permission required to modify a sensor or prototype.
+    Raises:
+        TOKEN_NOT_AUTHORIZED_ERROR: If the token does not have the required permissions.
+    """
     permission_code = token["permissions"]
     perm = Permissions(permission_code)
     if (
@@ -111,6 +142,17 @@ def verify_token_permission(
 
 
 def dict_from_token(token: str) -> dict:
+    """
+    Decodes a JWT token into a dictionary and handles common errors.
+    Args:
+        token (str): The JWT token to decode.
+    Returns:
+        dict: The decoded content of the token.
+    Raises:
+        TOKEN_EXPIRED_ERROR: If the token has expired.
+        TOKEN_INVALID_ERROR: If the token is invalid.
+        HTTPException: For any other error during decoding.
+    """
     try:
         return jwt.decode(
             token,
@@ -132,6 +174,15 @@ def needs_prototype_modification_permission(
     token: Annotated[str, Depends(authentification.oauth2_scheme)],
     db: Session = Depends(get_db),
 ):
+    """
+    Dependency that verifies if the current user, identified by the provided OAuth2 token,
+    has permission to modify prototypes. Raises an exception if the user lacks the required permission.
+    Args:
+        token (str): OAuth2 token extracted from the request.
+        db (Session): SQLAlchemy database session.
+    Raises:
+        HTTPException: If the token is invalid or the user does not have prototype modification permissions.
+    """
     verify_token(token, db, needs_perm_modify_proto=True)
 
 
@@ -139,6 +190,15 @@ def needs_measurements_post_permission(
     token: Annotated[str, Depends(authentification.oauth2_scheme)],
     db: Session = Depends(get_db),
 ):
+    """
+    Dependency that verifies if the current user, identified by the provided OAuth2 token,
+    has permission to post measurements. Raises an exception if the user lacks the required permission.
+    Args:
+        token (str): OAuth2 token extracted from the request.
+        db (Session): SQLAlchemy database session.
+    Raises:
+        HTTPException: If the token is invalid or the user does not have post measurement permissions.
+    """
     verify_token(token, db, needs_perm_post_measure=True)
 
 
@@ -146,4 +206,13 @@ def needs_measurements_get_permission(
     token: Annotated[str, Depends(authentification.oauth2_scheme)],
     db: Session = Depends(get_db),
 ):
+    """
+    Dependency that verifies if the current user, identified by the provided OAuth2 token,
+    has permission to get measurements. Raises an exception if the user lacks the required permission.
+    Args:
+        token (str): OAuth2 token extracted from the request.
+        db (Session): SQLAlchemy database session.
+    Raises:
+        HTTPException: If the token is invalid or the user does not have get measurement permissions.
+    """
     verify_token(token, db, needs_perm_get_measure=True)

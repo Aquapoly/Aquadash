@@ -7,6 +7,16 @@ from pytz import UTC
 DISCONNECTED_DELTA = timedelta(days=1)
 
 def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (models.Measurement | None)): 
+    """
+    Determines whether an actuator should be activated based on its configuration and the latest measurement.
+    Args:
+        actuator (schemas.Actuator): The actuator configuration and state.
+        last_measurement (models.Measurement | None): The most recent measurement associated with the actuator, or None if no measurement exists.
+    Returns:
+        schemas.ActuatorActivation: An object indicating whether to activate the actuator, the activation status message, duration, and period.
+    Raises:
+        None
+    """
     #####
     # Verify validity of actuator and measurement
     #####
