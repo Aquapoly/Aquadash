@@ -33,13 +33,18 @@ export class GlobalSettingsService {
 
   private initializeTheme(): void {
     const savedTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME);
+    const savedThresholdDisplay = localStorage.getItem(LOCAL_STORAGE_KEYS.THRESHOLDDISPLAY);
     this.darkMode = savedTheme === DARK_THEME;
+    if (savedThresholdDisplay != null) {
+      this.setThresholdDisplay(Number(savedThresholdDisplay) as ChartThresholdDisplay);
+    }
     this.applyTheme();
   }
 
   setThresholdDisplay(display: ChartThresholdDisplay): void {
     this.thresholdDisplay = display;
     this.thresholdDisplaySubject.next(display);
+    this.saveThresholdTheme();
   }
 
   toggleDarkMode(): void {
@@ -51,7 +56,12 @@ export class GlobalSettingsService {
     this.applyTheme();
     localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, this.getThemeName());
   }
-
+  
+  private saveThresholdTheme() : void {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.THRESHOLDDISPLAY, this.getThresholdDisplay().toLocaleString());
+  }
+  
+  
   applyTheme(): void {
     const themeName = this.getThemeName();
     const cssClass = this.darkMode ? CSS_CLASSES.DARK : CSS_CLASSES.LIGHT;
@@ -60,6 +70,10 @@ export class GlobalSettingsService {
     document.documentElement.setAttribute(DOM_ATTRIBUTES.CLASS, cssClass);
 
     this.themeSubject.next(themeName);
+  }
+
+  getThresholdDisplay(): ChartThresholdDisplay {
+    return this.thresholdDisplay;
   }
 
   getTheme(): boolean {
