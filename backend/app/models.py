@@ -76,3 +76,13 @@ class User(Base):
     pw_hash = Column(String, nullable=False)
     permissions = Column(Integer, nullable=False)
     logged_in = Column(Boolean, nullable=False)
+
+#Notification Backend
+#A TESTER mais selon mes recherches c comme ca
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message = Column(String, nullable=False)
+    state = Column(String, default="unread")  
+    timestamp = Column(DateTime, default=datetime.utcnow)
