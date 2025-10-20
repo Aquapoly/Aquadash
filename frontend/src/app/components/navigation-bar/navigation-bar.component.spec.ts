@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { NavigationBarComponent } from './navigation-bar.component';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
-import { ChartThresholdDisplay } from '../../../constants/constants';
+import { ChartThresholdDisplay } from '@app/constants/constants';
 import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';

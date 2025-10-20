@@ -3,7 +3,7 @@ import { LineChartComponent } from './line-chart.component';
 import { SensorService } from '@app/services/sensor.service';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { of } from 'rxjs';
-import { ChartThresholdDisplay } from '../../../constants/constants';
+import { ChartThresholdDisplay } from '@app/constants/constants';
 import { Measurement } from '@app/interfaces/measurement';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
