@@ -1,39 +1,26 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { HttpClient, HttpResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { of } from 'rxjs/internal/observable/of';
 import { ApiService } from './api.service';
 
 describe('ApiService', () => {
-  let component: ApiService;
-  let fixture: ComponentFixture<ApiService>;
-  let httpClientSpy: jasmine.SpyObj<HttpClient>;
-  let httpTestingController: HttpTestingController;
+  let service: ApiService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    httpClientSpy = jasmine.createSpyObj('HttpClient', [
-      'get', 'patch'
-    ]);
-
-    httpClientSpy.get.and.returnValues(of('{}'));
-    httpClientSpy.patch.and.returnValue(of('{}'))
-
     TestBed.configureTestingModule({
-      providers: [
-        ApiService,
-        provideHttpClient(),
-        provideHttpClientTesting()
-      ],
-    }).compileComponents();
+      providers: [ApiService, provideHttpClient(), provideHttpClientTesting()],
+    });
+    service = TestBed.inject(ApiService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
 
-    httpTestingController = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(ApiService);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should be created', () => {
-    expect(component).toBeTruthy();
+    expect(service).toBeTruthy();
   });
 });
