@@ -12,24 +12,11 @@ describe('ActuatorPageComponent', () => {
   let apiServiceSpy: jasmine.SpyObj<ApiService>;
 
   beforeEach(async () => {
-    // apiServiceSpy = jasmine.createSpyObj('ApiService', [
-    //   'getActuators', 'patchActuators'
-    // ]);
-
-    // apiServiceSpy.getActuators.and.returnValue(of(
-    //   {} as HttpResponse<Object>
-    // ));
-
-    // apiServiceSpy.patchActuators.and.returnValue(of(
-    //   {} as HttpResponse<Object>
-    // ));
-
     await TestBed.configureTestingModule({
       imports: [ConfigurationPageComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        // { provide: ApiService, useValue: apiServiceSpy },
       ],
     }).compileComponents();
 
