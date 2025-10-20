@@ -134,6 +134,8 @@ export const SENSOR_VALIDITY_CLASSES = {
 
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
+  TEMP_UNIT: 'temperature_unit',
+  EC_UNIT: 'ec_unit',
 } as const;
 
 export const DOM_ATTRIBUTES = {
@@ -146,9 +148,22 @@ export const CSS_CLASSES = {
   LIGHT: 'light',
 } as const;
 
+export const UNIT_OPTIONS = {
+  TEMPERATURE: {
+    CELSIUS: 'Celsius',
+    FAHRENHEIT: 'Fahrenheit',
+  },
+  EC: {
+    MICRO_SIEMENS: 'µS/cm',
+    MILLI_SIEMENS: 'mS/cm',
+  },
+} as const;
+
 export const GLOBAL_SETTINGS_DEFAULTS = {
   DARK_MODE: false,
   THRESHOLD_DISPLAY: ChartThresholdDisplay.ColoredBackgroundWithLine,
+  TEMP_UNIT: UNIT_OPTIONS.TEMPERATURE.CELSIUS,
+  EC_UNIT: UNIT_OPTIONS.EC.MILLI_SIEMENS,
 } as const;
 
 export const SENSOR_SERVICE_DEFAULTS = {
