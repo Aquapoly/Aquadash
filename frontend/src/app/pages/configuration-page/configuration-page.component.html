@@ -3,9 +3,9 @@
     <div class="py-6 px-4 sm:px-0">
       <div class="flex align-baseline justify-between">
         <h3 class="text-base/7 font-semibold">Actuateurs</h3>
-        <button class="btn btn-square btn-xs btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="5.5 5.5 13 13" stroke-width="1" stroke="currentColor" >
-            <path d="M12 9V15" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M9 12H15" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path>
+        <button class="btn btn-square btn-xs btn-primary" (click)="showForm()">
+          <svg class= "stroke-base-100" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="5.5 5.5 13 13" stroke-width="1" stroke="currentColor" >
+            <path d="M12 9V15" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M9 12H15" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
         </button>
       </div>
@@ -114,7 +114,7 @@
     </div>
     } @else {
     <div class="tooltip tooltip-bottom" data-tip="Sauvegarder">
-      <button class="btn btn-primary pointer-events-auto" onclick="confirm_modal.showModal()">
+      <button class="btn btn-primary text-base-100 pointer-events-auto" onclick="confirm_modal.showModal()">
         Sauvegarder
       </button>
     </div>
@@ -125,10 +125,10 @@
 <dialog id="confirm_modal" class="modal">
   <div class="modal-box">
     <h3 class="font-bold text-lg">Attention</h3>
-    <p class="py-4">Etes vous sûr de vouloir sauvegarder les modifications?</p>
+    <p class="py-4">Êtes-vous sûr(e) de vouloir sauvegarder les modifications?</p>
     <div class="modal-action">
       <form method="dialog">
-        <button class="btn btn-primary mx-2" (click)="onSubmit()">
+        <button class="btn btn-primary text-base-100 mx-2" (click)="onSubmit()">
           Sauvegarder
         </button>
         <button class="btn">Annuler</button>

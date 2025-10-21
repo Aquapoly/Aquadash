@@ -81,4 +81,9 @@ export class ConfigurationPageComponent implements OnInit {
       );
     });
   }
+
+  showAddActuatorModal() : void {
+    console.log("Bouton d'ajout d'actuateur cliqué")
+  }
+
 }
