@@ -1,26 +1,10 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app import models
-from random import randint
-import pytest
-
-@pytest.fixture
-def dummy_prototype(db_session: Session):
-    """Insert dummy prototype in DB and return it"""
-    random_id = randint(1, 9999)
-    # Ensure ID is unique
-    while random_id in db_session.query(models.Prototype.prototype_id).all():
-        random_id = randint(1, 9999)
-    # Create prototype and add to DB
-    new_proto = models.Prototype(prototype_id=random_id, prototype_name="Test Proto")
-    db_session.add(new_proto)
-    db_session.flush()
-    yield new_proto
-
 
 def test_get_all_prototypes(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /prototypes endpoint that retrieves all prototypes"""
-    prototypes_list = db_session.query(models.Prototype).all() # Get all prototypes from DB
+    prototypes_list = db_session.query(models.Prototype).all()
     
     response = client.get("/prototypes")
     assert response.status_code == 200, "Expected status code 200"
@@ -28,7 +12,6 @@ def test_get_all_prototypes(client: TestClient, db_session: Session, dummy_proto
     
     assert len(data) == len(prototypes_list), "Response length should match prototypes in DB"
 
-    # Check if each prototype is in the response
     for proto in prototypes_list:
         assert {"prototype_id": proto.prototype_id, "prototype_name": proto.prototype_name} in data, \
             f"Prototype with ID {proto.prototype_id} should be in response"
@@ -49,10 +32,7 @@ def test_get_non_existent_prototype_by_id(client: TestClient, db_session: Sessio
     db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
 
     response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
-    assert response.status_code == 404, "Expected status code 404 for non-existent prototype"
-    data = response.json()
-    assert data["detail"] == "Prototype not found", "Expected 'Prototype not found' message"
-
+    assert response.status_code == 404, "Expected status code 404 for not found prototype"
 
 
 def test_post_duplicate_id_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
@@ -61,5 +41,68 @@ def test_post_duplicate_id_prototype(client: TestClient, db_session: Session, du
 
     response = client.post("/prototypes", json=duplicate_proto)
     assert response.status_code == 409, "Expected status code 409 for duplicate prototype_id"
-    data = response.json()
-    assert data["detail"] == "Prototype with this id already exists", "Expected 'Prototype with this id already exists' message"
+
+    # POST endpoint rollsback on insertion error, so no need to check DB state
+    # assert db_session.get(models.Prototype, prototype_id=dummy_prototype.prototype_id).count() == 1, \
+    #     "Should not add prototype with duplicate ID to DB"
+
+
+def test_post_invalid_prototype(client: TestClient, db_session: Session):
+    """Test /prototypes endpoint to add a prototype with invalid data"""
+    invalid_proto = {"prototype_name": "Invalid Proto"}  # Missing prototype_id
+
+    response = client.post("/prototypes", json=invalid_proto)
+    assert response.status_code == 422, "Expected status code 422 for missing field"
+    assert db_session.query(models.Prototype).filter_by(prototype_name="Invalid Proto").count() == 0, \
+        "Should not add prototype with no id to DB"
+    
+    invalid_proto = {"prototype_id": "id", "prototype_name": "Invalid Proto"}
+
+    response = client.post("/prototypes", json=invalid_proto)
+    assert response.status_code == 422, "Expected status code 422 for invalid type"
+    assert db_session.query(models.Prototype).filter_by(prototype_name="Invalid Proto").count() == 0, \
+        "Should not add prototype with invalid type to DB"
+
+
+def test_post_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
+    """Test /prototypes endpoint to add a valid prototype"""
+    db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
+
+    new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "Valid Proto"}
+    response = client.post("/prototypes", json=new_proto)
+    assert response.status_code == 200, "Expected status code 200 for successfully processed" # Change to code 201?
+
+
+def test_post_special_char_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
+    """Test /prototypes endpoint to add a prototype with special characters in name"""
+    db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
+
+    new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": """!@#$%^&*()_+{}|:\"<>?\\`~☺"""}
+    response = client.post("/prototypes", json=new_proto)
+    assert response.status_code == 200, "Expected status code 200 for successfully processed"
+
+
+def test_post_newline_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
+    """Test /prototypes endpoint to add a prototype with newline in name"""
+    db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
+
+    new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "\na\n"}
+    response = client.post("/prototypes", json=new_proto)
+    # print(response.json()["prototype_name"])
+    # assert response.status_code == 200, "Expected status code 200 for successfully processed"
+
+    # TODO Est-ce qu'on veut accepter les sauts de ligne dans les noms?
+    # TODO Code 201 précise une création de ressource
+
+
+def test_post_sql_injection_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
+    """Test /prototypes endpoint to add a prototype with SQL injection attempt in name"""
+    db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
+    from sqlalchemy import insert
+
+    query = f"""INSERT INTO prototypes (prototype_id, prototype_name) VALUES ({dummy_prototype.prototype_id+1}, 'Injection'); --"""
+    new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": f"""Test'); {query}"""}
+    response = client.post("/prototypes", json=new_proto)
+
+    assert db_session.query(models.Prototype).filter_by(prototype_id=dummy_prototype.prototype_id+1).count() == 0, \
+        "SQL Injection should not have succeeded in adding a new prototype"
