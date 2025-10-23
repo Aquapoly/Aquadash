@@ -14,6 +14,8 @@ from .security import permissions
 from datetime import datetime, timedelta
 import random, pytz
 from concurrent.futures import ThreadPoolExecutor
+import csv
+from io import StringIO
 
 
 def get_prototypes(db: Session, prototype_id: int | None = None):
@@ -606,3 +608,40 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
 
     sensor_ids = list(values.keys())
     return distribute_meas(nb_year_meas, "year") + distribute_meas(nb_day_meas, "day") + distribute_meas(nb_hour_meas, "hour")
+
+def test_export_all_sensors_to_csv(db_session: Session):
+    """Export measurements for all sensors to a CSV file"""
+
+    # Query all unique sensor IDs
+    sensor_ids = db_session.query(models.Sensor.sensor_id).distinct().all()
+
+    # Prepare CSV data
+    csv_output = StringIO()
+    csv_writer = csv.writer(csv_output)
+    csv_writer.writerow([
+        "Sensor ID", "Sensor Type", "Sensor Value", "Timestamp",
+        "Threshold Critically Low", "Threshold Low", "Threshold High", "Threshold Critically High"
+    ])  # Header row
+
+    for sensor_id_tuple in sensor_ids:
+        sensor_id = sensor_id_tuple[0]
+        response = db_session.query(models.Measurement).filter_by(sensor_id=sensor_id)
+
+        # Fetch sensor thresholds
+        sensor = db_session.query(models.Sensor).filter_by(sensor_id=sensor_id).first()
+        threshold_critically_low = sensor.threshold_critically_low
+        threshold_low = sensor.threshold_low
+        threshold_high = sensor.threshold_high
+        threshold_critically_high = sensor.threshold_critically_high
+
+        for measurement in response:
+            sensor_type = db_session.query(models.Sensor).filter_by(sensor_id=measurement.sensor_id).first().sensor_type.name
+            csv_writer.writerow([
+                sensor_id, sensor_type, measurement.value, measurement.timestamp,
+                threshold_critically_low, threshold_low, threshold_high, threshold_critically_high
+            ])
+
+    # Get CSV content
+    csv_content = csv_output.getvalue()
+    csv_output.close()
+    return csv_content
