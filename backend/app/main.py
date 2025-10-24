@@ -177,7 +177,7 @@ async def export_all_sensors_to_csv(db: Session = Depends(get_db)):
     Endpoint to export all sensor measurements to a CSV file.
     """
     # Call the function from crud.py to generate the CSV content
-    csv_content = crud.test_export_all_sensors_to_csv(db)
+    csv_content = crud.export_all_measures_to_csv(db)
 
     # Create a streaming response for the CSV file
     return StreamingResponse(

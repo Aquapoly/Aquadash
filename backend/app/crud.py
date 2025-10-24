@@ -609,7 +609,7 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
     sensor_ids = list(values.keys())
     return distribute_meas(nb_year_meas, "year") + distribute_meas(nb_day_meas, "day") + distribute_meas(nb_hour_meas, "hour")
 
-def test_export_all_sensors_to_csv(db_session: Session):
+def export_all_measures_to_csv(db_session: Session):
     """Export measurements for all sensors to a CSV file"""
 
     # Query all unique sensor IDs
