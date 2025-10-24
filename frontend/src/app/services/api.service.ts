@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SERVER_URL } from '@app/environment';
 import { Actuator } from '@app/interfaces/actuator';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -21,5 +22,9 @@ export class ApiService {
     return this.http.patch(this.serverUrl + '/actuators', actuators, {
       observe: 'response',
     });
+  }
+
+  getCsv(url: string): Observable<Blob> {
+    return this.http.get(url, { responseType: 'blob' });
   }
 }

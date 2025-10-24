@@ -168,6 +168,25 @@ async def prototype(prototype_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Prototype not found")
 
 @app.get(
+    "/measurements/export",
+    tags=["Measurements"],
+    response_class=StreamingResponse,
+)
+async def export_all_sensors_to_csv(db: Session = Depends(get_db)):
+    """
+    Endpoint to export all sensor measurements to a CSV file.
+    """
+    # Call the function from crud.py to generate the CSV content
+    csv_content = crud.test_export_all_sensors_to_csv(db)
+
+    # Create a streaming response for the CSV file
+    return StreamingResponse(
+        io.StringIO(csv_content),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=all_sensors_measurements.csv"}
+    )
+
+@app.get(
     "/measurements/{sensor_id}",
     tags=["Measurements"],
     response_model=list[schemas.Measurement],
@@ -310,22 +329,3 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
-
-@app.get(
-    "/measurements/export",
-    tags=["Measurements"],
-    response_class=StreamingResponse,
-)
-async def export_all_sensors_to_csv(db: Session = Depends(get_db)):
-    """
-    Endpoint to export all sensor measurements to a CSV file.
-    """
-    # Call the function from crud.py to generate the CSV content
-    csv_content = crud.test_export_all_sensors_to_csv(db)
-
-    # Create a streaming response for the CSV file
-    return StreamingResponse(
-        io.StringIO(csv_content),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=all_sensors_measurements.csv"}
-    )
