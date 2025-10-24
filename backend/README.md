@@ -142,4 +142,3 @@ The backend tests use `pytest`.
 - **Windows PS Issues**: Use Git Bash for all commands
 - **PostgreSQL Connection**: Verify password is set to 'aquapoly'
 - **Camera Errors**: Check `ENABLE_CAMERA` environment variable
-```
