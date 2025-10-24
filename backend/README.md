@@ -19,9 +19,9 @@ FastAPI backend for monitoring and controlling a hydroponics system.
   sudo apt install git
   ```
 ### 🪟 On Windows:  
-  **Official versions** are recommended:  
- - [Python](https://www.python.org/downloads/windows/)  
- - [Git Bash](https://git-scm.com/install/windows)
+  **These versions** are recomended: :  
+ - [Python](https://apps.microsoft.com/detail/9PNRBTZXMB4Z?hl=en-us&gl=CA&ocid=pdpshare)  
+ - [Git Bash](https://git-scm.com/install/windows) 
 
 ---
 
@@ -68,7 +68,7 @@ You can install it directly or use **[Docker](#docker-option-en)** for a simpler
 ## 🐘 Option A — Native PostgreSQL Installation
 
 
-- ### On Linux
+- ### 🐧 On Linux
 
    ```bash
    # 1. Install PostgreSQL
@@ -89,12 +89,12 @@ You can install it directly or use **[Docker](#docker-option-en)** for a simpler
    ```
    ⚡ Backend should now be running
 
-- ### On Windows
+- ### 🪟 On Windows
    1. Install **[pgAdmin 4](https://www.pgadmin.org/download/pgadmin-4-windows/)** from the official site
    2. Use pgAdmin4 to :
       - Set password for `postgres` user (aquapoly)
       - Create `aquapoly` database
-   3. Start backend on a terminal :
+   3. Start backend on a terminal (from backend folder) :
          ```powershell
          uvicorn app.main:app --reload
          ```
@@ -108,26 +108,43 @@ Link to Access API docs:
 
 ## 🐋 Option B — Using Docker <a id="docker-option-en"></a>
 
-- ### On Linux
+- ### 🐧 On Linux
 
    ```bash
    # 1. Install Docker 
    sudo apt install docker.io docker-compose
 
-   # 2.a Camera control
+   # 2. Camera control
    export ENABLE_CAMERA=true  # or false to disable
 
-   # 3.a Build the app container (first time or after updates)
+   # 3. Restart your computer (recommended)
+
+   # 4. Build the app container (first time or after updates)
   docker-compose build
 
-   # 4.a Start containers
+   # 5 Start Containers
   docker-compose up # Or running in background: docker-compose up -d
    ```
    ⚡ Backend should now be running
 
-- ### On Windows
+- ### 🪟 On Windows
 
-  1. Install **[Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)** from the official site  
+  1. Get **[Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)** from the official site  and lauch the installer
+  2. Check **Use Wsl2** 
+  3. Restat your computer once the install is finished
+  4. Build and lauch the container (from backend folder):
+      ```bash
+      # Build Container
+      docker-compose build
+
+      # Start Containers
+      docker-compose up # Or running in background: docker-compose up -d
+      ```
+   ⚡ Backend should now be running
+
+---
+Link to Access API docs:  
+🔗 [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
