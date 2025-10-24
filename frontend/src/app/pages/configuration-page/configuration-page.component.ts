@@ -82,33 +82,5 @@ export class ConfigurationPageComponent implements OnInit {
     });
   }
 
-  exportData(): void {
-    const exportUrl = 'http://127.0.0.1:8000/measurements/export';
-    this.api.getCsv(exportUrl).subscribe({
-      next: (response: Blob) => {
-        const blob = new Blob([response], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'exported_data.csv';
-        a.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (err) => {
-        if (err.error instanceof Blob) {
-          // Lire le contenu du Blob pour afficher les détails de l'erreur
-          const reader = new FileReader();
-          reader.onload = () => {
-            console.error('Erreur backend :', reader.result);
-            alert(`Erreur backend : ${reader.result}`);
-          };
-          reader.readAsText(err.error);
-        } else {
-          console.error('Erreur lors de l\'exportation des données :', err);
-          alert('Une erreur est survenue lors de l\'exportation des données.');
-        }
-      },
-    });
-  }
 }
 

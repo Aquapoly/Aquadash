@@ -24,7 +24,4 @@ export class ApiService {
     });
   }
 
-  getCsv(url: string): Observable<Blob> {
-    return this.http.get(url, { responseType: 'blob' });
-  }
 }
