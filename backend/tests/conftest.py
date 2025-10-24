@@ -59,7 +59,7 @@ def dummy_sensors(db_session: Session, dummy_prototype: models.Prototype):
             threshold_critically_low=0,
             threshold_low=1,
             threshold_high=2,
-            theshold_critically_high=3,
+            threshold_critically_high=3,
             sensor_unit="units"
         )
         db_session.add(new_sensor)
