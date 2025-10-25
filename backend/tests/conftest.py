@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
 from app.main import app
 from app.database import engine, get_db  # Import your existing setup
-from random import randint
+from random import randint, random
 from app import models
 
 # TODO Find best scope for fixtures
@@ -67,3 +67,16 @@ def dummy_sensors(db_session: Session, dummy_prototype: models.Prototype):
         
     db_session.flush()
     yield new_sensors
+
+
+@pytest.fixture
+def dummy_measurements(db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Insert dummy measurements for each sensor and return them"""
+    new_measurements = []
+    for sensor in dummy_sensors:
+        new_measurement = models.Measurement(sensor_id=sensor.sensor_id,measurement_value=random()*10)
+        db_session.add(new_measurement)
+        new_measurements.append(new_measurement)
+        
+    db_session.flush()
+    yield new_measurements
