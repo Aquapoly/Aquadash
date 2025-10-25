@@ -5,6 +5,7 @@ from app.main import app
 from app.database import engine, get_db  # Import your existing setup
 from random import randint, random
 from app import models
+from sqlalchemy import func
 
 # TODO Find best scope for fixtures
 @pytest.fixture
@@ -74,7 +75,10 @@ def dummy_measurements(db_session: Session, dummy_sensors: list[models.Sensor]):
     """Insert dummy measurements for each sensor and return them"""
     new_measurements = []
     for sensor in dummy_sensors:
-        new_measurement = models.Measurement(sensor_id=sensor.sensor_id,measurement_value=random()*10)
+        new_measurement = models.Measurement(
+            sensor_id=sensor.sensor_id,
+            value=random()*10
+        )
         db_session.add(new_measurement)
         new_measurements.append(new_measurement)
         
