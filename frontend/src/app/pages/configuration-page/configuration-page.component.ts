@@ -27,6 +27,8 @@ export class ConfigurationPageComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: SortDirection = SortDirection.ASC;
 
+  selectedActuatorType: string = '';
+
   constructor(private readonly api: ApiService) {}
 
   ngOnInit(): void {
@@ -81,4 +83,10 @@ export class ConfigurationPageComponent implements OnInit {
       );
     });
   }
+
+  addActuator() : void {
+    // TODO : ajouter validation et POST
+    console.log("Actuateur ajouté")
+  }
+
 }
