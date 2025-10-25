@@ -7,7 +7,7 @@ def test_get_all_prototypes(client: TestClient, db_session: Session, dummy_proto
     prototypes_list = db_session.query(models.Prototype).all()
     
     response = client.get("/prototypes")
-    assert response.status_code == 200, "Expected status code 200"
+    assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
     data = response.json()
     
     assert len(data) == len(prototypes_list), "Response length should match prototypes in DB"
@@ -20,7 +20,7 @@ def test_get_all_prototypes(client: TestClient, db_session: Session, dummy_proto
 def test_get_prototype_by_id(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /prototypes/{prototype_id} endpoint to retrieve a prototype by its id"""
     response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
-    assert response.status_code == 200, "Expected status code 200"
+    assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
     data = response.json()
 
     assert {"prototype_id": dummy_prototype.prototype_id, "prototype_name": dummy_prototype.prototype_name} == data, \
@@ -32,7 +32,7 @@ def test_get_non_existent_prototype_by_id(client: TestClient, db_session: Sessio
     db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
 
     response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
-    assert response.status_code == 404, "Expected status code 404 for not found prototype"
+    assert response.status_code == 404, f"Expected status code 404 for not found prototype, got {response.status_code}"
 
 
 def test_post_duplicate_id_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
@@ -40,11 +40,7 @@ def test_post_duplicate_id_prototype(client: TestClient, db_session: Session, du
     duplicate_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "Duplicate Proto"}
 
     response = client.post("/prototypes", json=duplicate_proto)
-    assert response.status_code == 409, "Expected status code 409 for duplicate prototype_id"
-
-    # POST endpoint rollsback on insertion error, so no need to check DB state
-    # assert db_session.get(models.Prototype, prototype_id=dummy_prototype.prototype_id).count() == 1, \
-    #     "Should not add prototype with duplicate ID to DB"
+    assert response.status_code == 409, f"Expected status code 409 for duplicate prototype_id, got {response.status_code}"
 
 
 def test_post_invalid_prototype(client: TestClient, db_session: Session):
@@ -70,7 +66,7 @@ def test_post_prototype(client: TestClient, db_session: Session, dummy_prototype
 
     new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "Valid Proto"}
     response = client.post("/prototypes", json=new_proto)
-    assert response.status_code == 200, "Expected status code 200 for successfully processed" # Change to code 201?
+    assert response.status_code == 201, f"Expected status code 201 for created ressource, got {response.status_code}"
 
 
 def test_post_special_char_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
@@ -79,7 +75,7 @@ def test_post_special_char_prototype(client: TestClient, db_session: Session, du
 
     new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": """!@#$%^&*()_+{}|:\"<>?\\`~☺"""}
     response = client.post("/prototypes", json=new_proto)
-    assert response.status_code == 200, "Expected status code 200 for successfully processed"
+    assert response.status_code == 201, f"Expected status code 201 for created ressource, got {response.status_code}"
 
 
 def test_post_newline_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
@@ -89,7 +85,7 @@ def test_post_newline_prototype(client: TestClient, db_session: Session, dummy_p
     new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "\na\n"}
     response = client.post("/prototypes", json=new_proto)
     # print(response.json()["prototype_name"])
-    # assert response.status_code == 200, "Expected status code 200 for successfully processed"
+    # assert response.status_code == 201, f"Expected status code 201 for created ressource, got {response.status_code}"
 
     # TODO Est-ce qu'on veut accepter les sauts de ligne dans les noms?
     # TODO Code 201 précise une création de ressource
