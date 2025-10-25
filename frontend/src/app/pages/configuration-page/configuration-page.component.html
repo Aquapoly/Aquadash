@@ -3,7 +3,7 @@
     <div class="py-6 px-4 sm:px-0">
       <div class="flex align-baseline justify-between">
         <h3 class="text-base/7 font-semibold">Actuateurs</h3>
-        <button class="btn btn-square btn-xs btn-primary" (click)="showAddActuatorModal()">
+        <button class="btn btn-square btn-xs btn-primary" onclick = add_actuator_modal.showModal()>
           <svg class= "stroke-base-100" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="5.5 5.5 13 13" stroke-width="1" stroke="currentColor" >
             <path d="M12 9V15" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M9 12H15" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
@@ -136,5 +136,56 @@
     </div>
   </div>
 </dialog>
+
+<!-- CRÉER MODAL D'AJOUT D'ACTUATEUR -->
+<dialog id="add_actuator_modal" class="modal">
+  <div class="modal-box">
+    <div class="grid gap-5">
+      <h3 class="font-bold text-lg">Ajouter un actuateur</h3>
+      <form method="dialog">
+        <div class="grid gap-[10px]">
+          <div class="flex-inline">
+            <label for="input_actuator_name">Nom de l'actuateur: </label>
+            <input type="text" name="input_actuator_name" placeholder="Actuateur #{{actuators.length + 1}}" class="input h-[1.8em] input-primary"/>
+          </div>
+          <div class="flex-inline">
+            <label for="input_actuator_type">Type d'actuateur: </label>
+            <select required name="input_actuator_type" class="select select-sm select-primary" [(ngModel)]="selectedActuatorType">
+              <option disabled selected>Choisir un type</option>
+              <option>Pompe à acide</option>
+              <option>Pompe à base</option>
+              <option>Pompe Nutriment A</option>
+              <option>Pompe Nutriment B</option>
+              <option>Autre</option>
+            </select>
+          </div>
+          <div *ngIf="selectedActuatorType === 'Autre'">
+            <label for="input_new_actuator_type">Nouveau type d'actuateur: </label>
+            <input type="text" name="input_new_actuator_type" class="input h-[1.8em] input-primary" required>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-primary text-base-100 mx-2" (click)="addActuator()">
+          Ajouter
+        </button>
+        <button class="btn">Annuler</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<!-- CRÉATION D'UN ACTUATEUR :
+  >> actuator_name: string; -> NOM (input)
+  >> actuator_type: string; -> TYPE (input)
+  condition_value: number; -> default zero
+  enabled: boolean; -> Default False
+  activation_condition: string; -> default high
+  activation_period: number; -> default <
+  activation_duration: number; -> default 0
+-->
 
 <app-modal #responseModal />
