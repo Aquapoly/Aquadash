@@ -13,6 +13,7 @@ import {
   TIPPY_CONFIG,
   SortDirection,
 } from '../../constants/constants';
+import { NONE_TYPE } from '@angular/compiler';
 
 @Component({
   selector: 'app-actuator-page',
@@ -27,7 +28,11 @@ export class ConfigurationPageComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: SortDirection = SortDirection.ASC;
 
-  selectedActuatorType: string = '';
+  newActuator = {
+    actuator_name: '',
+    actuator_type: '',
+    customType: '',
+  };
 
   constructor(private readonly api: ApiService) {}
 
@@ -84,9 +89,48 @@ export class ConfigurationPageComponent implements OnInit {
     });
   }
 
-  addActuator() : void {
-    // TODO : ajouter validation et POST
-    console.log("Actuateur ajouté")
+  addActuator(): void {
+    // Validation
+    if (!this.newActuator.actuator_type) {
+      console.error('Form validation failed');
+      return;
+    }
+
+    if (!this.newActuator.actuator_name) {
+      this.newActuator.actuator_name = 'Actuateur #'+(this.actuators.length + 1)
+    }
+
+    const actuatorType = this.newActuator.actuator_type === 'Autre' 
+      ? this.newActuator.customType 
+      : this.newActuator.actuator_type;
+
+    const actuator = {
+      actuator_id : 0, // TODO ajouter générateur de ID
+      actuator_name: this.newActuator.actuator_name,
+      actuator_type: actuatorType,
+      condition_value: 0,
+      enabled: false,
+      activation_condition: 'high',
+      activation_period: 0,
+      activation_duration: 0,
+      last_activated: new Date()
+    };
+
+    // Ajouter à la liste des actuateurs
+    this.actuators.push(actuator);
+    
+    // TODO : ajouter au backend
+
+    // Reset form
+    this.resetForm();
+  }
+
+  resetForm(): void {
+    this.newActuator = {
+      actuator_name: '',
+      actuator_type: '',
+      customType: '',
+    };
   }
 
 }
