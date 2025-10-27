@@ -16,7 +16,7 @@ from .classes.activation_condition import ActivationCondition
 from .classes.actuator_type import ActuatorType
 from .database import Base
 from .classes.sensor_type import SensorType
-
+from datetime import datetime
 
 class Prototype(Base):
     __tablename__ = "prototypes"
@@ -78,7 +78,6 @@ class User(Base):
     logged_in = Column(Boolean, nullable=False)
 
 #Notification Backend
-#A TESTER mais selon mes recherches c comme ca
 class Notification(Base):
     __tablename__ = "notifications"
 

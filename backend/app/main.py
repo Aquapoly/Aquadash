@@ -18,9 +18,11 @@ from .services import camera
 from .services.actuator import get_actuator_activation
 from .security import authentification
 from .security import permissions
+from .services.notification_service import NotificationService
 
 models.Base.metadata.create_all(bind=engine)
 
+notification_service = NotificationService()
 
 sensors_data = dict()
 
@@ -86,9 +88,17 @@ async def post_measurement(
     measurement: schemas.MeasurementBase,
     db: Session = Depends(get_db),
 ):
-    return crud.post_measurement(
-        db=db, measurement=measurement
-    )
+    result = crud.post_measurement(db=db, measurement=measurement)
+    
+    sensor = crud.get_sensors(db=db, prototype_id=None)
+    sensor_type = sensor[0].sensor_type.name.lower()
+    
+    msg = notification_service.check_measure(result.value, sensor_type)
+    
+    if msg:
+        crud.post_notification(db=db, message=msg)
+
+    return result
 
 @app.post(
     "/actuators",
@@ -293,7 +303,7 @@ async def post_random_measurements(
     try:
         db.query(models.Measurement).delete()
         db.commit()
-        return {"message": "Données remplacées avec succès."}
+        message = "message": "Données remplacées avec succès."
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -310,3 +320,16 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
+            
+            from app.services.notification_service import NotificationService
+
+            #notif meme ici les gars
+            sensor = db.query(models.Sensor).filter(models.Sensor.sensor_id == meas[0]).first()
+            if sensor:
+                sensor_type = sensor.sensor_type.name.lower()
+                msg = notification_service.check_measure(db_Measurement.value, sensor_type)
+                if msg:
+                    crud.post_notification(db, msg)
+    
+    return message 
+            
