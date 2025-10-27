@@ -611,16 +611,16 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
 
 def export_all_measures_to_csv(db_session: Session):
     """
-    Exporte toutes les mesures de tous les capteurs dans une chaîne CSV triée par capteur.
+    Exports all measurements from all sensors into a CSV string sorted by sensor.
     Args:
-        db_session (Session): Session SQLAlchemy utilisée pour interroger les tables Sensor et Measurement.
+        db_session (Session): SQLAlchemy session used to query the Sensor and Measurement tables.
     Returns:
-        str: Contenu CSV comprenant les colonnes
+        str: CSV content with columns
              ["Sensor ID", "Sensor Type", "Sensor Value", "Timestamp",
               "Threshold Critically Low", "Threshold Low", "Threshold High", "Threshold Critically High"].
     Raises:
-        sqlalchemy.exc.SQLAlchemyError: Si une erreur de base de données survient lors des requêtes.
-        AttributeError: Si un capteur référencé par une mesure n'a pas les attributs dse seuils attendus.
+        sqlalchemy.exc.SQLAlchemyError: If a database error occurs during queries.
+        AttributeError: If a sensor referenced by a measurement lacks the expected threshold attributes.
     """
     
     sensor_ids = db_session.query(models.Sensor.sensor_id).distinct().all()
