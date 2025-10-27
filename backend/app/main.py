@@ -18,7 +18,7 @@ from .services import camera
 from .services.actuator import get_actuator_activation
 from .security import authentification
 from .security import permissions
-from .services.notification_service import NotificationService
+from .services.notification import NotificationService
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -303,7 +303,7 @@ async def post_random_measurements(
     try:
         db.query(models.Measurement).delete()
         db.commit()
-        message = "message": "Données remplacées avec succès."
+        message = "Données remplacées avec succès."
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

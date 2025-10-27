@@ -2,24 +2,15 @@
 # et lorsque des capteurs se déconnectent.
 
 from enum import Enum
-import app.monitoring.resssources.critical_thresholds
-import app.monitoring.prototype
-
-class Thresholds(Enum):
-    Temperature = [22, 40]
-    Ecs         = [300, 1800]
-    Ph          = [5.5, 7]
-    Humidity    = [35, 100]
-
+import app.monitoring.resssources.critical_thresholds as critical_thresholds
 
 class NotificationService:
-    self.ranges = app.monitoring.resssources.critical_thresholds
     def __init__(self):
         self.ranges = {
-            "temperature": TEMPERATURE_RANGES,
-            "ecs": ECS_RANGES,
-            "ph": PH_RANGES,
-            "humidity": HUMIDITY_RANGES,
+            "temperature": critical_thresholds.TEMPERATURE_RANGES,
+            "ecs": critical_thresholds.ECS_RANGES,
+            "ph": critical_thresholds.PH_RANGES,
+            "humidity": critical_thresholds.HUMIDITY_RANGES,
         }
     
     
