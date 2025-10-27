@@ -104,3 +104,17 @@ class RandomMeasurements(BaseModel):
     deviation_rate:float = 0.20
     smoothing_factor:float = 0.50
     drift_adjustment:float = 0.15
+
+class NotificationBase(BaseModel):
+    message: str
+    state: str = "unread"
+
+class NotificationCreate(NotificationBase):
+    pass
+
+class Notification(NotificationBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True

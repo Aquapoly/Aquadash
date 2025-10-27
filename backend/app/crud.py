@@ -607,24 +607,24 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
     sensor_ids = list(values.keys())
     return distribute_meas(nb_year_meas, "year") + distribute_meas(nb_day_meas, "day") + distribute_meas(nb_hour_meas, "hour")
 
-# A tester mais en gros 
-# post_notifications =  simplement creer une notif so ca va nous etre utile quand un
-#                        evenement quon veut creer une notif
-def post_notification(db: Session, message: str):
-    notif = models.Notification(message=message, state="unread")
+# Crée une notification générique dans la base de données.
+def post_notification(db: Session, message: str,  state: str = "unread"):
+    notif = models.Notification(message=message, state=state)
     db.add(notif)
     db.commit()
     db.refresh(notif)
     return notif
 
+# Récupère les notifications depuis la base.
 # get_notifications = ca retourne liste des notif non lues so ca va nous etre utile quand
 #                       on voudra genre mettre les notifs dans le dashbord ou wtv
 def get_notifications(db: Session, only_unread: bool = False):
-    query = select(models.Notification)
+    query = select(models.Notification).order_by(models.Notification.timestamp.desc())
     if only_unread:
         query = query.where(models.Notification.state == "unread")
     return db.execute(query).scalars().all()
 
+# Marque une notification comme lue.
 # mark_notification_as_read = on va appeler cette fonction quand on voudra que la notif soient efface genre
 #                               avec un bouton X ou read ou wtv dans la page
 def mark_notification_as_read(db: Session, notif_id: int):
@@ -636,4 +636,11 @@ def mark_notification_as_read(db: Session, notif_id: int):
     )
     notif = db.execute(query).scalars().first()
     db.commit()
+    
+    if notif is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notification with id {notif_id} not found"
+        )
+
     return notif
