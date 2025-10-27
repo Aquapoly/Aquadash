@@ -134,8 +134,9 @@ export const SENSOR_VALIDITY_CLASSES = {
 
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
-  TEMP_UNIT: 'temperature_unit',
-  EC_UNIT: 'ec_unit',
+  THRESHOLDDISPLAY: 'thresholdDisplay',
+  TEMP_UNIT: 'tempUnit',
+  EC_UNIT: 'ecUnit',
 } as const;
 
 export const DOM_ATTRIBUTES = {
@@ -148,22 +149,11 @@ export const CSS_CLASSES = {
   LIGHT: 'light',
 } as const;
 
-export const UNIT_OPTIONS = {
-  TEMPERATURE: {
-    CELSIUS: 'Celsius',
-    FAHRENHEIT: 'Fahrenheit',
-  },
-  EC: {
-    MICRO_SIEMENS: 'µS/cm',
-    MILLI_SIEMENS: 'mS/cm',
-  },
-} as const;
-
 export const GLOBAL_SETTINGS_DEFAULTS = {
   DARK_MODE: false,
   THRESHOLD_DISPLAY: ChartThresholdDisplay.ColoredBackgroundWithLine,
-  TEMP_UNIT: UNIT_OPTIONS.TEMPERATURE.CELSIUS,
-  EC_UNIT: UNIT_OPTIONS.EC.MILLI_SIEMENS,
+  TEMP_UNIT: 'Celsius',
+  EC_UNIT: 'µS/cm',
 } as const;
 
 export const SENSOR_SERVICE_DEFAULTS = {
@@ -207,3 +197,18 @@ export const API_ENDPOINTS = {
   SENSORS: 'sensors',
   LAST: 'last',
 } as const;
+
+export const SENSOR_UNIT_STORAGE_KEYS: Partial<Record<SensorType, string>> = {
+  [SensorType.temperature]: LOCAL_STORAGE_KEYS.TEMP_UNIT,
+  [SensorType.ec]: LOCAL_STORAGE_KEYS.EC_UNIT,
+};
+
+export enum TemperatureUnit {
+  Celsius = 'Celsius',
+  Fahrenheit = 'Fahrenheit',
+}
+
+export enum EcUnit {
+  MicroSiemensPerCm = 'µS/cm',
+  MilliSiemensPerCm = 'mS/cm',
+}

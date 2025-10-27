@@ -7,9 +7,10 @@ import {
   DOM_ATTRIBUTES,
   CSS_CLASSES,
   GLOBAL_SETTINGS_DEFAULTS,
-  UNIT_OPTIONS,
+  SENSOR_UNIT_STORAGE_KEYS,
 } from '@app/constants/constants';
 import { BehaviorSubject } from 'rxjs';
+import { SensorType } from '@app/interfaces/sensor-type';
 
 @Injectable({
   providedIn: 'root',
@@ -18,8 +19,6 @@ export class GlobalSettingsService {
   private darkMode: boolean = GLOBAL_SETTINGS_DEFAULTS.DARK_MODE;
   private thresholdDisplay: ChartThresholdDisplay =
     GLOBAL_SETTINGS_DEFAULTS.THRESHOLD_DISPLAY;
-  private temperatureUnit: string = GLOBAL_SETTINGS_DEFAULTS.TEMP_UNIT;
-  private ecUnit: string = GLOBAL_SETTINGS_DEFAULTS.EC_UNIT;
 
   private readonly themeSubject = new BehaviorSubject<string>(
     this.getThemeName()
@@ -27,37 +26,17 @@ export class GlobalSettingsService {
   private readonly thresholdDisplaySubject =
     new BehaviorSubject<ChartThresholdDisplay>(this.thresholdDisplay);
 
-  private readonly temperatureUnitSubject = new BehaviorSubject<string>(
-    this.temperatureUnit
-  );
-
-  private readonly ecUnitSubject = new BehaviorSubject<string>(this.ecUnit);
-
   theme$ = this.themeSubject.asObservable();
   thresholdDisplay$ = this.thresholdDisplaySubject.asObservable();
-  temperatureUnit$ = this.temperatureUnitSubject.asObservable();
-  ecUnit$ = this.ecUnitSubject.asObservable();
 
   constructor() {
     this.initializeTheme();
-    this.initializeUnits();
   }
 
   private initializeTheme(): void {
     const savedTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME);
     this.darkMode = savedTheme === DARK_THEME;
     this.applyTheme();
-  }
-
-  private initializeUnits(): void {
-    const temp = localStorage.getItem(LOCAL_STORAGE_KEYS.TEMP_UNIT);
-    const ec = localStorage.getItem(LOCAL_STORAGE_KEYS.EC_UNIT);
-
-    this.temperatureUnit = temp || GLOBAL_SETTINGS_DEFAULTS.TEMP_UNIT;
-    this.ecUnit = ec || GLOBAL_SETTINGS_DEFAULTS.EC_UNIT;
-
-    this.temperatureUnitSubject.next(this.temperatureUnit);
-    this.ecUnitSubject.next(this.ecUnit);
   }
 
   setThresholdDisplay(display: ChartThresholdDisplay): void {
@@ -85,31 +64,23 @@ export class GlobalSettingsService {
     this.themeSubject.next(themeName);
   }
 
+  getSensorUnit(sensorType: SensorType): string | null {
+    const key = SENSOR_UNIT_STORAGE_KEYS[sensorType];
+    return key ? localStorage.getItem(key) : null;
+  }
+
+  setSensorUnit(sensorType: SensorType, unit: string): void {
+    const key = SENSOR_UNIT_STORAGE_KEYS[sensorType];
+    if (key) {
+      localStorage.setItem(key, unit);
+    }
+  }
+
   getTheme(): boolean {
     return this.darkMode;
   }
 
   getThemeName(): string {
     return this.darkMode ? DARK_THEME : LIGHT_THEME;
-  }
-
-  setTemperatureUnit(unit: string): void {
-    this.temperatureUnit = unit;
-    localStorage.setItem(LOCAL_STORAGE_KEYS.TEMP_UNIT, unit);
-    this.temperatureUnitSubject.next(unit);
-  }
-
-  setEcUnit(unit: string): void {
-    this.ecUnit = unit;
-    localStorage.setItem(LOCAL_STORAGE_KEYS.EC_UNIT, unit);
-    this.ecUnitSubject.next(unit);
-  }
-
-  getTemperatureUnit(): string {
-    return this.temperatureUnit;
-  }
-
-  getEcUnit(): string {
-    return this.ecUnit;
   }
 }

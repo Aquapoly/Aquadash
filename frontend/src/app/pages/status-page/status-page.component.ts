@@ -12,7 +12,9 @@ import {
 } from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
-import { UNIT_OPTIONS } from '@app/constants/constants';
+import { SensorUnitsUtils } from '@app/utils/sensor-units.utils';
+import { SENSOR_UNIT_STORAGE_KEYS } from '@app/constants/constants';
+import { SensorType } from '@app/interfaces/sensor-type';
 
 @Component({
   selector: 'app-status-page',
@@ -43,13 +45,8 @@ export class StatusPageComponent implements OnInit {
 
   private async loadData() {
     this.sensors = await this.sensorService.getSensors();
-    this.sensors.forEach((sensor) => {
-      if (!sensor.sensor_unit) {
-        if (sensor.sensor_type === 'temperature')
-          sensor.sensor_unit = 'Celsius';
-        else if (sensor.sensor_type === 'ec') sensor.sensor_unit = 'µS/cm';
-      }
-    });
+
+    this.sensors.forEach((sensor) => this.setUnitFromLocalStorage(sensor));
 
     this.chartSize =
       STATUS_PAGE_DEFAULTS.CHART_SIZE_DIVISOR /
@@ -73,7 +70,11 @@ export class StatusPageComponent implements OnInit {
 
   getLastMeasurement(sensor: Sensor): string {
     const measurement = this.findSensorMeasurement(sensor.sensor_id);
-    return measurement?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
+    const displayValue = SensorUnitsUtils.convertUnitToPref(
+      sensor,
+      measurement
+    );
+    return displayValue?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
   }
 
   getSensorValidity(sensor: Sensor): string {
@@ -111,49 +112,18 @@ export class StatusPageComponent implements OnInit {
     this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
   }
 
-  getAvailableUnits(sensor: any): string[] {
-    if (sensor.sensor_type === 'temperature') return ['Celsius', 'Fahrenheit'];
-    if (sensor.sensor_type === 'ec') return ['µS/cm', 'mS/cm'];
-    return [sensor.sensor_unit];
+  getAvailableUnits(sensor: Sensor): string[] {
+    return SensorUnitsUtils.getUnits(sensor.sensor_type);
+  }
+
+  private setUnitFromLocalStorage(sensor: Sensor) {
+    const savedUnit = this.globalSettings.getSensorUnit(sensor.sensor_type);
+    sensor.sensor_unit =
+      savedUnit || SensorUnitsUtils.getDefaultUnit(sensor.sensor_type) || '';
   }
 
   onUnitChange(sensor: Sensor): void {
-    const measurementIndex = this.sensorLastMeasurements.findIndex(
-      ([id]) => id === sensor.sensor_id
-    );
-
-    if (measurementIndex === -1) return;
-
-    const currentValue = this.sensorLastMeasurements[measurementIndex][1];
-    const currentUnit = sensor.sensor_unit;
-
-    if (sensor.sensor_type === 'temperature') {
-      if (currentUnit === 'Celsius') {
-        // Fahrenheit to Celsius
-        const converted = ((currentValue - 32) * 5) / 9;
-        this.sensorLastMeasurements[measurementIndex][1] = parseFloat(
-          converted.toFixed(2)
-        );
-      } else if (currentUnit === 'Fahrenheit') {
-        // Celsius to Fahrenheit
-        const converted = currentValue * 1.8 + 32;
-        this.sensorLastMeasurements[measurementIndex][1] = parseFloat(
-          converted.toFixed(2)
-        );
-      }
-    } else if (sensor.sensor_type === 'ec') {
-      if (currentUnit === 'µS/cm') {
-        // mS/cm to µS/cm
-        this.sensorLastMeasurements[measurementIndex][1] = currentValue * 1000;
-      } else if (currentUnit === 'mS/cm') {
-        // µS/cm to mS/cm
-        this.sensorLastMeasurements[measurementIndex][1] = currentValue / 1000;
-      }
-    }
-
-    if (sensor.sensor_type === 'temperature')
-      this.globalSettings.setTemperatureUnit(currentUnit);
-    else if (sensor.sensor_type === 'ec')
-      this.globalSettings.setEcUnit(currentUnit);
+    this.globalSettings.setSensorUnit(sensor.sensor_type, sensor.sensor_unit);
+    this.loadData();
   }
 }
