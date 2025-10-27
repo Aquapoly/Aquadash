@@ -610,24 +610,30 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
     return distribute_meas(nb_year_meas, "year") + distribute_meas(nb_day_meas, "day") + distribute_meas(nb_hour_meas, "hour")
 
 def export_all_measures_to_csv(db_session: Session):
-    """Export measurements for all sensors to a CSV file"""
-
-    # Query all unique sensor IDs
+    """
+    Exporte toutes les mesures de tous les capteurs dans une chaîne CSV triée par capteur.
+    Args:
+        db_session (Session): Session SQLAlchemy utilisée pour interroger les tables Sensor et Measurement.
+    Returns:
+        str: Contenu CSV comprenant les colonnes
+             ["Sensor ID", "Sensor Type", "Sensor Value", "Timestamp",
+              "Threshold Critically Low", "Threshold Low", "Threshold High", "Threshold Critically High"].
+    Raises:
+        sqlalchemy.exc.SQLAlchemyError: Si une erreur de base de données survient lors des requêtes.
+        AttributeError: Si un capteur référencé par une mesure n'a pas les attributs dse seuils attendus.
+    """
+    
     sensor_ids = db_session.query(models.Sensor.sensor_id).distinct().all()
-
-    # Prepare CSV data
     csv_output = StringIO()
     csv_writer = csv.writer(csv_output)
     csv_writer.writerow([
         "Sensor ID", "Sensor Type", "Sensor Value", "Timestamp",
         "Threshold Critically Low", "Threshold Low", "Threshold High", "Threshold Critically High"
-    ])  # Header row
+    ])
 
     for sensor_id_tuple in sensor_ids:
         sensor_id = sensor_id_tuple[0]
         response = db_session.query(models.Measurement).filter_by(sensor_id=sensor_id)
-
-        # Fetch sensor thresholds
         sensor = db_session.query(models.Sensor).filter_by(sensor_id=sensor_id).first()
         threshold_critically_low = sensor.threshold_critically_low
         threshold_low = sensor.threshold_low
@@ -641,7 +647,6 @@ def export_all_measures_to_csv(db_session: Session):
                 threshold_critically_low, threshold_low, threshold_high, threshold_critically_high
             ])
 
-    # Get CSV content
     csv_content = csv_output.getvalue()
     csv_output.close()
     return csv_content
