@@ -343,3 +343,11 @@ def create_notification(notification: schemas.NotificationBase, db: Session = De
 @app.patch("/notifications/{notif_id}/read", response_model=schemas.Notification)
 def mark_as_read(notif_id: int, db: Session = Depends(get_db)):
     return mark_notification_as_read(db, notif_id)
+
+@app.delete("/notifications", response_model=dict)
+def delete_notifications(db: Session = Depends(get_db)):
+    from sqlalchemy import delete
+    stmt = delete(models.Notification)
+    result = db.execute(stmt)
+    db.commit()
+    return {"deleted": result.rowcount}
