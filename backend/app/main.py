@@ -97,7 +97,7 @@ async def post_measurement(
         msg = notification_service.check_measure(result.value, sensor_type)
         
         if msg:
-            crud.post_notification(db=db, message=msg)
+            crud.post_notification(db=db, description=msg)
 
     return result
 
@@ -337,7 +337,7 @@ def read_notifications(only_unread: bool = False, db: Session = Depends(get_db))
 
 @app.post("/notifications", response_model=schemas.Notification)
 def create_notification(notification: schemas.NotificationBase, db: Session = Depends(get_db)):
-    return crud.post_notification(db, notification.message)
+    return crud.post_notification(db, notification.description, notification.level)
 
 @app.patch("/notifications/{notif_id}/read", response_model=schemas.Notification)
 def mark_as_read(notif_id: int, db: Session = Depends(get_db)):

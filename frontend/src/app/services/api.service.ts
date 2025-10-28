@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SERVER_URL } from '@app/environment';
 import { Actuator } from '@app/interfaces/actuator';
-import { Notification} from '@app/interfaces/notification';
+import { Notification } from '@app/interfaces/notification';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +23,7 @@ export class ApiService {
       observe: 'response',
     });
   }
-  
+
   //Notifications
   getNotifications(onlyUnread: boolean = false) {
     const url = onlyUnread
@@ -32,9 +32,10 @@ export class ApiService {
     return this.http.get<Notification[]>(url);
   }
 
-  postNotification(message: string) { //pas tres certain de l'utilité dun post
+  postNotification(description: string) {
+    //pas tres certain de l'utilité dun post
     return this.http.post<Notification>(`${this.serverUrl}/notifications`, {
-      message,
+      message: description,
     });
   }
 
@@ -44,5 +45,4 @@ export class ApiService {
       {}
     );
   }
-
 }
