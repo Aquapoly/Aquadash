@@ -105,16 +105,21 @@ class RandomMeasurements(BaseModel):
     smoothing_factor:float = 0.50
     drift_adjustment:float = 0.15
 
-class NotificationBase(BaseModel):
-    message: str
-    state: str = "unread"
+class NotificationLevel(str, enum.Enum):
+    info = "info"
+    warning = "warning"
+    error = "error"
+    success = "success"
 
-class NotificationCreate(NotificationBase):
-    pass
+class NotificationBase(BaseModel):
+    description: str
+    level: NotificationLevel = NotificationLevel.info
 
 class Notification(NotificationBase):
     id: int
     timestamp: datetime
+    read: bool = False
+    dismissed: bool = False
 
     class Config:
         from_attributes = True

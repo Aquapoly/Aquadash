@@ -608,12 +608,12 @@ def generate_meas(nb_meas: int, year_ratio: float, day_ratio: float, hour_ratio:
     return distribute_meas(nb_year_meas, "year") + distribute_meas(nb_day_meas, "day") + distribute_meas(nb_hour_meas, "hour")
 
 # Crée une notification générique dans la base de données.
-def post_notification(db: Session, message: str,  state: str = "unread"):
-    notif = models.Notification(message=message, state=state)
-    db.add(notif)
+def post_notification(db: Session, description: str, level: NotificationLevel = NotificationLevel.info):
+    db_notification = models.Notification(description=description, level=level)
+    db.add(db_notification)
     db.commit()
-    db.refresh(notif)
-    return notif
+    db.refresh(db_notification)
+    return db_notification
 
 # Récupère les notifications depuis la base.
 # get_notifications = ca retourne liste des notif non lues so ca va nous etre utile quand

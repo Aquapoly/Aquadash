@@ -27,3 +27,4 @@ class NotificationService:
             return f"{name.capitalize()} WARNING: {value}"
         else:
             return None
+

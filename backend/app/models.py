@@ -78,10 +78,18 @@ class User(Base):
     logged_in = Column(Boolean, nullable=False)
 
 #Notification Backend
+class NotificationLevel(enum.Enum):
+    info = "info"
+    warning = "warning"
+    error = "error"
+    success = "success"
+
 class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    message = Column(String, nullable=False)
-    state = Column(String, default="unread")  
+    description = Column(String, nullable=False)
+    level = Column(String, nullable=False, default="info")
+    read = Column(Boolean, default=False)
+    dismissed = Column(Boolean, default=False)
     timestamp = Column(DateTime, default=datetime.utcnow)

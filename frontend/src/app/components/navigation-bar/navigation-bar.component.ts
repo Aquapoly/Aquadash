@@ -2,10 +2,11 @@ import { Component, inject, OnInit } from '@angular/core';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
+import { NotificationsComponent } from '../notifications/notifications.component';
 
 @Component({
   selector: 'app-navigation-bar',
-  imports: [FontAwesomeModule],
+  imports: [FontAwesomeModule, NotificationsComponent],
   templateUrl: './navigation-bar.component.html',
   styleUrl: './navigation-bar.component.scss',
 })
