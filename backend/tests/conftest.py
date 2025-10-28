@@ -35,7 +35,7 @@ def dummy_prototype(db_session: Session):
     """Insert dummy prototype in DB and return it"""
     random_id = randint(1, 9999)
 
-    while random_id in db_session.query(models.Prototype.prototype_id).all():
+    while random_id in [id[0] for id in db_session.query(models.Prototype.prototype_id).all()]:
         random_id = randint(1, 9999)
 
     new_proto = models.Prototype(prototype_id=random_id, prototype_name="Test Proto")
@@ -50,7 +50,7 @@ def dummy_sensors(db_session: Session, dummy_prototype: models.Prototype):
     new_sensors = []
     for sensor_type in models.SensorType:
         random_id = randint(1, 9999)
-        while random_id in db_session.query(models.Sensor.sensor_id).all():
+        while random_id in [id[0] for id in db_session.query(models.Sensor.sensor_id).all()]:
             random_id = randint(1, 9999)
 
         new_sensor = models.Sensor(
@@ -84,3 +84,24 @@ def dummy_measurements(db_session: Session, dummy_sensors: list[models.Sensor]):
         
     db_session.flush()
     yield new_measurements
+
+
+@pytest.fixture
+def dummy_actuators(db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Insert dummy actuators of each type for each sensor and return them"""
+    new_actuators = []
+    for sensor in dummy_sensors:
+        for actuator_type in models.ActuatorType:
+            new_actuator = models.Actuator(
+                actuator_type=actuator_type,
+                sensor_id=sensor.sensor_id,
+                condition_value=1.0,
+                activation_condition=models.ActivationCondition.high,
+                activation_period=1.0,
+                activation_duration=1.0
+            )
+            db_session.add(new_actuator)
+            new_actuators.append(new_actuator)
+        
+    db_session.flush()
+    yield new_actuators
