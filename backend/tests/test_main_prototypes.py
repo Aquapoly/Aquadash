@@ -48,7 +48,7 @@ def test_post_invalid_prototype(client: TestClient, db_session: Session):
     invalid_proto = {"prototype_name": "Invalid Proto"}  # Missing prototype_id
 
     response = client.post("/prototypes", json=invalid_proto)
-    assert response.status_code == 422, "Expected status code 422 for missing field"
+    assert response.status_code == 400, f"Expected status code 400 for missing field, got {response.status_code}"
     assert db_session.query(models.Prototype).filter_by(prototype_name="Invalid Proto").count() == 0, \
         "Should not add prototype with no id to DB"
     
@@ -102,3 +102,11 @@ def test_post_sql_injection_prototype(client: TestClient, db_session: Session, d
 
     assert db_session.query(models.Prototype).filter_by(prototype_id=dummy_prototype.prototype_id+1).count() == 0, \
         "SQL Injection should not have succeeded in adding a new prototype"
+    
+
+# def test_post_illegal_id_prototype(client: TestClient, db_session: Session):
+#     """Test /prototypes endpoint with a prototype with an illegal id"""
+#     new_proto = {"prototype_id": -1, "prototype_name": "Illegal Proto"}
+
+#     response = client.post("/prototypes", json=new_proto)
+    # TODO accepter id négatifs ?
