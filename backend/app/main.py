@@ -91,7 +91,7 @@ async def post_measurement(
     result = crud.post_measurement(db=db, measurement=measurement)
     
     sensor = db.query(models.Sensor).filter(models.Sensor.sensor_id == result.sensor_id).first()
-    if (sensor)
+    if (sensor):
         sensor_type = sensor.sensor_type.name.lower()
     
         msg = notification_service.check_measure(result.value, sensor_type)
@@ -321,8 +321,6 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
-            
-            from app.services.notification_service import NotificationService
 
             #notif meme ici les gars
             sensor = db.query(models.Sensor).filter(models.Sensor.sensor_id == meas[0]).first()
@@ -330,7 +328,7 @@ async def post_random_measurements(
                 sensor_type = sensor.sensor_type.name.lower()
                 msg = notification_service.check_measure(db_Measurement.value, sensor_type)
                 if msg:
-                    crud.post_notification(db, description=msg, level=models.NotificationLevel.warning)    
+                    crud.post_notification(db, description=msg, level=schemas.NotificationLevel.warning)    
     return message 
 
 @app.get("/notifications", response_model=list[schemas.Notification])

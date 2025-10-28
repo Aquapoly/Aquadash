@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 from datetime import datetime
+import enum
 from .classes.activation_condition import ActivationCondition
 
 from .classes.actuator_type import ActuatorType

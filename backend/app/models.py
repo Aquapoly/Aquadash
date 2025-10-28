@@ -77,13 +77,6 @@ class User(Base):
     permissions = Column(Integer, nullable=False)
     logged_in = Column(Boolean, nullable=False)
 
-#Notification Backend
-class NotificationLevel(enum.Enum):
-    info = "info"
-    warning = "warning"
-    error = "error"
-    success = "success"
-
 class Notification(Base):
     __tablename__ = "notifications"
 
