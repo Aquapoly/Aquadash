@@ -22,9 +22,9 @@ class NotificationService:
         good_limits = self.ranges[name]['good']
 
         if value < warn_limits['min'] or value > warn_limits['max']:
-            return f"{name.capitalize()} CRITICAL out of range: {value}"
+            return f"CRITICAL out of range: {name.capitalize()} {value}"
         elif value < good_limits['min'] or value > good_limits['max']:
-            return f"{name.capitalize()} WARNING: {value}"
+            return f"WARNING: {name.capitalize()} {value}"
         else:
             return None
 

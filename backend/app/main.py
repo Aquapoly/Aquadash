@@ -98,7 +98,8 @@ async def post_measurement(
         msg = notification_service.check_measure(result.value, sensor_type)
         
         if msg:
-            post_notification(db=db, description=msg)
+            level = msg.startswith("CRITICAL") and schemas.NotificationLevel.error or schemas.NotificationLevel.warning
+            post_notification(db=db, description=msg, level=level)
 
     return result
 
@@ -329,8 +330,9 @@ async def post_random_measurements(
                 sensor_type = sensor.sensor_type.name.lower()
                 msg = notification_service.check_measure(db_Measurement.value, sensor_type)
                 if msg:
-                    post_notification(db, description=msg, level=schemas.NotificationLevel.warning)
-    return message 
+                    level = msg.startswith("CRITICAL") and schemas.NotificationLevel.error or schemas.NotificationLevel.warning
+                    post_notification(db, description=msg, level=level)
+    return message
 
 @app.get("/notifications", response_model=list[schemas.Notification])
 def read_notifications(only_unread: bool = False, db: Session = Depends(get_db)):
