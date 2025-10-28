@@ -19,6 +19,7 @@ from .services.actuator import get_actuator_activation
 from .security import authentification
 from .security import permissions
 from .services.notification import NotificationService
+from .notifications import post_notification, get_notifications, mark_notification_as_read
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -97,7 +98,7 @@ async def post_measurement(
         msg = notification_service.check_measure(result.value, sensor_type)
         
         if msg:
-            crud.post_notification(db=db, description=msg)
+            post_notification(db=db, description=msg)
 
     return result
 
@@ -328,17 +329,17 @@ async def post_random_measurements(
                 sensor_type = sensor.sensor_type.name.lower()
                 msg = notification_service.check_measure(db_Measurement.value, sensor_type)
                 if msg:
-                    crud.post_notification(db, description=msg, level=schemas.NotificationLevel.warning)    
+                    post_notification(db, description=msg, level=schemas.NotificationLevel.warning)
     return message 
 
 @app.get("/notifications", response_model=list[schemas.Notification])
 def read_notifications(only_unread: bool = False, db: Session = Depends(get_db)):
-    return crud.get_notifications(db, only_unread)
+    return get_notifications(db, only_unread)
 
 @app.post("/notifications", response_model=schemas.Notification)
 def create_notification(notification: schemas.NotificationBase, db: Session = Depends(get_db)):
-    return crud.post_notification(db, notification.description, notification.level)
+    return post_notification(db, notification.description, notification.level)
 
 @app.patch("/notifications/{notif_id}/read", response_model=schemas.Notification)
 def mark_as_read(notif_id: int, db: Session = Depends(get_db)):
-    return crud.mark_notification_as_read(db, notif_id)
+    return mark_notification_as_read(db, notif_id)
