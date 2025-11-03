@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem] m-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem]">
   <select [(ngModel)]="selectedThresholdsDisplay" (change)="updateThresholdDisplay()"
     class="col-span-12 select w-full max-w-xs selectDiv">
     @for (choice of chartChoices; track choice) {
@@ -9,8 +9,12 @@
   <div class="flex justify-center col-span-12">
     <span class="loading loading-infinity loading-lg text-success"></span>
   </div>
-  } @for (sensor of sensors; track sensor.sensor_id) {
-  <div class="stats shadow text-center col-span-12 lg:col-span-3 bg-base-200">
+  } 
+  <div cdkDropList (cdkDropListDropped)="drop($event)" class="grid-cols-subgrid col-span-12 lg:col-span-12 ">
+  @for (sensor of sensors; track sensor.sensor_id) {
+  <div cdkDrag class="col-span-12 grid grid-cols-12">
+  <div class="col-span-12 lg:col-span-3 m-4">
+  <div class="stats shadow text-center bg-base-200 w-full h-full " >
     <div class="stat">
       <div class="stat-title">{{ this.getSensorTitle(sensor) }}</div>
       <div>
@@ -38,12 +42,17 @@
       </div>
     </div>
   </div>
-  <div class="grid-cols-subgrid col-span-12 lg:col-span-9 card shadow h-72 bg-base-200">
+  </div>
+  <div class="col-span-12 lg:col-span-9 m-4 ">
+  <div class="grid-cols-subgrid card shadow h-72 bg-base-200 ">
     <app-line-chart [chartTitle]="this.getSensorTitle(sensor)" [sensor]="sensor" class="h-full">
     </app-line-chart>
   </div>
+  </div>
+  </div>
   }
-</div>
+  </div>
+  </div>
 <app-camera-picture></app-camera-picture>
 <span class="text-error hidden"></span>
 <span class="text-neutral hidden"></span>

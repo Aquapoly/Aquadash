@@ -12,13 +12,14 @@ import {
 } from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
+import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
+  imports: [LineChartComponent, FormsModule, CameraPictureComponent, CdkDrag, CdkDropList],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
@@ -96,6 +97,10 @@ export class StatusPageComponent implements OnInit {
     return (
       measurement < sensor.threshold_low || measurement > sensor.threshold_high
     );
+  }
+
+  protected drop(event: CdkDragDrop<any>){
+    moveItemInArray(this.sensors, event.previousIndex, event.currentIndex);
   }
 
   updateThresholdDisplay() {
