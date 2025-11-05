@@ -104,9 +104,18 @@ def test_post_sql_injection_prototype(client: TestClient, db_session: Session, d
         "SQL Injection should not have succeeded in adding a new prototype"
     
 
-# def test_post_illegal_id_prototype(client: TestClient, db_session: Session):
-#     """Test /prototypes endpoint with a prototype with an illegal id"""
-#     new_proto = {"prototype_id": -1, "prototype_name": "Illegal Proto"}
+def test_post_negative_id_prototype(client: TestClient, db_session: Session):
+    """Test /prototypes endpoint with a prototype with a negative id"""
+    new_proto = {"prototype_id": -1, "prototype_name": "Illegal Proto"}
 
-#     response = client.post("/prototypes", json=new_proto)
-    # TODO accepter id négatifs ?
+    response = client.post("/prototypes", json=new_proto)
+    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
+
+
+def test_get_prototypes_return_types(client: TestClient, db_session: Session,  dummy_prototype: models.Prototype):
+    """Test /prototypes/{prototype_id} endpoint to check if it returns the right types"""
+    response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
+    data = response.json()
+
+    assert isinstance(data["prototype_id"], int), f"Prototype id should be an int, was {type(data['prototype_id'])}"
+    assert isinstance(data["prototype_name"], str), f"Prototype name should be a string, was {type(data['prototype_name'])}"

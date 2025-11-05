@@ -70,6 +70,8 @@ def test_get_measurements_no_measurements(client: TestClient, db_session: Sessio
 
 def test_get_measurements_time_range(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], dummy_measurements: list[models.Measurement]):
     """Test /measurements/{sensor_id} endpoint with time range"""
+    db_session.query(models.Measurement).delete()
+
     db_session.add(models.Measurement(
         sensor_id=dummy_sensors[0].sensor_id,
         timestamp='2000-01-01T01:01:00.100000Z', # Too early
