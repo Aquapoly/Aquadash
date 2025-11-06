@@ -4,6 +4,7 @@ from app.services.actuator import get_actuator_activation
 from app import models, schemas
 from sqlalchemy.orm import Session
 import pytest
+from pytest_check import check
 
 @pytest.mark.parametrize("measurement", [None, models.Measurement()])
 def test_get_actuator_activation_deactivated(dummy_actuators: list[models.Actuator], measurement):
@@ -12,7 +13,8 @@ def test_get_actuator_activation_deactivated(dummy_actuators: list[models.Actuat
     actuator.enabled = False
 
     result = get_actuator_activation(actuator, measurement)
-    assert result.activate == False
+    with check:
+        assert result.activate == False
 
 
 def test_get_actuator_activation_return_type(dummy_actuators: list[models.Actuator]):
@@ -25,11 +27,16 @@ def test_get_actuator_activation_return_type(dummy_actuators: list[models.Actuat
     )
 
     result = get_actuator_activation(actuator, last_measurement)
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation. was {type(result)}"
-    assert isinstance(result.activate, bool), f"Activate should be a boolean. was {type(result.activate)}"
-    assert isinstance(result.status, str), f"Status should be a string. was {type(result.status)}"
-    assert isinstance(result.duration, float), f"Duration should be a float. was {type(result.duration)}"
-    assert isinstance(result.period, float), f"Period should be a float. was {type(result.period)}"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation. was {type(result)}"
+    with check:
+        assert isinstance(result.activate, bool), f"Activate should be a boolean. was {type(result.activate)}"
+    with check:
+        assert isinstance(result.status, str), f"Status should be a string. was {type(result.status)}"
+    with check:
+        assert isinstance(result.duration, float), f"Duration should be a float. was {type(result.duration)}"
+    with check:
+        assert isinstance(result.period, float), f"Period should be a float. was {type(result.period)}"
 
 
 def test_get_actuator_activation_missing_timestamp(dummy_actuators: list[models.Actuator]):
@@ -41,8 +48,10 @@ def test_get_actuator_activation_missing_timestamp(dummy_actuators: list[models.
     )
 
     result = get_actuator_activation(actuator, last_measurement)
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
-    assert result.activate == False, "Actuator should not be activated when timestamp is missing"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    with check:
+        assert result.activate == False, "Actuator should not be activated when timestamp is missing"
 
 
 def test_get_actuator_activation_missing_value(dummy_actuators: list[models.Actuator]):
@@ -56,8 +65,10 @@ def test_get_actuator_activation_missing_value(dummy_actuators: list[models.Actu
     )
 
     result = get_actuator_activation(actuator, last_measurement)
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
-    assert result.activate == False, "Actuator should not be activated when value is missing"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    with check:
+        assert result.activate == False, "Actuator should not be activated when value is missing"
 
 
 def test_get_actuator_activation_old_timestamp(dummy_actuators: list[models.Actuator]):
@@ -70,8 +81,10 @@ def test_get_actuator_activation_old_timestamp(dummy_actuators: list[models.Actu
     )
 
     result = get_actuator_activation(actuator, last_measurement)
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
-    assert result.activate == False, "Actuator should not be activated when timestamp is too old"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    with check:
+        assert result.activate == False, "Actuator should not be activated when timestamp is too old"
 
 
 def test_get_actuator_activation_still_activated(dummy_actuators: list[models.Actuator]):
@@ -85,8 +98,10 @@ def test_get_actuator_activation_still_activated(dummy_actuators: list[models.Ac
     )
 
     result = get_actuator_activation(actuator, last_measurement)
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
-    assert result.activate == False, "Actuator should not be activated again when it is already active"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    with check:
+        assert result.activate == False, "Actuator should not be activated again when it is already active"
 
 
 @pytest.mark.parametrize("actuator_modifications, measurement_value", [
@@ -116,13 +131,21 @@ def test_get_actuator_activation(dummy_actuators: list[models.Actuator], actuato
     )
 
     result = get_actuator_activation(actuator, last_measurement)
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
-    assert result.activate == True, "Actuator should be activated"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    with check:
+        assert result.activate == True, "Actuator should be activated"
 
 
 def test_get_actuator_activation_no_measurements(db_session: Session, dummy_actuators: list[schemas.Actuator]):
     """Test result of get_actuator_activation when there are no measurements"""
     result = get_actuator_activation(dummy_actuators[0], None)
     
-    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
-    assert result.activate == False, "Actuator should not be activated"
+    with check:
+        assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    with check:
+        assert result.activate == False, "Actuator should not be activated"
+
+
+def test_errors():
+    with check:
