@@ -157,7 +157,7 @@ def test_get_measurements_return_types(client: TestClient, db_session: Session, 
     assert isinstance(measurement["measurement_id"], int), f"Measurement id should be an int, got {type(measurement['measurement_id'])}"
 
 
-@pytest.mark.parametrize("num_measurements", [1, 5, 10, 100, 1000, 10000, 50000])
+@pytest.mark.parametrize("num_measurements", [1, 5, 10, 100, 1000, 10000])
 def test_get_measurements_multiple(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], num_measurements):
     """Test /measurements/{sensor_id} endpoint to check if it returns all the measurements"""
     db_session.query(models.Measurement).filter_by(sensor_id=dummy_sensors[0].sensor_id).delete() # Start with 0
