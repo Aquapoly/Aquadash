@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import pytest
 from sqlalchemy.orm import Session
 from app import models
 
@@ -156,3 +157,19 @@ def test_get_measurements_return_types(client: TestClient, db_session: Session, 
     assert isinstance(measurement["measurement_id"], int), f"Measurement id should be an int, got {type(measurement['measurement_id'])}"
 
 
+@pytest.mark.parametrize("num_measurements", [1, 5, 10, 100, 1000, 10000, 50000])
+def test_get_measurements_multiple(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], num_measurements):
+    """Test /measurements/{sensor_id} endpoint to check if it returns all the measurements"""
+    db_session.query(models.Measurement).filter_by(sensor_id=dummy_sensors[0].sensor_id).delete() # Start with 0
+
+    for _ in range(num_measurements):
+        db_session.add(models.Measurement(
+            sensor_id=dummy_sensors[0].sensor_id,
+            timestamp="2000-01-01T01:01:00.100000Z",
+            value=5.0
+        )
+    )
+    
+    response = client.get(f"/measurements/{dummy_sensors[0].sensor_id}")
+    assert response.status_code == 200, "Expected status code 200"
+    assert len(response.json()) == num_measurements, f"Expected {num_measurements} measurements but got {len(response.json())}"
