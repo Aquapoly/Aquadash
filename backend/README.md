@@ -120,7 +120,7 @@ The backend tests use `pytest`.
      ```
    - Run specific test file:
      ```bash
-     pytest app/tests/test_example.py
+     pytest tests/test_example.py
      ```
 ---
 
