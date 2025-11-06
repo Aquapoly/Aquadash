@@ -64,9 +64,9 @@
     <app-line-chart
       [chartTitle]="this.getSensorTitle(sensor)"
       [sensor]="sensor"
+      (sensorUpdated)="onSensorUpdated($event)"
       class="h-full"
-    >
-    </app-line-chart>
+    ></app-line-chart>
   </div>
   }
 </div>

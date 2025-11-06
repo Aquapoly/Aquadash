@@ -13,8 +13,6 @@ import {
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 import { SensorUnitsUtils } from '@app/utils/sensor-units.utils';
-import { SENSOR_UNIT_STORAGE_KEYS } from '@app/constants/constants';
-import { SensorType } from '@app/interfaces/sensor-type';
 
 @Component({
   selector: 'app-status-page',
@@ -30,6 +28,7 @@ export class StatusPageComponent implements OnInit {
   public chartSize: number = STATUS_PAGE_DEFAULTS.CHART_SIZE_INITIAL;
   selectedThresholdsDisplay: ChartThresholdDisplay =
     ChartThresholdDisplay.ColoredBackgroundWithLine;
+  private updatingSensors = new Set<number>();
 
   constructor(
     private readonly sensorService: SensorService,
@@ -78,17 +77,26 @@ export class StatusPageComponent implements OnInit {
   }
 
   getSensorValidity(sensor: Sensor): string {
+    if (this.updatingSensors.has(sensor.sensor_id)) {
+      return SENSOR_VALIDITY_CLASSES.NEUTRAL; // ou NEUTRAL, au choix visuel
+    }
+
     const measurement = this.findSensorMeasurement(sensor.sensor_id);
 
     if (!measurement) {
       return SENSOR_VALIDITY_CLASSES.NEUTRAL;
     }
 
-    if (this.isCriticalThreshold(measurement, sensor)) {
+    const convertedMeasurement = SensorUnitsUtils.convertUnitToPref(
+      sensor,
+      measurement
+    );
+
+    if (this.isCriticalThreshold(convertedMeasurement, sensor)) {
       return SENSOR_VALIDITY_CLASSES.ERROR;
     }
 
-    if (this.isWarningThreshold(measurement, sensor)) {
+    if (this.isWarningThreshold(convertedMeasurement, sensor)) {
       return SENSOR_VALIDITY_CLASSES.WARNING;
     }
 
@@ -123,7 +131,18 @@ export class StatusPageComponent implements OnInit {
   }
 
   onUnitChange(sensor: Sensor): void {
+    this.updatingSensors.add(sensor.sensor_id);
+
     this.globalSettings.setSensorUnit(sensor.sensor_type, sensor.sensor_unit);
-    this.loadData();
+    setTimeout(() => this.updatingSensors.delete(sensor.sensor_id), 10);
+  }
+
+  onSensorUpdated(updatedSensor: Sensor): void {
+    const index = this.sensors.findIndex(
+      (s) => s.sensor_id === updatedSensor.sensor_id
+    );
+    if (index !== -1) {
+      this.sensors[index] = { ...updatedSensor };
+    }
   }
 }

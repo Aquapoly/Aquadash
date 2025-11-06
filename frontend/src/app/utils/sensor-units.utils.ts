@@ -40,7 +40,6 @@ export class SensorUnitsUtils {
 
     const currentUnit = sensor.sensor_unit;
     const defaultUnit = this.getDefaultUnit(sensor.sensor_type);
-
     if (!defaultUnit || currentUnit === defaultUnit)
       return parseFloat(value.toFixed(2));
 
@@ -59,7 +58,9 @@ export class SensorUnitsUtils {
         break;
     }
 
-    return parseFloat(convertedValue.toFixed(2));
+    // plus de précision pour EC (mS/cm)
+    const decimals = sensor.sensor_type === SensorType.ec ? 5 : 2;
+    return parseFloat(convertedValue.toFixed(decimals));
   }
 
   private static convertTemperature(
@@ -85,7 +86,7 @@ export class SensorUnitsUtils {
       defaultUnit === EcUnit.MicroSiemensPerCm &&
       currentUnit === EcUnit.MilliSiemensPerCm
     ) {
-      return value * 1000; // µS → mS
+      return value / 1000; // µS → mS
     }
     return value;
   }
