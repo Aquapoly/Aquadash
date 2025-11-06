@@ -105,10 +105,11 @@ The backend tests use `pytest`.
    - **Docker Desktop**: Click on your container → "Open in Terminal"
    - **Command Line**:
      ```bash
-     docker exec -it backend_container_name /bin/sh
+     docker ps # List containers
+     docker exec -it backend_container_name /bin/sh # Enter container
      ```
 
-3. **Navigate to the app directory**:
+3. **Navigate to the app directory** (if not already current directory):
    ```bash
    cd /usr/src/app
    ```
