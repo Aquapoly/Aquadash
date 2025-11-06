@@ -122,6 +122,11 @@ The backend tests use `pytest`.
      ```bash
      pytest tests/test_example.py
      ```
+   - Run coverage report:
+     ```bash
+     pytest --cov-report=html
+     ```
+     - Open the `htmlcov/index.html` file in your browser to view the coverage report.
 ---
 
 ## 📚 Developer Resources
