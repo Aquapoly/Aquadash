@@ -143,3 +143,16 @@ def test_post_measurement_missing_data(client: TestClient, db_session: Session, 
     for measurement in measurements:
         response = client.post("/measurements", json=measurement)
         assert response.status_code == 422, f"Should return 422 for unprocessable entity, got {response.status_code}"
+
+
+def test_get_measurements_return_types(client: TestClient, db_session: Session, dummy_measurements: list[models.Measurement]):
+    """Test /measurements/{sensor_id} endpoint to check return types are correct"""
+    response = client.get(f"/measurements/{dummy_measurements[0].sensor_id}")
+    measurement = response.json()
+
+    assert isinstance(measurement["value"], float), f"Value should be a float, got {type(measurement['value'])}"
+    assert isinstance(measurement["timestamp"], str), f"Timestamp should be a string, got {type(measurement['timestamp'])}"
+    assert isinstance(measurement["sensor_id"], int), f"Sensor id should be an int, got {type(measurement['sensor_id'])}"
+    assert isinstance(measurement["measurement_id"], int), f"Measurement id should be an int, got {type(measurement['measurement_id'])}"
+
+

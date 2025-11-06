@@ -229,7 +229,7 @@ def test_get_actuator_state_inactive(client: TestClient, db_session: Session, du
     assert response.json()["activate"] == False, "Actuator should be in inactive state"
     
 
-def test_get_actuators_return_types(client: TestClient, db_session: Session,  dummy_actuators: list[models.Actuator]):
+def test_get_actuators_return_types(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
     """Test /actuators/{prototype_id} endpoint to check if it returns the right types"""
     prototype_id = db_session.get(models.Sensor, dummy_actuators[0].sensor_id).prototype_id
     
@@ -245,3 +245,19 @@ def test_get_actuators_return_types(client: TestClient, db_session: Session,  du
     assert isinstance(actuator["activation_duration"], float), f"Activation duration should be a float, was {type(actuator['activation_duration'])}"
     assert isinstance(actuator["enabled"], bool), f"Enabled should be a boolean, was {type(actuator['enabled'])}"
     assert isinstance(actuator["last_activated"], str), f"Last activated should be a string, was {type(actuator['last_activated'])}"
+
+
+def test_get_actuator_state_non_existent(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{prototype_id}/state endpoint with a non existent actuator"""
+    db_session.delete(dummy_actuators[0])
+
+    response = client.get(f"/actuators/{dummy_actuators[0].actuator_id}/state")
+    assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
+
+
+def test_patch_actuator_last_activated_non_existent(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id}/last_activated endpoint with a non existent actuator"""
+    db_session.delete(dummy_actuators[0])
+
+    response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}/last_activated")
+    assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
