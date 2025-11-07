@@ -23,36 +23,50 @@
         >
           {{ this.getLastMeasurement(sensor) }}
         </div>
-        <div class="stat-desc">
-          @if (sensor.sensor_type !== 'ph') {
+        <div class="stat-desc flex justify-center items-center">
+          @if (sensor.sensor_type === 'ph') {
+          <span class="opacity-70 text-sm">pH</span>
+          } @else {
           <select
             [(ngModel)]="sensor.sensor_unit"
             (change)="onUnitChange(sensor)"
-            class="select select-bordered select-sm text-center bg-base-200 text-base-content border-base-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-success/60 transition duration-150"
+            class="select select-bordered select-sm text-center bg-base-200 text-base-content border-base-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-success/60 transition-all duration-150 hover:border-success/40"
           >
             @for (unit of getAvailableUnits(sensor); track unit) {
             <option [value]="unit">{{ unit }}</option>
             }
           </select>
-          } @else {
-          <span>{{ sensor.sensor_unit }}</span>
           }
         </div>
       </div>
       <div>
-        <div class="grid grid-cols-5">
+        <div
+          class="grid grid-cols-5"
+          *ngIf="getConvertedThresholds(sensor) as t"
+        >
           <div class="cols-span-1 text-warning">
-            {{ sensor.threshold_critically_low }}
+            {{
+              t.critLow
+                | number : (sensor.sensor_type === "ec" ? "1.0-5" : "1.0-2")
+            }}
           </div>
           <div class="cols-span-1 text-success">
-            {{ sensor.threshold_low }}
+            {{
+              t.low | number : (sensor.sensor_type === "ec" ? "1.0-5" : "1.0-2")
+            }}
           </div>
           <div class="cols-span-1"></div>
           <div class="cols-span-1 text-success">
-            {{ sensor.threshold_high }}
+            {{
+              t.high
+                | number : (sensor.sensor_type === "ec" ? "1.0-5" : "1.0-2")
+            }}
           </div>
           <div class="row-span-1 text-warning">
-            {{ sensor.threshold_critically_high }}
+            {{
+              t.critHigh
+                | number : (sensor.sensor_type === "ec" ? "1.0-5" : "1.0-2")
+            }}
           </div>
         </div>
       </div>
@@ -64,7 +78,7 @@
     <app-line-chart
       [chartTitle]="this.getSensorTitle(sensor)"
       [sensor]="sensor"
-      (sensorUpdated)="onSensorUpdated($event)"
+      (sensorUpdated)="onSensorConversionDone($event)"
       class="h-full"
     ></app-line-chart>
   </div>

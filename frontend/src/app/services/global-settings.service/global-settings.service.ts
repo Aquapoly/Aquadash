@@ -11,6 +11,11 @@ import {
 } from '@app/constants/constants';
 import { BehaviorSubject } from 'rxjs';
 import { SensorType } from '@app/interfaces/sensor-type';
+import { SensorUnitsUtils } from '@app/utils/sensor-units.utils';
+
+interface SensorState {
+  units: Partial<Record<SensorType, string>>;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -26,18 +31,18 @@ export class GlobalSettingsService {
   private readonly thresholdDisplaySubject =
     new BehaviorSubject<ChartThresholdDisplay>(this.thresholdDisplay);
 
-  private readonly sensorUnitsSubject = new BehaviorSubject<
-    Record<string, string>
-  >({});
+  private readonly sensorStateSubject = new BehaviorSubject<SensorState>({
+    units: {},
+  });
 
   theme$ = this.themeSubject.asObservable();
   thresholdDisplay$ = this.thresholdDisplaySubject.asObservable();
-  sensorUnits$ = this.sensorUnitsSubject.asObservable();
+  sensorState$ = this.sensorStateSubject.asObservable();
 
   constructor() {
     this.initializeTheme();
     const units = this.loadInitialUnits();
-    this.sensorUnitsSubject.next(units);
+    this.sensorStateSubject.next({ units });
   }
 
   private initializeTheme(): void {
@@ -54,11 +59,13 @@ export class GlobalSettingsService {
     this.applyTheme();
   }
 
-  private loadInitialUnits(): Record<string, string> {
-    const units: Record<string, string> = {};
+  private loadInitialUnits(): Partial<Record<SensorType, string>> {
+    const units: Partial<Record<SensorType, string>> = {};
     for (const [type, key] of Object.entries(SENSOR_UNIT_STORAGE_KEYS)) {
       const saved = localStorage.getItem(key);
-      if (saved) units[type] = saved;
+      if (saved) {
+        units[type as SensorType] = saved;
+      }
     }
     return units;
   }
@@ -115,14 +122,19 @@ export class GlobalSettingsService {
 
   setSensorUnit(sensorType: SensorType, unit: string): void {
     const key = SENSOR_UNIT_STORAGE_KEYS[sensorType];
-    if (key) {
-      localStorage.setItem(key, unit);
+    if (!key) return;
 
-      const current = this.sensorUnitsSubject.value;
-      this.sensorUnitsSubject.next({
-        ...current,
-        [sensorType]: unit,
-      });
+    const availableUnits = SensorUnitsUtils.getUnits(sensorType);
+    if (availableUnits.length > 0 && !availableUnits.includes(unit)) {
+      console.warn(`Invalid unit "${unit}" for ${sensorType}`);
+      return;
     }
+
+    localStorage.setItem(key, unit);
+
+    const current = this.sensorStateSubject.value;
+    this.sensorStateSubject.next({
+      units: { ...current.units, [sensorType]: unit },
+    });
   }
 }

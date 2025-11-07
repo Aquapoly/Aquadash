@@ -13,13 +13,19 @@ import {
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 import { SensorUnitsUtils } from '@app/utils/sensor-units.utils';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
+  imports: [
+    LineChartComponent,
+    FormsModule,
+    CameraPictureComponent,
+    CommonModule,
+  ],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
@@ -68,52 +74,52 @@ export class StatusPageComponent implements OnInit {
   }
 
   getLastMeasurement(sensor: Sensor): string {
-    const measurement = this.findSensorMeasurement(sensor.sensor_id);
+    const measurement = this.findSensorMeasurement(sensor.sensor_id); // raw/base
     const displayValue = SensorUnitsUtils.convertUnitToPref(
       sensor,
       measurement
     );
     return displayValue?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
   }
-
   getSensorValidity(sensor: Sensor): string {
     if (this.updatingSensors.has(sensor.sensor_id)) {
-      return SENSOR_VALIDITY_CLASSES.NEUTRAL; // ou NEUTRAL, au choix visuel
-    }
-
-    const measurement = this.findSensorMeasurement(sensor.sensor_id);
-
-    if (!measurement) {
       return SENSOR_VALIDITY_CLASSES.NEUTRAL;
     }
 
-    const convertedMeasurement = SensorUnitsUtils.convertUnitToPref(
+    const measurement = this.findSensorMeasurement(sensor.sensor_id);
+    if (measurement == null) return SENSOR_VALIDITY_CLASSES.NEUTRAL;
+
+    const convertedValue = SensorUnitsUtils.convertUnitToPref(
       sensor,
       measurement
     );
+    const thresholds = this.getConvertedThresholds(sensor); // ✅ Réutilisation
 
-    if (this.isCriticalThreshold(convertedMeasurement, sensor)) {
+    if (
+      convertedValue < thresholds.critLow ||
+      convertedValue > thresholds.critHigh
+    ) {
       return SENSOR_VALIDITY_CLASSES.ERROR;
     }
-
-    if (this.isWarningThreshold(convertedMeasurement, sensor)) {
+    if (convertedValue < thresholds.low || convertedValue > thresholds.high) {
       return SENSOR_VALIDITY_CLASSES.WARNING;
     }
-
     return SENSOR_VALIDITY_CLASSES.SUCCESS;
   }
 
-  private isCriticalThreshold(measurement: number, sensor: Sensor): boolean {
-    return (
-      measurement < sensor.threshold_critically_low ||
-      measurement > sensor.threshold_critically_high
-    );
-  }
-
-  private isWarningThreshold(measurement: number, sensor: Sensor): boolean {
-    return (
-      measurement < sensor.threshold_low || measurement > sensor.threshold_high
-    );
+  getConvertedThresholds(sensor: Sensor) {
+    return {
+      critLow: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        sensor.threshold_critically_low
+      ),
+      low: SensorUnitsUtils.convertUnitToPref(sensor, sensor.threshold_low),
+      high: SensorUnitsUtils.convertUnitToPref(sensor, sensor.threshold_high),
+      critHigh: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        sensor.threshold_critically_high
+      ),
+    };
   }
 
   updateThresholdDisplay() {
@@ -126,23 +132,27 @@ export class StatusPageComponent implements OnInit {
 
   private setUnitFromLocalStorage(sensor: Sensor) {
     const savedUnit = this.globalSettings.getSensorUnit(sensor.sensor_type);
-    sensor.sensor_unit =
-      savedUnit || SensorUnitsUtils.getDefaultUnit(sensor.sensor_type) || '';
+    const defaultUnit =
+      SensorUnitsUtils.getDefaultUnit(sensor.sensor_type) ?? '';
+    sensor.sensor_unit = savedUnit || defaultUnit; // display only
   }
 
   onUnitChange(sensor: Sensor): void {
     this.updatingSensors.add(sensor.sensor_id);
-
     this.globalSettings.setSensorUnit(sensor.sensor_type, sensor.sensor_unit);
-    setTimeout(() => this.updatingSensors.delete(sensor.sensor_id), 10);
   }
 
-  onSensorUpdated(updatedSensor: Sensor): void {
+  onSensorConversionDone(updatedSensor: Sensor): void {
     const index = this.sensors.findIndex(
       (s) => s.sensor_id === updatedSensor.sensor_id
     );
+
     if (index !== -1) {
-      this.sensors[index] = { ...updatedSensor };
+      this.sensors[index] = {
+        ...this.sensors[index],
+        sensor_unit: updatedSensor.sensor_unit,
+      };
     }
+    this.updatingSensors.delete(updatedSensor.sensor_id);
   }
 }
