@@ -2,6 +2,7 @@ import time
 from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 from app import models
 from app.services.actuator import get_actuator_activation
 
@@ -255,9 +256,25 @@ def test_get_actuator_state_non_existent(client: TestClient, db_session: Session
     assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
 
 
+def test_patch_actuator_last_activated(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id}/last_activated endpoint with a valid actuator"""
+    
+    response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}/last_activated")
+    assert response.status_code == 200, f"Should return 200, got {response.status_code}"
+    assert db_session.query(models.Actuator).order_by(desc(models.Actuator.last_activated)).first() == dummy_actuators[0], \
+        "Should update given actuator's last_activated value"
+
+
 def test_patch_actuator_last_activated_non_existent(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
     """Test /actuators/{actuator_id}/last_activated endpoint with a non existent actuator"""
     db_session.delete(dummy_actuators[0])
 
     response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}/last_activated")
     assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
+
+
+def test_patch_actuator_last_activated_invalid_actuator(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id}/last_activated endpoint with an invalid actuator"""
+
+    response = client.patch(f"/actuators/ten/last_activated")
+    assert response.status_code == 422, f"Should return 422 for unprocessable content, got {response.status_code}"
