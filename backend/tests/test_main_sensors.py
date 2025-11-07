@@ -65,7 +65,7 @@ def test_post_invalid_type_sensor(client: TestClient, db_session: Session, dummy
 
     sensors_in_db = db_session.query(models.Sensor).all()
     for sensor in sensors_in_db:
-        assert sensor.sensor_type != "阿夸冲刺", "Should not add invalid sensor to DB"
+        assert sensor.sensor_type.name != "阿夸冲刺", "Should not add invalid sensor to DB"
 
 
 def test_post_sensor_non_existent_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
@@ -138,6 +138,7 @@ def test_patch_sensor(client: TestClient, db_session: Session, dummy_sensors: li
 
     for sensor in updated_sensors:
         s = db_session.get(models.Sensor, sensor['sensor_id'])
+        assert s is not None, "Shold not delete sensor from DB"
         assert sensor["sensor_type"] == s.sensor_type.name, "Should update sensor type"
         assert sensor["prototype_id"] == s.prototype_id, "Should not update prototype id"
         assert sensor["sensor_unit"] == s.sensor_unit, "Should update sensor unit"
