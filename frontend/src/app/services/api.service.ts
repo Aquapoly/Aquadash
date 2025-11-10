@@ -22,4 +22,10 @@ export class ApiService {
       observe: 'response',
     });
   }
+
+  postActuator(actuator: Actuator) {
+    return this.http.post(this.serverUrl + '/actuators', actuator, {
+      observe: 'response',
+    });
+  }
 }
