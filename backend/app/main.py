@@ -16,6 +16,7 @@ from .database import engine, get_db
 from .classes.sensor_type import SensorType
 from .services import camera
 from .services.actuator import get_actuator_activation
+from .services.export_data import export_all_measures_to_csv
 from .security import authentification
 from .security import permissions
 
@@ -173,7 +174,7 @@ async def prototype(prototype_id: int, db: Session = Depends(get_db)):
     response_class=StreamingResponse,
 )
 async def export_all_sensors_to_csv(db: Session = Depends(get_db)):
-    csv_content = crud.export_all_measures_to_csv(db)
+    csv_content = export_all_measures_to_csv(db)
     return StreamingResponse(
         io.StringIO(csv_content),
         media_type="text/csv",
