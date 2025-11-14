@@ -203,4 +203,4 @@ The backend tests use `pytest`.
 - **Camera errors:** Ensure the `ENABLE_CAMERA` environment variable is correctly set before starting containers.
 ---
 <br><br>
-© 2025 Aquadash — Released under the MIT License
+© 2025 Aquadash — Released under the GNU License
