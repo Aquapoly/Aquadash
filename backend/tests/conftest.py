@@ -6,6 +6,7 @@ from app.database import engine, get_db  # Import your existing setup
 from random import randint, random
 from app import models
 from sqlalchemy import func
+from app.security.authentification import get_password_hash
 
 # TODO Find best scope for fixtures
 @pytest.fixture
@@ -105,3 +106,19 @@ def dummy_actuators(db_session: Session, dummy_sensors: list[models.Sensor]):
         
     db_session.flush()
     yield new_actuators
+
+
+@pytest.fixture
+def dummy_user(db_session: Session):
+    """Insert a dummy user in the DB"""
+    new_user = models.User(
+        username = "Aqua",
+        pw_salt = "blabla",
+        pw_hash = get_password_hash("Dash"+"blabla"),
+        permissions = 0,
+        logged_in = True
+    )
+
+    db_session.add(new_user)
+    db_session.flush()
+    yield new_user
