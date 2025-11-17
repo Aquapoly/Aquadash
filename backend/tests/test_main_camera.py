@@ -43,4 +43,4 @@ def test_get_picture_error(client: TestClient, monkeypatch, set_last_image):
     monkeypatch.setattr(camera, "get_image", mock_get_image_error)
     
     response = client.get("/picture")
-    assert response.status_code == 404, f"Should return 404 for no camera found, got {response.status_code}"
+    assert response.status_code == 503, f"Should return 503 for no camera found, got {response.status_code}"
