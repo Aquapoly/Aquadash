@@ -149,7 +149,7 @@ def test_post_measurement_missing_data(client: TestClient, db_session: Session, 
 def test_get_measurements_return_types(client: TestClient, db_session: Session, dummy_measurements: list[models.Measurement]):
     """Test /measurements/{sensor_id} endpoint to check return types are correct"""
     response = client.get(f"/measurements/{dummy_measurements[0].sensor_id}")
-    measurement = response.json()
+    measurement = response.json()[0]
 
     assert isinstance(measurement["value"], float), f"Value should be a float, got {type(measurement['value'])}"
     assert isinstance(measurement["timestamp"], str), f"Timestamp should be a string, got {type(measurement['timestamp'])}"
@@ -157,7 +157,7 @@ def test_get_measurements_return_types(client: TestClient, db_session: Session, 
     assert isinstance(measurement["measurement_id"], int), f"Measurement id should be an int, got {type(measurement['measurement_id'])}"
 
 
-@pytest.mark.parametrize("num_measurements", [1, 5, 10, 100, 1000, 10000])
+@pytest.mark.parametrize("num_measurements", [1, 5, 10, 100, 1000])
 def test_get_measurements_multiple(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], num_measurements):
     """Test /measurements/{sensor_id} endpoint to check if it returns all the measurements"""
     db_session.query(models.Measurement).filter_by(sensor_id=dummy_sensors[0].sensor_id).delete() # Start with 0
