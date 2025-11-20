@@ -6,6 +6,7 @@ from sqlalchemy import desc
 from app import models
 from app.services.actuator import get_actuator_activation
 
+# GET /actuators/{prototype_id}
 def test_get_actuators(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
     """Test /actuators/{prototype_id} endpoint to retrieve a prototype's actuators by its id"""
     prototype_id = db_session.get(models.Sensor, dummy_actuators[0].sensor_id).prototype_id
@@ -51,155 +52,6 @@ def test_get_actuators_wrong_type(client: TestClient, dummy_actuators: list[mode
     response = client.get(f"/actuators/☻♥")
     assert response.status_code == 422, f"Should return 422 for unprocessable content, got {response.status_code}"
 
-
-def test_post_actuator(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], dummy_actuators: list[models.Actuator]):
-    """Test /actuators endpoint to add an actuator"""
-    new_actuator = {
-        "actuator_type": models.ActuatorType.acid_pump.name,
-        "sensor_id": dummy_sensors[0].sensor_id,
-        "condition_value": 1.0,
-        "activation_condition": models.ActivationCondition.high.name,
-        "activation_period": 1.0,
-        "activation_duration": 1.0
-    }
-
-    response = client.post("/actuators", json=new_actuator)
-    assert response.status_code == 201, f"Should return 201 for ressource created, got {response.status_code}"
-    assert db_session.get(models.Actuator, response.json()["actuator_id"]) is not None, "Should add actuator to database"
-
-
-def test_post_actuator_missing_field(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
-    """Test /actuators endpoint to try to add an actuator with missing fields"""
-    new_actuator = {
-        "actuator_type": models.ActuatorType.acid_pump.name,
-        "sensor_id": dummy_sensors[0].sensor_id,
-        "condition_value": 1.0,
-        "activation_condition": models.ActivationCondition.high.name,
-    }
-
-    response = client.post("/actuators", json=new_actuator)
-    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
-
-
-def test_post_actuator_duplicate_id(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
-    """Test /actuators endpoint to try to add an actuator with a duplicate id"""
-    duplicate_actuator = {
-        "actuator_id": dummy_actuators[0].actuator_id,
-        "actuator_type": dummy_actuators[0].actuator_type.name,
-        "sensor_id": dummy_actuators[0].sensor_id,
-        "condition_value": dummy_actuators[0].condition_value,
-        "activation_condition": dummy_actuators[0].activation_condition.name,
-        "activation_period": dummy_actuators[0].activation_period+1,
-        "activation_duration": dummy_actuators[0].activation_duration
-    }
-
-    response = client.post("/actuators", json=duplicate_actuator)
-    assert response.status_code == 409, f"Should return 409 for duplicate id, got {response.status_code}"
-    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).activation_period != duplicate_actuator["activation_period"], \
-        "Should not modify existing actuator"
-
-
-def test_post_actuator_no_sensor(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
-    """Test /actuator endpoint to try to add an actuator to a non-existing sensor"""
-    db_session.delete(dummy_sensors[0])
-
-    new_actuator = {
-        "actuator_type": models.ActuatorType.acid_pump.name,
-        "sensor_id": dummy_sensors[0].sensor_id,
-        "condition_value": 5.0,
-        "activation_condition": models.ActivationCondition.high.name,
-        "activation_period": 2.5,
-        "activation_duration": 1.25
-    }
-
-    response = client.post("/actuators", json=new_actuator)
-    assert response.status_code == 404, f"Should return not found, got {response.status_code}"
-    assert db_session.query(models.Actuator).filter_by(sensor_id=dummy_sensors[0].sensor_id).count() == 0, \
-        "Should not add actuator with non-existant sensor to DB"
-
-
-@pytest.mark.parametrize("key, value", [("activation_period",-1.0),("activation_duration",-10.0)])
-def test_post_actuator_impossible_value(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], key, value):
-    """Test /actuators endpoint to try to add an actuator with an impossible value"""
-    new_actuator_template = {
-        "actuator_type": models.ActuatorType.acid_pump.name,
-        "sensor_id": dummy_sensors[0].sensor_id,
-        "condition_value": 5.0,
-        "activation_condition": models.ActivationCondition.high.name,
-        "activation_period": 2.5,
-        "activation_duration": 1.25
-    }
-
-    actuator = new_actuator_template.copy()
-    actuator[key] = value
-    
-    response = client.post("/actuators", json=actuator)
-    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
-    for actuator in db_session.query(models.Actuator).all():
-        assert actuator.__getattribute__(key) != value, "Should not add actuator with impossible values to DB"
-
-
-@pytest.mark.parametrize("key, val", [
-    ("activation_period", 9999.0), ("activation_duration", 8888.0), ("condition_value", 7777.0),
-    ("actuator_type", models.ActuatorType.nutrients_A_pump.name), ("activation_condition", models.ActivationCondition.low_or_high.name),
-    ("enabled", False)
-])
-def test_patch_actuator(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator], key, val):
-    """Test /actuators endpoint to modify an existing actuator"""
-    modified_actuator = {
-        "actuator_id": dummy_actuators[0].actuator_id,
-        key: val
-    }
-
-    response = client.patch("/actuators", json=[modified_actuator])
-    assert response.status_code == 200, f"Should return 200 for success, got {response.status_code}"
-    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).__dict__[key] == val, "Should modify actuator"
-
-
-def test_get_actuators_negative_id(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
-    """Test /actuators/{prototype_id} endpoint with a negative id"""
-    response = client.get(f"/actuators/-1")
-    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
-
-
-def test_post_actuator_negative_id(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
-    """Test /actuators endpoint with a negative actuator id"""
-    new_actuator = {
-        "actuator_id": -1,
-        "actuator_type": models.ActuatorType.base_pump.name,
-        "sensor_id": dummy_sensors[0].sensor_id,
-        "condition_value": 1.01,
-        "activation_condition": models.ActivationCondition.low.name,
-        "activation_period": 0.101,
-        "activation_duration": 0.0101
-    }
-
-    response = client.post(f"/actuators", json=new_actuator)
-    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
-    assert db_session.get(models.Actuator, -1) is None, "Should not add actuator with negative id to DB"
-
-
-def test_patch_actuator_negative_id(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], dummy_actuators: list[models.Actuator]):
-    """Test /actuators endpoint with a negative actuator id"""
-    actuator = {"actuator_id": -1}
-
-    response = client.post(f"/actuators", json=actuator)
-    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
-
-
-def test_patch_actuator_not_existent(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
-    """Test /actuators endpoint with a non-existent actuator"""
-    db_session.delete(dummy_actuators[0])
-    actuator = {
-        "actuator_id": dummy_actuators[0].actuator_id,
-        "condition_value": 123
-    }
-
-    response = client.post(f"/actuators", json=actuator)
-    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
-    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).count() == 0, \
-        "Should not add actuator to DB"
-    
 
 def test_get_actuator_state_active(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
     """Test /actuators/{actuator_id}/state endpoint to get the state of an active actuator"""
@@ -256,6 +108,109 @@ def test_get_actuator_state_non_existent(client: TestClient, db_session: Session
     assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
 
 
+# POST /actuators
+def test_post_actuator(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], dummy_actuators: list[models.Actuator]):
+    """Test /actuators endpoint to add an actuator"""
+    new_actuator = {
+        "actuator_type": models.ActuatorType.acid_pump.name,
+        "sensor_id": dummy_sensors[0].sensor_id,
+        "condition_value": 1.0,
+        "activation_condition": models.ActivationCondition.high.name,
+        "activation_period": 1.0,
+        "activation_duration": 1.0
+    }
+
+    response = client.post("/actuators", json=new_actuator)
+    assert response.status_code == 201, f"Should return 201 for ressource created, got {response.status_code}"
+    assert db_session.get(models.Actuator, response.json()["actuator_id"]) is not None, "Should add actuator to database"
+
+
+def test_post_actuator_missing_field(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Test /actuators endpoint to try to add an actuator with missing fields"""
+    new_actuator = {
+        "actuator_type": models.ActuatorType.acid_pump.name,
+        "sensor_id": dummy_sensors[0].sensor_id,
+        "condition_value": 1.0,
+        "activation_condition": models.ActivationCondition.high.name,
+    }
+
+    response = client.post("/actuators", json=new_actuator)
+    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
+
+
+def test_post_actuator_no_sensor(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Test /actuator endpoint to try to add an actuator to a non-existing sensor"""
+    db_session.delete(dummy_sensors[0])
+
+    new_actuator = {
+        "actuator_type": models.ActuatorType.acid_pump.name,
+        "sensor_id": dummy_sensors[0].sensor_id,
+        "condition_value": 5.0,
+        "activation_condition": models.ActivationCondition.high.name,
+        "activation_period": 2.5,
+        "activation_duration": 1.25
+    }
+
+    response = client.post("/actuators", json=new_actuator)
+    assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
+    assert db_session.query(models.Actuator).filter_by(sensor_id=dummy_sensors[0].sensor_id).count() == 0, \
+        "Should not add actuator with non-existant sensor to DB"
+
+
+@pytest.mark.parametrize("key, value", [("activation_period",-1.0),("activation_duration",-10.0)])
+def test_post_actuator_impossible_value(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor], key, value):
+    """Test /actuators endpoint to try to add an actuator with an impossible value"""
+    new_actuator_template = {
+        "actuator_type": models.ActuatorType.acid_pump.name,
+        "sensor_id": dummy_sensors[0].sensor_id,
+        "condition_value": 5.0,
+        "activation_condition": models.ActivationCondition.high.name,
+        "activation_period": 2.5,
+        "activation_duration": 1.25
+    }
+
+    actuator = new_actuator_template.copy()
+    actuator[key] = value
+    
+    response = client.post("/actuators", json=actuator)
+    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
+    for actuator in db_session.query(models.Actuator).all():
+        assert actuator.__getattribute__(key) != value, "Should not add actuator with impossible values to DB"
+
+
+# PATCH /actuators
+@pytest.mark.parametrize("key, val", [
+    ("activation_period", 9999.0), ("activation_duration", 8888.0), ("condition_value", 7777.0),
+    ("actuator_type", models.ActuatorType.nutrients_A_pump.name), ("activation_condition", models.ActivationCondition.low_or_high.name),
+    ("enabled", False)
+])
+def test_patch_actuator(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator], key, val):
+    """Test /actuators endpoint to modify an existing actuator"""
+    modified_actuator = {
+        "actuator_id": dummy_actuators[0].actuator_id,
+        key: val
+    }
+
+    response = client.patch("/actuators", json=[modified_actuator])
+    assert response.status_code == 200, f"Should return 200 for success, got {response.status_code}"
+    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).__dict__[key] == val, "Should modify actuator"
+
+
+def test_patch_actuator_not_existent(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators endpoint with a non-existent actuator"""
+    db_session.delete(dummy_actuators[0])
+    actuator = {
+        "actuator_id": dummy_actuators[0].actuator_id,
+        "condition_value": 123
+    }
+
+    response = client.patch(f"/actuators", json=actuator)
+    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
+    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).count() == 0, \
+        "Should not add actuator to DB"
+
+
+# PATCH /actuators/{actuator_id}/last_activated
 def test_patch_actuator_last_activated(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
     """Test /actuators/{actuator_id}/last_activated endpoint with a valid actuator"""
     

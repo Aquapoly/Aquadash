@@ -5,6 +5,7 @@ from app import models, schemas
 from sqlalchemy.orm import Session
 import pytest
 
+# Test get_actuator_activation
 @pytest.mark.parametrize("measurement", [None, models.Measurement()])
 def test_get_actuator_activation_deactivated(dummy_actuators: list[models.Actuator], measurement):
     """Test the result of get_actuator_activation when actuator is deactivated"""

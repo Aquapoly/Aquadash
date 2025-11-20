@@ -1,6 +1,7 @@
 from app.classes.activation_condition import *
 import pytest
 
+# Test low_condition
 @pytest.mark.parametrize("value, condition_value, expected", [
     (1,2,True), (1,1,False), (-1,0,True), (-10,-10,False), (float("-inf"),0,True), (0,float("inf"),True)
 ])
@@ -12,6 +13,7 @@ def test_low_condition(value, condition_value, expected):
     assert result == expected, f"Result shoud be {expected}, was {result}"
 
 
+# Test high_condition
 @pytest.mark.parametrize("value, condition_value, expected", [
     (1,2,False), (1,1,False), (-1,0,False), (-10,-10,False), (float("-inf"),0,False), (0,float("inf"),False)
 ])
@@ -23,6 +25,7 @@ def test_high_condition(value, condition_value, expected):
     assert result == expected, f"Result shoud be {expected}, was {result}"
 
 
+# Test always_condition
 @pytest.mark.parametrize("value, condition_value, expected", [
     (1,2,True), (1,1,True), (-1,0,True), (-10,-10,True), (float("-inf"),0,True), (0,float("inf"),True)
 ])

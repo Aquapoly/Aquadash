@@ -20,7 +20,7 @@ def mock_iio_imwrite_failure(*args, **kwargs):
     return None
 
 
-# Tests
+# Test get_image
 def test_get_image_success(monkeypatch):
     monkeypatch.setattr(iio, "imread", mock_iio_imread_success)
     monkeypatch.setattr(iio, "imwrite", mock_iio_imwrite_success)

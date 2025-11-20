@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app import models
 
+# GET /prototypes
 def test_get_all_prototypes(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /prototypes endpoint that retrieves all prototypes"""
     prototypes_list = db_session.query(models.Prototype).all()
@@ -17,6 +18,7 @@ def test_get_all_prototypes(client: TestClient, db_session: Session, dummy_proto
             f"Prototype with ID {proto.prototype_id} should be in response"
 
 
+# GET /prototypes/{prototype_id}
 def test_get_prototype_by_id(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /prototypes/{prototype_id} endpoint to retrieve a prototype by its id"""
     response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
@@ -35,6 +37,16 @@ def test_get_non_existent_prototype_by_id(client: TestClient, db_session: Sessio
     assert response.status_code == 404, f"Expected status code 404 for not found prototype, got {response.status_code}"
 
 
+def test_get_prototypes_return_types(client: TestClient, db_session: Session,  dummy_prototype: models.Prototype):
+    """Test /prototypes/{prototype_id} endpoint to check if it returns the right types"""
+    response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
+    data = response.json()
+
+    assert isinstance(data["prototype_id"], int), f"Prototype id should be an int, was {type(data['prototype_id'])}"
+    assert isinstance(data["prototype_name"], str), f"Prototype name should be a string, was {type(data['prototype_name'])}"
+
+
+# POST /prototypes
 def test_post_duplicate_id_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /prototypes endpoint to add a prototype with an existing prototype_id"""
     duplicate_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "Duplicate Proto"}
@@ -78,23 +90,9 @@ def test_post_special_char_prototype(client: TestClient, db_session: Session, du
     assert response.status_code == 201, f"Expected status code 201 for created ressource, got {response.status_code}"
 
 
-def test_post_newline_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
-    """Test /prototypes endpoint to add a prototype with newline in name"""
-    db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
-
-    new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": "\na\n"}
-    response = client.post("/prototypes", json=new_proto)
-    # print(response.json()["prototype_name"])
-    # assert response.status_code == 201, f"Expected status code 201 for created ressource, got {response.status_code}"
-
-    # TODO Est-ce qu'on veut accepter les sauts de ligne dans les noms?
-    # TODO Code 201 précise une création de ressource
-
-
 def test_post_sql_injection_prototype(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /prototypes endpoint to add a prototype with SQL injection attempt in name"""
     db_session.delete(dummy_prototype) # Remove the dummy prototype to ensure ID does not exist
-    from sqlalchemy import insert
 
     query = f"""INSERT INTO prototypes (prototype_id, prototype_name) VALUES ({dummy_prototype.prototype_id+1}, 'Injection'); --"""
     new_proto = {"prototype_id": dummy_prototype.prototype_id, "prototype_name": f"""Test'); {query}"""}
@@ -110,12 +108,3 @@ def test_post_negative_id_prototype(client: TestClient, db_session: Session):
 
     response = client.post("/prototypes", json=new_proto)
     assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
-
-
-def test_get_prototypes_return_types(client: TestClient, db_session: Session,  dummy_prototype: models.Prototype):
-    """Test /prototypes/{prototype_id} endpoint to check if it returns the right types"""
-    response = client.get(f"/prototypes/{dummy_prototype.prototype_id}")
-    data = response.json()
-
-    assert isinstance(data["prototype_id"], int), f"Prototype id should be an int, was {type(data['prototype_id'])}"
-    assert isinstance(data["prototype_name"], str), f"Prototype name should be a string, was {type(data['prototype_name'])}"

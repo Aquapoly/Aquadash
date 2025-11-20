@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 from app import models
 
+# GET /sensors/{prototype_id}
 def test_get_sensors(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
     """Test /sensors/{prototype_id} endpoint to retrieve a prototype's sensors by its id"""
     response = client.get(f"/sensors/{dummy_sensors[0].prototype_id}")
@@ -29,6 +30,23 @@ def test_get_sensors_non_existent_prototype(client: TestClient, db_session: Sess
     assert response.status_code == 404, f"Expected status code 404 for not found prototype, got {response.status_code}"
 
 
+def test_get_sensors_return_types(client: TestClient, db_session: Session,  dummy_sensors: list[models.Sensor]):
+    """Test /sensors/{prototype_id} endpoint to check if it returns the right types"""
+
+    response = client.get(f"/sensors/{dummy_sensors[0].prototype_id}")
+    data = response.json()[0]
+
+    assert isinstance(data["sensor_id"], int), f"Sensor id should be an int, was {type(data['sensor_id'])}"
+    assert isinstance(data["prototype_id"], int), f"Prototype id should be an int, was {type(data['prototype_id'])}"
+    assert isinstance(data["sensor_type"], str), f"Senor type should be a string, was {type(data['sensor_type'])}"
+    assert isinstance(data["sensor_unit"], str), f"Senor unit should be a string, was {type(data['sensor_unit'])}"
+    assert isinstance(data["threshold_critically_low"], float), f"Crit low thresh should be a float, was {type(data['threshold_critically_low'])}"
+    assert isinstance(data["threshold_low"], float), f"Low thresh should be a float, was {type(data['threshold_low'])}"
+    assert isinstance(data["threshold_high"], float), f"High thresh should be a float, was {type(data['threshold_high'])}"
+    assert isinstance(data["threshold_critically_high"], float), f"Crit high thresh should be a float, was {type(data['threshold_critically_high'])}"
+
+
+# POST /sensors
 def test_post_valid_sensor(client: TestClient, db_session: Session, dummy_prototype: models.Prototype):
     """Test /sensors endpoint to add a valid sensor"""
     new_sensor = {
@@ -118,8 +136,9 @@ def test_post_invalid_sensor_thresholds(client: TestClient, db_session: Session,
         } != invalid_sensor_1, "Should not add sensor with invalid thresholds to DB"
 
 
+# PATCH /sensors
 def test_patch_sensor(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
-    """Test /sensors/{sensor_id} endpoint to update a sensor"""
+    """Test /sensors endpoint to update a sensor"""
     updated_sensors = [
         {
             "sensor_type": sensor.sensor_type.name,
@@ -166,19 +185,3 @@ def test_patch_non_existent_sensor(client: TestClient, db_session: Session, dumm
     response = client.patch(f"/sensors", json=[sensor])
     assert response.status_code == 404, f"Expected status code 404 for not found, got {response.status_code}"
     assert db_session.get(models.Sensor, sensor['sensor_id']) is None, "Should not add DB"
-
-    
-def test_get_sensors_return_types(client: TestClient, db_session: Session,  dummy_sensors: list[models.Sensor]):
-    """Test /sensors/{prototype_id} endpoint to check if it returns the right types"""
-
-    response = client.get(f"/sensors/{dummy_sensors[0].prototype_id}")
-    data = response.json()[0]
-
-    assert isinstance(data["sensor_id"], int), f"Sensor id should be an int, was {type(data['sensor_id'])}"
-    assert isinstance(data["prototype_id"], int), f"Prototype id should be an int, was {type(data['prototype_id'])}"
-    assert isinstance(data["sensor_type"], str), f"Senor type should be a string, was {type(data['sensor_type'])}"
-    assert isinstance(data["sensor_unit"], str), f"Senor unit should be a string, was {type(data['sensor_unit'])}"
-    assert isinstance(data["threshold_critically_low"], float), f"Crit low thresh should be a float, was {type(data['threshold_critically_low'])}"
-    assert isinstance(data["threshold_low"], float), f"Low thresh should be a float, was {type(data['threshold_low'])}"
-    assert isinstance(data["threshold_high"], float), f"High thresh should be a float, was {type(data['threshold_high'])}"
-    assert isinstance(data["threshold_critically_high"], float), f"Crit high thresh should be a float, was {type(data['threshold_critically_high'])}"

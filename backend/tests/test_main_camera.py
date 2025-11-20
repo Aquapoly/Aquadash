@@ -20,7 +20,7 @@ def mock_get_image_error(*args, **kwargs):
     raise OSError("Device not found")
 
 
-# Tests
+# GET /picture
 def test_get_picture_success(client: TestClient, monkeypatch, set_last_image):
     """Test /picture endpoint to internally update the last image"""
     monkeypatch.setattr(camera, "get_image", mock_get_image_success)
