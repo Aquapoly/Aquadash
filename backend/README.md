@@ -105,10 +105,11 @@ The backend tests use `pytest`.
    - **Docker Desktop**: Click on your container → "Open in Terminal"
    - **Command Line**:
      ```bash
-     docker exec -it backend_container_name /bin/bash
+     docker ps # List containers
+     docker exec -it backend_container_name /bin/sh # Enter container
      ```
 
-3. **Navigate to the app directory**:
+3. **Navigate to the app directory** (if not already current directory):
    ```bash
    cd /usr/src/app
    ```
@@ -120,8 +121,13 @@ The backend tests use `pytest`.
      ```
    - Run specific test file:
      ```bash
-     pytest app/tests/test_example.py
+     pytest tests/test_example.py
      ```
+   - Run coverage report:
+     ```bash
+     pytest --cov-report=html
+     ```
+     - Open the `htmlcov/index.html` file in your browser to view the coverage report.
 ---
 
 ## 📚 Developer Resources
