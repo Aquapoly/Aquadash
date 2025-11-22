@@ -4,7 +4,6 @@ import pytest
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app import models
-from app.services.actuator import get_actuator_activation
 
 # GET /actuators/{prototype_id}
 def test_get_actuators(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):

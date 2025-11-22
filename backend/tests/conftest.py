@@ -6,10 +6,8 @@ from app.services import camera
 from app.database import engine, get_db  # Import your existing setup
 from random import randint, random
 from app import models
-from sqlalchemy import func
 from app.security.authentification import get_password_hash
 
-# TODO Find best scope for fixtures
 @pytest.fixture
 def db_session():
     connection = engine.connect()

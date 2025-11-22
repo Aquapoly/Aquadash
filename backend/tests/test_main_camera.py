@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session
 from app.services import camera
 from app.services.camera import IMAGE_EXPIRE_TIME
 import time
