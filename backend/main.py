@@ -44,36 +44,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post(
-    "/prototypes",
-    tags=["Prototypes"],
-    # dependencies=[Depends(permissions.needs_prototype_modification_permission)],
-    response_model=schemas.Prototype,
-)
-async def post_prototype(
-    prototype: schemas.Prototype,
-    db: Session = Depends(get_db),
-):
-    return crud.post_prototype(db=db, prototype=prototype)
 
 
 
-@app.post("/sensors/", tags=["Sensors"], response_model=schemas.Sensor)
-async def post_sensor(
-    sensor: schemas.SensorBase, 
-    db: Session = Depends(get_db)
-):
-    return crud.post_sensor(
-        db=db,
-        sensor=sensor,
-    )
 
-@app.get("/sensors/{prototype_id}", tags=["Sensors"], response_model=list[schemas.Sensor])
-async def sensors(
-    prototype_id: int,
-    db: Session = Depends(get_db),
-):
-    return crud.get_sensors(db=db, prototype_id=prototype_id)
+
+
 
 
 @app.post(

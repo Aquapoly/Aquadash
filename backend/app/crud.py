@@ -79,28 +79,7 @@ def get_sensors(db: Session, prototype_id: int | None = None):
 
 
 def post_sensor(db: Session, sensor: schemas.SensorBase):
-    """
-    Inserts a new sensor into the database.
-    Args:
-        db (Session): SQLAlchemy session used for database operations.
-        sensor (schemas.SensorBase): Validated sensor data to be inserted.
-    Returns:
-        models.Sensor: The newly created sensor instance.
-    Raises:
-        HTTPException: If an integrity error occurs (e.g., duplicate entry), raises a 409 Conflict with error details.
-    """
-    query = insert(models.Sensor).returning(models.Sensor)
-    try:
-        result = db.execute(query, sensor.model_dump()).scalars().first()
-    except IntegrityError as err:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Conflict in database: {err}",
-        )
-
-    db.commit()
-    return result
+    
 
 
 def get_actuators(db: Session, prototype_id: int):

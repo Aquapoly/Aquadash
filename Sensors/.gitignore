@@ -1,6 +1,0 @@
-# Log files
-*.log
-*.err
-
-# Compiled python
-*.pyc
