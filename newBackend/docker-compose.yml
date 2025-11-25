@@ -1,0 +1,46 @@
+version: '3.1'
+
+services:
+  db:
+    image: postgres
+    container_name: db
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: aquapoly
+      POSTGRES_DB: aquapoly
+    restart: always
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    networks:
+      - postgres
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+
+  app:
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    environment:
+      DOCKER: 1
+      ENABLE_CAMERA: ${ENABLE_CAMERA:-false}
+    volumes:
+      - .:/usr/src/app
+    restart: always
+    depends_on:
+      - db
+    links:
+      - db:db
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge

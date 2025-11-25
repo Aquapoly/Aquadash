@@ -1,0 +1,2 @@
+@reboot python3 /home/aquapoly/monitoring/sensors/services/ultrason_SEN0311.py >> /var/log/crontab/cron.log 2>&1
+* * * * * python3 /home/aquapoly/monitoring/sensors/services/ultrason_SEN0311.py >> /var/log/crontab/cron.log 2>&1
