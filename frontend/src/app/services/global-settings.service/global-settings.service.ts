@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Sensor } from '@app/interfaces/sensor';
 import {
   ChartThresholdDisplay,
   DARK_THEME,
@@ -17,6 +18,8 @@ export class GlobalSettingsService {
   private darkMode: boolean = GLOBAL_SETTINGS_DEFAULTS.DARK_MODE;
   private thresholdDisplay: ChartThresholdDisplay =
     GLOBAL_SETTINGS_DEFAULTS.THRESHOLD_DISPLAY;
+  private sensorOrder : string[] =  []; 
+  
 
   private readonly themeSubject = new BehaviorSubject<string>(
     this.getThemeName()
@@ -34,6 +37,7 @@ export class GlobalSettingsService {
   private initializeTheme(): void {
     const savedTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME);
     const savedThresholdDisplay = localStorage.getItem(LOCAL_STORAGE_KEYS.THRESHOLDDISPLAY);
+
     this.darkMode = savedTheme === DARK_THEME;
     if (savedThresholdDisplay != null) {
       this.setThresholdDisplay(Number(savedThresholdDisplay) as ChartThresholdDisplay);
@@ -52,6 +56,16 @@ export class GlobalSettingsService {
     this.saveAndApplyTheme();
   }
 
+  getSensorOrder(): string[]{
+    const order = localStorage.getItem(LOCAL_STORAGE_KEYS.SENSOR_ORDER);
+    this.sensorOrder = order !== null ? JSON.parse(order) : [];
+    return this.sensorOrder;
+  }
+
+  saveSensorOrder(sensors: string[]):void{
+    localStorage.setItem(LOCAL_STORAGE_KEYS.SENSOR_ORDER, JSON.stringify(sensors) );
+  }
+
   private saveAndApplyTheme(): void {
     this.applyTheme();
     localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, this.getThemeName());
@@ -60,7 +74,6 @@ export class GlobalSettingsService {
   private saveThresholdTheme() : void {
     localStorage.setItem(LOCAL_STORAGE_KEYS.THRESHOLDDISPLAY, this.getThresholdDisplay().toLocaleString());
   }
-  
   
   applyTheme(): void {
     const themeName = this.getThemeName();
