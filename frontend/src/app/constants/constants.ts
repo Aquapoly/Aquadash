@@ -134,7 +134,9 @@ export const SENSOR_VALIDITY_CLASSES = {
 
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
-  THRESHOLDDISPLAY: 'thresholdDisplay'
+  THRESHOLDDISPLAY: 'thresholdDisplay',
+  TEMP_UNIT: 'tempUnit',
+  EC_UNIT: 'ecUnit',
 } as const;
 
 export const DOM_ATTRIBUTES = {
@@ -150,6 +152,8 @@ export const CSS_CLASSES = {
 export const GLOBAL_SETTINGS_DEFAULTS = {
   DARK_MODE: false,
   THRESHOLD_DISPLAY: ChartThresholdDisplay.ColoredBackgroundWithLine,
+  TEMP_UNIT: 'Celsius',
+  EC_UNIT: 'µS/cm',
 } as const;
 
 export const SENSOR_SERVICE_DEFAULTS = {
@@ -193,3 +197,43 @@ export const API_ENDPOINTS = {
   SENSORS: 'sensors',
   LAST: 'last',
 } as const;
+
+type SensorUnitConfig = {
+  default: string;
+  available: string[];
+  storageKey: string;
+  convert: (value: number, from: string, to: string) => number;
+};
+
+export const SENSOR_UNITS_CONFIG: Partial<
+  Record<SensorType, SensorUnitConfig>
+> = {
+  [SensorType.temperature]: {
+    default: 'Celsius',
+    available: ['Celsius', 'Fahrenheit'],
+    storageKey: LOCAL_STORAGE_KEYS.TEMP_UNIT,
+    convert: (value: number, from: string, to: string) => {
+      if (from === 'Celsius' && to === 'Fahrenheit') return value * 1.8 + 32;
+      if (from === 'Fahrenheit' && to === 'Celsius') return (value - 32) / 1.8;
+      return value;
+    },
+  },
+  [SensorType.ec]: {
+    default: 'µS/cm',
+    available: ['µS/cm', 'mS/cm'],
+    storageKey: LOCAL_STORAGE_KEYS.EC_UNIT,
+    convert: (value: number, from: string, to: string) => {
+      if (from === 'µS/cm' && to === 'mS/cm') return value / 1000;
+      if (from === 'mS/cm' && to === 'µS/cm') return value * 1000;
+      return value;
+    },
+  },
+};
+
+export const SENSOR_UNIT_STORAGE_KEYS: Partial<Record<SensorType, string>> =
+  Object.entries(SENSOR_UNITS_CONFIG).reduce((acc, [type, config]) => {
+    if (config) {
+      acc[type as SensorType] = config.storageKey;
+    }
+    return acc;
+  }, {} as Partial<Record<SensorType, string>>);

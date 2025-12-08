@@ -12,13 +12,20 @@ import {
 } from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
+import { SensorUnitsUtils } from '@app/utils/sensor-units.utils';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
+  imports: [
+    LineChartComponent,
+    FormsModule,
+    CameraPictureComponent,
+    CommonModule,
+  ],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
@@ -27,6 +34,7 @@ export class StatusPageComponent implements OnInit {
   public chartSize: number = STATUS_PAGE_DEFAULTS.CHART_SIZE_INITIAL;
   selectedThresholdsDisplay: ChartThresholdDisplay =
     ChartThresholdDisplay.ColoredBackgroundWithLine;
+  private updatingSensors = new Set<number>();
 
   constructor(
     private readonly sensorService: SensorService,
@@ -42,6 +50,9 @@ export class StatusPageComponent implements OnInit {
 
   private async loadData() {
     this.sensors = await this.sensorService.getSensors();
+
+    this.sensors.forEach((sensor) => this.setUnitFromLocalStorage(sensor));
+
     this.chartSize =
       STATUS_PAGE_DEFAULTS.CHART_SIZE_DIVISOR /
       Math.ceil(this.sensors.length / this.columnCount);
@@ -63,42 +74,85 @@ export class StatusPageComponent implements OnInit {
   }
 
   getLastMeasurement(sensor: Sensor): string {
-    const measurement = this.findSensorMeasurement(sensor.sensor_id);
-    return measurement?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
+    const measurement = this.findSensorMeasurement(sensor.sensor_id); // raw/base
+    const displayValue = SensorUnitsUtils.convertUnitToPref(
+      sensor,
+      measurement
+    );
+    return displayValue?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
   }
-
   getSensorValidity(sensor: Sensor): string {
-    const measurement = this.findSensorMeasurement(sensor.sensor_id);
-
-    if (!measurement) {
+    if (this.updatingSensors.has(sensor.sensor_id)) {
       return SENSOR_VALIDITY_CLASSES.NEUTRAL;
     }
 
-    if (this.isCriticalThreshold(measurement, sensor)) {
+    const measurement = this.findSensorMeasurement(sensor.sensor_id);
+    if (measurement == null) return SENSOR_VALIDITY_CLASSES.NEUTRAL;
+
+    const convertedValue = SensorUnitsUtils.convertUnitToPref(
+      sensor,
+      measurement
+    );
+    const thresholds = this.getConvertedThresholds(sensor); // ✅ Réutilisation
+
+    if (
+      convertedValue < thresholds.critLow ||
+      convertedValue > thresholds.critHigh
+    ) {
       return SENSOR_VALIDITY_CLASSES.ERROR;
     }
-
-    if (this.isWarningThreshold(measurement, sensor)) {
+    if (convertedValue < thresholds.low || convertedValue > thresholds.high) {
       return SENSOR_VALIDITY_CLASSES.WARNING;
     }
-
     return SENSOR_VALIDITY_CLASSES.SUCCESS;
   }
 
-  private isCriticalThreshold(measurement: number, sensor: Sensor): boolean {
-    return (
-      measurement < sensor.threshold_critically_low ||
-      measurement > sensor.threshold_critically_high
-    );
-  }
-
-  private isWarningThreshold(measurement: number, sensor: Sensor): boolean {
-    return (
-      measurement < sensor.threshold_low || measurement > sensor.threshold_high
-    );
+  getConvertedThresholds(sensor: Sensor) {
+    return {
+      critLow: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        sensor.threshold_critically_low
+      ),
+      low: SensorUnitsUtils.convertUnitToPref(sensor, sensor.threshold_low),
+      high: SensorUnitsUtils.convertUnitToPref(sensor, sensor.threshold_high),
+      critHigh: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        sensor.threshold_critically_high
+      ),
+    };
   }
 
   updateThresholdDisplay() {
     this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
+  }
+
+  getAvailableUnits(sensor: Sensor): string[] {
+    return SensorUnitsUtils.getUnits(sensor.sensor_type);
+  }
+
+  private setUnitFromLocalStorage(sensor: Sensor) {
+    const savedUnit = this.globalSettings.getSensorUnit(sensor.sensor_type);
+    const defaultUnit =
+      SensorUnitsUtils.getDefaultUnit(sensor.sensor_type) ?? '';
+    sensor.sensor_unit = savedUnit || defaultUnit; // display only
+  }
+
+  onUnitChange(sensor: Sensor): void {
+    this.updatingSensors.add(sensor.sensor_id);
+    this.globalSettings.setSensorUnit(sensor.sensor_type, sensor.sensor_unit);
+  }
+
+  onSensorConversionDone(updatedSensor: Sensor): void {
+    const index = this.sensors.findIndex(
+      (s) => s.sensor_id === updatedSensor.sensor_id
+    );
+
+    if (index !== -1) {
+      this.sensors[index] = {
+        ...this.sensors[index],
+        sensor_unit: updatedSensor.sensor_unit,
+      };
+    }
+    this.updatingSensors.delete(updatedSensor.sensor_id);
   }
 }

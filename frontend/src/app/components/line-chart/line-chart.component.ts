@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Sensor } from '@app/interfaces/sensor';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { SensorService } from '@app/services/sensor.service';
@@ -14,6 +14,7 @@ import {
 import { Measurement } from '@app/interfaces/measurement';
 import { HighchartsChartModule } from 'highcharts-angular';
 import * as Highcharts from 'highcharts';
+import { SensorUnitsUtils } from '@app/utils/sensor-units.utils';
 
 @Component({
   selector: 'app-line-chart',
@@ -26,6 +27,15 @@ export class LineChartComponent {
   private thresholdDisplaySubscription!: Subscription;
   private thresholdDisplay: ChartThresholdDisplay =
     ChartThresholdDisplay.ColoredBackgroundWithLine;
+  private lastAppliedUnit: string | null = null;
+  private baseThresholds: {
+    low: number;
+    high: number;
+    critLow: number;
+    critHigh: number;
+  } | null = null;
+  private sensorStateSubscription!: Subscription;
+
   protected theme: string = LIGHT_THEME;
 
   Highcharts: typeof Highcharts = Highcharts;
@@ -37,6 +47,10 @@ export class LineChartComponent {
 
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
+  @Input() unit: string = '';
+  @Output() sensorUpdated = new EventEmitter<Sensor>();
+
+  private viewSensor!: Sensor;
 
   constructor(
     private readonly sensorService: SensorService,
@@ -45,12 +59,38 @@ export class LineChartComponent {
 
   ngOnInit(): void {
     this.theme = this.globalSettings.getThemeName();
+    this.viewSensor = { ...this.sensor };
+
+    const savedUnit = this.globalSettings.getSensorUnit(
+      this.viewSensor.sensor_type
+    );
+
+    if (savedUnit) {
+      this.unit = savedUnit;
+      this.lastAppliedUnit = savedUnit;
+      this.viewSensor.sensor_unit = savedUnit;
+    }
+
+    this.sensorStateSubscription = this.globalSettings.sensorState$.subscribe(
+      async (state) => {
+        if (!this.viewSensor || !this.viewSensor.sensor_type) return;
+
+        const preferredUnit = state.units[this.viewSensor.sensor_type];
+        if (preferredUnit && preferredUnit !== this.lastAppliedUnit) {
+          this.unit = preferredUnit;
+          await this.refreshChartWithNewUnits();
+          this.lastAppliedUnit = preferredUnit;
+        }
+      }
+    );
 
     this.loadInitialData();
+
     this.themeSubscription = this.globalSettings.theme$.subscribe((theme) => {
       this.theme = theme;
       this.loadInitialData();
     });
+
     this.thresholdDisplaySubscription =
       this.globalSettings.thresholdDisplay$.subscribe((display) => {
         this.thresholdDisplay = display;
@@ -59,12 +99,9 @@ export class LineChartComponent {
   }
 
   ngOnDestroy(): void {
-    if (this.themeSubscription) {
-      this.themeSubscription.unsubscribe();
-    }
-    if (this.thresholdDisplaySubscription) {
-      this.thresholdDisplaySubscription.unsubscribe();
-    }
+    this.themeSubscription?.unsubscribe();
+    this.thresholdDisplaySubscription?.unsubscribe();
+    this.sensorStateSubscription?.unsubscribe();
   }
 
   private async loadInitialData() {
@@ -73,7 +110,36 @@ export class LineChartComponent {
       this.sensorService.time_delta()
     );
 
-    this.updateChartData(measurements);
+    if (!this.baseThresholds) {
+      this.baseThresholds = {
+        low: this.sensor.threshold_low,
+        high: this.sensor.threshold_high,
+        critLow: this.sensor.threshold_critically_low,
+        critHigh: this.sensor.threshold_critically_high,
+      };
+    }
+
+    const defaultUnit = SensorUnitsUtils.getDefaultUnit(
+      this.viewSensor.sensor_type
+    );
+    const needsConversion =
+      this.unit && defaultUnit && this.unit !== defaultUnit;
+
+    if (needsConversion) {
+      const convertedMeasurements = this.convertMeasurements(measurements);
+      this.viewSensor = this.convertSensorData(this.viewSensor);
+      this.updateChartData(convertedMeasurements);
+    } else {
+      this.viewSensor = {
+        ...this.viewSensor,
+        threshold_low: this.baseThresholds.low,
+        threshold_high: this.baseThresholds.high,
+        threshold_critically_low: this.baseThresholds.critLow,
+        threshold_critically_high: this.baseThresholds.critHigh,
+        sensor_unit: defaultUnit || this.viewSensor.sensor_unit,
+      };
+      this.updateChartData(measurements);
+    }
   }
 
   private updateChartData(measurements: Measurement[]) {
@@ -109,12 +175,12 @@ export class LineChartComponent {
       },
       yAxis: {
         title: {
-          text: this.sensor.sensor_unit,
+          text: this.viewSensor.sensor_unit,
         },
         minorGridLineWidth: 0,
         gridLineWidth: 0,
         plotBands: backgroundThresholdOn
-          ? this.createThresholds(this.sensor)
+          ? this.createThresholds(this.viewSensor)
           : [],
         labels: {
           style: {
@@ -126,7 +192,7 @@ export class LineChartComponent {
         enabled: false,
       },
       tooltip: {
-        valueSuffix: this.sensor.sensor_unit,
+        valueSuffix: this.viewSensor.sensor_unit,
       },
       plotOptions: {
         spline: {
@@ -146,7 +212,7 @@ export class LineChartComponent {
         {
           type: 'line',
           color: THEME_COLOR[this.theme].lineColor,
-          name: this.sensor.sensor_type,
+          name: this.viewSensor.sensor_type,
           data: measurements.map((msr) => ({
             x: new Date(msr.timestamp).getTime(),
             y: msr.value,
@@ -158,22 +224,38 @@ export class LineChartComponent {
     };
   }
 
+  private async refreshChartWithNewUnits(): Promise<void> {
+    const measurements = await this.sensorService.getSensorMeasurementsDelta(
+      this.sensor.sensor_id,
+      this.sensorService.time_delta()
+    );
+
+    this.viewSensor.sensor_unit = this.unit;
+
+    const convertedMeasurements = this.convertMeasurements(measurements);
+    this.viewSensor = this.convertSensorData(this.viewSensor);
+
+    this.updateChartData(convertedMeasurements);
+    this.updateFlag = !this.updateFlag;
+    this.sensorUpdated.emit(this.viewSensor);
+  }
+
   private getZones(): Highcharts.SeriesZonesOptionsObject[] {
     return [
       {
-        value: this.sensor.threshold_critically_low,
+        value: this.viewSensor.threshold_critically_low,
         color: THEME_COLOR[this.theme].danger,
       },
       {
-        value: this.sensor.threshold_low,
+        value: this.viewSensor.threshold_low,
         color: THEME_COLOR[this.theme].warning,
       },
       {
-        value: this.sensor.threshold_high,
+        value: this.viewSensor.threshold_high,
         color: THEME_COLOR[this.theme].success,
       },
       {
-        value: this.sensor.threshold_critically_high,
+        value: this.viewSensor.threshold_critically_high,
         color: THEME_COLOR[this.theme].warning,
       },
       {
@@ -245,5 +327,35 @@ export class LineChartComponent {
         },
       },
     ];
+  }
+
+  private convertSensorData(sensor: Sensor): Sensor {
+    return {
+      ...sensor,
+      threshold_low: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        this.baseThresholds!.low
+      ),
+      threshold_high: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        this.baseThresholds!.high
+      ),
+      threshold_critically_low: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        this.baseThresholds!.critLow
+      ),
+      threshold_critically_high: SensorUnitsUtils.convertUnitToPref(
+        sensor,
+        this.baseThresholds!.critHigh
+      ),
+      sensor_unit: this.unit,
+    };
+  }
+
+  private convertMeasurements(measurements: Measurement[]): Measurement[] {
+    return measurements.map((m) => ({
+      ...m,
+      value: SensorUnitsUtils.convertUnitToPref(this.viewSensor, m.value),
+    }));
   }
 }
