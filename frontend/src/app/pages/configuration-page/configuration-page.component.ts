@@ -66,7 +66,6 @@ export class ConfigurationPageComponent implements OnInit {
   showNewActuatorForm() {    
     if(this.newActuatorModal) {
       this.newActuatorModal.actuatorNumber = this.actuators.length+1;
-      // this.newActuatorModal.addActuatorMethod = this.addActuator
       this.newActuatorModal.addActuatorMethod = (actuator: Actuator) => this.addActuator(actuator);
     }
     this.newActuatorModal?.showModal();
@@ -96,17 +95,10 @@ export class ConfigurationPageComponent implements OnInit {
   }
 
   addActuator(actuatorToAdd: Actuator) {
-    // Ajouter à la liste des actuateurs + post
-    try{
+    // Ajouter à la liste des actuateurs
       this.api.postActuator(actuatorToAdd).subscribe((res)=>{
         if(res.status === HttpStatusCode.Ok) {
           this.actuators.push(actuatorToAdd);
-          
-          if (this.modal) {
-          this.modal.title = MODAL_MESSAGES.SUCCESS_TITLE;
-          this.modal.content = MODAL_MESSAGES.SUCCESS_CONTENT_ADDED;
-          this.modal.showModal();
-          }
         }
         else if (this.modal) {
           this.modal.title = MODAL_MESSAGES.ERROR_TITLE;
@@ -114,10 +106,6 @@ export class ConfigurationPageComponent implements OnInit {
           this.modal.showModal();
         }
       });
-    }
-    catch {
-      console.log('UNE ERREUR EST SURVENUE', error);
-    }
   }
 
 }

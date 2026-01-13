@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, Output, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Actuator } from '@app/interfaces/actuator';
 
 @Component({
   selector: 'app-new-actuator-modal',
@@ -10,6 +9,7 @@ import { Actuator } from '@app/interfaces/actuator';
   styleUrl: './new-actuator-modal.component.scss'
 })
 export class NewActuatorModalComponent {
+
     @ViewChild('newActuatorModal') newActuatorModal: ElementRef<HTMLDialogElement> | undefined;
     @Input() actuatorNumber: number | undefined;
     @Input() addActuatorMethod: Function | undefined;
@@ -21,8 +21,18 @@ export class NewActuatorModalComponent {
 
     showModal() {
       const modal = this.newActuatorModal?.nativeElement.showModal();
-      
     }
+
+    onTypeChange(event: any) {
+      this.formInput.type = event;
+      if(this.formInput.type !== '') {
+        this.newActuatorModal?.nativeElement.querySelector('#submitBtn')?.removeAttribute('disabled');
+      }
+      else {
+        this.newActuatorModal?.nativeElement.querySelector('#submitBtn')?.setAttribute('disabled', 'true');
+      }
+    }
+
     onSubmit(event: Event) {
       // Validation
       if (!this.formInput['type']) {
@@ -32,7 +42,7 @@ export class NewActuatorModalComponent {
       }
       if (!this.formInput['name']) {
         if(!this.actuatorNumber) this.actuatorNumber = 1
-        this.formInput['name'] = 'Actuateur #'+this.actuatorNumber
+        this.formInput['name'] = 'Actuateur #'+this.actuatorNumber;
       }
 
       console.log(this.formInput)
@@ -49,16 +59,26 @@ export class NewActuatorModalComponent {
       actuator_name: this.formInput['name']
       };
 
-      // POST format
-    // {
-    //   "actuator_type": "acid_pump",
-    //   "sensor_id": 0,
-    //   "condition_value": 0,
-    //   "activation_condition": "high",
-    //   "activation_period": 0,
-    //   "activation_duration": 0
-    // }
-
       if(this.addActuatorMethod) this.addActuatorMethod(actuator);
+      /**
+       --- NOTE ---
+       POST format :
+        {
+          "actuator_type": "acid_pump",
+          "sensor_id": 0,
+          "condition_value": 0,
+          "activation_condition": "high",
+          "activation_period": 0,
+          "activation_duration": 0
+        }
+      */
+    }
+
+    onCancel() {
+      this.formInput = {
+        name: '',
+        type: '',
+      };
+      this.newActuatorModal?.nativeElement.close();
     }
 }
