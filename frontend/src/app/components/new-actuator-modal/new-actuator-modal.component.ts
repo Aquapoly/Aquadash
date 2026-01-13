@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, Input, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -60,6 +60,8 @@ export class NewActuatorModalComponent {
       };
 
       if(this.addActuatorMethod) this.addActuatorMethod(actuator);
+
+      this.onCancel(); // Réinitialiser le formulaire
       /**
        --- NOTE ---
        POST format :
