@@ -16,6 +16,7 @@ import random, pytz
 from concurrent.futures import ThreadPoolExecutor
 
 
+
 def get_prototypes(db: Session, prototype_id: int | None = None):
     """
     Retrieves prototypes from the database, optionally filtered by prototype ID.
