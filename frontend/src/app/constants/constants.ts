@@ -134,7 +134,8 @@ export const SENSOR_VALIDITY_CLASSES = {
 
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
-  THRESHOLDDISPLAY: 'thresholdDisplay'
+  THRESHOLDDISPLAY: 'thresholdDisplay',
+  SENSOR_ORDER: 'sensor_order'
 } as const;
 
 export const DOM_ATTRIBUTES = {
