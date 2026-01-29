@@ -1,3 +1,7 @@
 .selectDiv {
   grid-column: 10 / 13;
 }
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
