@@ -1,0 +1,34 @@
+<dialog id="add_actuator_modal" class="modal" #newActuatorModal>
+  <div class="modal-box">
+    <div class="grid gap-5">
+      <h3 class="font-bold text-lg">Ajouter un actuateur</h3>
+      <form method="dialog">
+        <div class="grid gap-[10px]">
+          <div class="flex-inline">
+            <label for="input_actuator_name">Nom de l'actuateur: </label>
+            <input required type="text" [(ngModel)]="formInput.name" name="input_actuator_name" placeholder="Actuateur #{{ actuatorNumber }}" class="input h-[1.8em] input-primary"/>
+          </div>
+          <div class="flex-inline">
+            <label for="input_actuator_type">Type d'actuateur: </label>
+            <select required [(ngModel)]="formInput.type" (ngModelChange)="onTypeChange($event)" name="input_actuator_type" class="select select-sm select-primary">
+              <option disabled selected>Choisir un type</option>
+              <option value="acid_pump">Pompe à acide</option>
+              <option value="base_pump">Pompe à base</option>
+              <option value="nutrients_A_pump">Pompe Nutriment A</option>
+              <option value="nutrients_B_pump">Pompe Nutriment B</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-primary text-base-100 mx-2" type="submit" id="submitBtn" (click)="onSubmit($event)" disabled>
+          Ajouter
+        </button>
+        <button class="btn" (click)="onCancel()">Annuler</button>
+      </form>
+    </div>
+  </div>
+</dialog>
