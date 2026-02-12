@@ -3,14 +3,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.core.database.database import get_db
-from .schemas import Sensor, SensorBase
-from . import service
+from . import service, schemas
 
 router = APIRouter(prefix="/sensors", tags=["Sensors"])
 
-@router.post("/", response_model=Sensor)
+@router.post("/", response_model=schemas.Sensor)
 async def post(
-    sensor: SensorBase, 
+    sensor: schemas.SensorBase, 
     db: Session = Depends(get_db)
 ):
     return service.create(
@@ -19,9 +18,21 @@ async def post(
     )
 
 
-@router.get("/{prototype_id}", response_model=list[Sensor])
+@router.get("/{prototype_id}", response_model=list[schemas.Sensor])
 async def get(
     prototype_id: int,
     db: Session = Depends(get_db),
 ):
     return service.get_sensors(db=db, prototype_id=prototype_id)
+
+
+@router.patch(
+    "/",
+    dependencies=[],
+    response_model=list[schemas.Sensor]
+)
+async def patch(
+    sensors: list[schemas.Sensor],
+    db: Session = Depends(get_db),
+):
+    return service.update_sensors(db=db, sensors=sensors)

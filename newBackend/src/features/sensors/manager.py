@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, update
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -35,3 +35,13 @@ def get_by_prototype(db: Session, prototype_id: int):
         .where(models.Sensor.prototype_id == prototype_id)
     )
     return db.execute(query).scalars().all()
+
+
+def update_sensor(db: Session, sensor: schemas.Sensor):
+    query = (
+        update(models.Sensor)
+        .where(models.Sensor.sensor_id == sensor.sensor_id)
+        .values(**sensor.model_dump())
+        .returning(models.Sensor)
+    )
+    return db.execute(query).scalars().first()

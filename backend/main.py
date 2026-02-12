@@ -52,19 +52,7 @@ app.add_middleware(
 
 
 
-@app.post(
-    "/measurements",
-    tags=["Measurements"],
-    # dependencies=[Depends(permissions.needs_measurements_post_permission)],
-    response_model=schemas.Measurement,
-)
-async def post_measurement(
-    measurement: schemas.MeasurementBase,
-    db: Session = Depends(get_db),
-):
-    return crud.post_measurement(
-        db=db, measurement=measurement
-    )
+
 
 @app.post(
     "/actuators",
@@ -129,19 +117,8 @@ async def update_actuator_last_activated(actuator_id: int, db: Session = Depends
     return crud.update_actuator_last_activated(db=db, actuator_id=actuator_id)
 
 
-@app.get("/prototypes", tags=["Prototypes"], response_model=list[schemas.Prototype])
-async def prototypes(db: Session = Depends(get_db)):
-    return crud.get_prototypes(db=db)
 
-@app.get(
-    "/prototypes/{prototype_id}", tags=["Prototypes"], response_model=schemas.Prototype
-)
-async def prototype(prototype_id: int, db: Session = Depends(get_db)):
-    prototype = crud.get_prototypes(db=db, prototype_id = prototype_id)
-    if len(prototype) > 0:
-        return prototype[0]
-    else:
-        raise HTTPException(status_code=404, detail="Prototype not found")
+
 
 @app.get(
     "/measurements/{sensor_id}",

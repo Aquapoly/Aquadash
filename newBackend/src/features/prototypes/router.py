@@ -21,3 +21,11 @@ async def get(
     db: Session = Depends(get_db)
 ):
     return service.get_prototypes(db=db, prototype_id=prototype_id)
+
+
+@router.get("/", response_model=list[Prototype])
+async def get(
+    prototype_id: int,
+    db: Session = Depends(get_db)
+):
+    return service.get_prototypes(db=db, prototype_id=None)

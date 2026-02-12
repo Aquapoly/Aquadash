@@ -79,7 +79,28 @@ def get_sensors(db: Session, prototype_id: int | None = None):
 
 
 def post_sensor(db: Session, sensor: schemas.SensorBase):
-    
+    """
+    Inserts a new sensor into the database.
+    Args:
+        db (Session): SQLAlchemy session used for database operations.
+        sensor (schemas.SensorBase): Validated sensor data to be inserted.
+    Returns:
+        models.Sensor: The newly created sensor instance.
+    Raises:
+        HTTPException: If an integrity error occurs (e.g., duplicate entry), raises a 409 Conflict with error details.
+    """
+    query = insert(models.Sensor).returning(models.Sensor)
+    try:
+        result = db.execute(query, sensor.model_dump()).scalars().first()
+    except IntegrityError as err:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Conflict in database: {err}",
+        )
+
+    db.commit()
+    return result
 
 
 def get_actuators(db: Session, prototype_id: int):
@@ -206,32 +227,7 @@ def get_last_measurement(
     return db.execute(query).scalars().first()
 
 
-def post_measurement(db: Session, measurement: schemas.MeasurementBase):
-    """
-    Inserts a new measurement into the database.
-    Args:
-        db (Session): SQLAlchemy session.
-        measurement (schemas.MeasurementBase): Validated measurement data to add to the DB.
-    Returns:
-        models.Measurement: The created measurement.
-    Raises:
-        HTTPException: On integrity error (e.g., sensor does not exist), raises 422 with details.
-    """
-    query = (
-        insert(models.Measurement)
-        .values(**measurement.model_dump())
-        .returning(models.Measurement)
-    )
-    try:
-        result = db.execute(query).scalars().first()
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Sensor with this id does not exist",
-        )
-    db.commit()
-    return result
+
 
 
 def post_user(db: Session, username: str, password: str):

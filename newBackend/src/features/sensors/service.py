@@ -53,3 +53,43 @@ def get_sensors(db:Session, prototype_id:int | None = None):
             detail=f"Prototype Id {prototype_id} has no sensor",
         )
     return sensors
+
+
+def update_sensor(db: Session, sensor: schemas.Sensor):
+    if not (
+        sensor.threshold_critically_low
+        <= sensor.threshold_low
+        <= sensor.threshold_high
+        <= sensor.threshold_critically_high
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Threshold values for sensor {sensor.sensor_id} are inconsistent",
+        )
+
+    try:
+        updated_sensor = repository.update_sensor(db=db, sensor=sensor)
+        if updated_sensor is None:
+            raise NoResultFound
+        db.commit()
+        db.refresh(updated_sensor)
+        return updated_sensor
+    except NoResultFound:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sensor with id {sensor.sensor_id} not found",
+        )
+    except IntegrityError as err:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Conflict in database: {err}",
+        )
+
+
+def update_sensors(db: Session, sensors: list[schemas.Sensor]):
+    updated_sensors = []
+    for sensor in sensors:
+        updated_sensors.append(update_sensor(db, sensor))
+    return updated_sensors
