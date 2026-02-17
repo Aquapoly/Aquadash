@@ -324,3 +324,19 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
+
+@app.get(
+    "/docs/openapi.json",
+    tags=["Docs"],
+    summary="OpenAPI JSON",
+    operation_id="openapi_json",
+)
+async def openapi_json():
+    """
+    Returns the OpenAPI JSON for the backend API.
+    """
+    try:
+        return app.openapi()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
