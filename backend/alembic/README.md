@@ -1,6 +1,6 @@
 # Alembic configuration
 
-why?
+Since we use SQLAlchemy, we use Alembic for database migrations. This file contains the configuration for Alembic, which is used by the alembic command-line tool to generate and apply migrations.
 
 ## Script location
 
