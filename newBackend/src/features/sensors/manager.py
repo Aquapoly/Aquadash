@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 
-def create(db: Session, sensor: schemas.Sensor) -> models.Sensor | None:
+
+def create(db: Session, sensor: schemas.Sensor) -> models.Sensor:
     """
     Inserts a new sensor into the database.
 
@@ -19,7 +20,10 @@ def create(db: Session, sensor: schemas.Sensor) -> models.Sensor | None:
         .values(**sensor.model_dump())
         .returning(models.Sensor)
     )
-    return db.execute(query).scalars().first()
+    result = db.execute(query).scalars().first()
+    if result is None:
+        raise ValueError("Failed to create sensor")
+    return result
 
 
 def get_all(db: Session):

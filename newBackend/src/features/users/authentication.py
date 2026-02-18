@@ -5,9 +5,8 @@ from typing import Annotated
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from .. import schemas
 from sqlalchemy.orm import Session
-from .. import models
+from . import models
 
 SECRET_KEY = "d1c7fa9d4f8dc8d8731896337e1131ef586e6f0f7f5b7af4554adba5efdb7c0d"
 ALGORITHM = "HS256"

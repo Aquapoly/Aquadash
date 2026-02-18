@@ -8,7 +8,7 @@ def high_condition(value, condition_value):
 
 
 
-def always_condition(value, condition_value):
+def always_condition(*_):
     return True
 
 

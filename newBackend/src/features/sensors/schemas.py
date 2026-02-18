@@ -1,9 +1,6 @@
-# TODO: séparer et déplacer les schemas dans un dossier schema (renommer le dossier "classes")
 
 from pydantic import BaseModel
-from src.enums.sensor_type import SensorType
-
-
+from .models import SensorType
 
 class SensorBase(BaseModel):
     sensor_type: SensorType
@@ -20,3 +17,5 @@ class Sensor(SensorBase):
 
     class Config:
         from_attributes = True
+
+

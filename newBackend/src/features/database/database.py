@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 import os
 
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./aquapoly.sqlite"
@@ -22,3 +22,72 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def default_populate(db: Session):
+    """
+    Populates the database with a default prototype, associated sensors, and an actuator if they do not already exist.
+    Args:
+        db (Session): SQLAlchemy session.
+    Returns:
+        dict: A dictionary containing the created or retrieved prototype, list of sensors, and actuator.
+    Raises:
+        HTTPException: If any database operation fails due to integrity errors or other issues.
+    """
+    # Check if the prototype already exists
+    existing_prototype = get_prototypes(db=db, prototype_id=0)
+    if existing_prototype:
+        prototype = existing_prototype[0]
+    else:
+        # Create a prototype
+        prototype_data = schemas.Prototype(
+            prototype_id=0,
+            prototype_name="default_prototype"
+        )
+        prototype = post_prototype(db, prototype_data)
+
+    # Create three sensors associated with the prototype
+    sensors = []
+    sensor_types = [
+        (SensorType.ec, "mS/cm", 0.0, 1.0, 2.0, 3.0),
+        (SensorType.ph, "pH", 0.0, 4.0, 7.0, 10.0),
+        (SensorType.temperature, "Celsius", 0.0, 10.0, 30.0, 40.0)
+    ]
+
+    existing_sensors = get_sensors(db=db, prototype_id=prototype.prototype_id)
+     
+    if not existing_sensors:
+        for sensor_type, unit, crit_low, low, high, crit_high in sensor_types:   
+            sensor_data = schemas.SensorBase(
+                sensor_type=sensor_type,
+                prototype_id=prototype.prototype_id,
+                threshold_critically_low=crit_low,
+                threshold_low=low,
+                threshold_high=high,
+                threshold_critically_high=crit_high,
+                sensor_unit=unit
+            )
+            sensor = post_sensor(db, sensor_data)
+            sensors.append(sensor)
+
+    # Check if the actuator already exists
+    existing_actuator = get_actuators(db=db, prototype_id=prototype.prototype_id)
+    if existing_actuator:
+        actuator = existing_actuator[0]
+    else:
+        # Create one actuator associated with the first sensor
+        actuator_data = schemas.ActuatorBase(
+            actuator_type=ActuatorType.acid_pump,  
+            sensor_id=sensors[0].sensor_id,  
+            condition_value=0.0,  
+            activation_condition=ActivationCondition.low,  
+            activation_period=5.0,  
+            activation_duration=2.0,  
+        )
+        actuator = post_actuator(db, actuator_data)
+
+    return {
+        "prototype": prototype,
+        "sensors": sensors,
+        "actuator": actuator
+    }

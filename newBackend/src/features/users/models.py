@@ -10,20 +10,17 @@ from sqlalchemy import (
     Time,
     func,
 )
-import enum
-from .classes.activation_condition import ActivationCondition
+from sqlalchemy.orm import Mapped, mapped_column
 
-from .classes.actuator_type import ActuatorType
-from .database import Base
-from .classes.sensor_type import SensorType
+from ..database.database import Base
 
 
 # auth stuff
 class User(Base):
     __tablename__ = "users"
 
-    username = Column(String, primary_key=True, nullable=False, unique=True)
-    pw_salt = Column(String, nullable=False)
-    pw_hash = Column(String, nullable=False)
-    permissions = Column(Integer, nullable=False)
-    logged_in = Column(Boolean, nullable=False)
+    username:Mapped[str] = mapped_column(String, primary_key=True, nullable=False, unique=True)
+    pw_salt:Mapped[str] = mapped_column(String, nullable=False)
+    pw_hash:Mapped[str] = mapped_column(String, nullable=False)
+    permissions:Mapped[int] = mapped_column(Integer, nullable=False)
+    logged_in:Mapped[bool] = mapped_column(Boolean, nullable=False)
