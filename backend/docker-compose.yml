@@ -3,6 +3,12 @@ version: '3.1'
 services:
   db:
     image: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     container_name: db
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -16,7 +22,7 @@ services:
     networks:
       - postgres
     volumes:
-      - ./initdb:/docker-entrypoint-initdb.d
+      - ./initdb:/docker-entrypoint-initdb.d:Z
 
   app:
     stdin_open: true # docker run -i
@@ -26,12 +32,14 @@ services:
       dockerfile: app.Dockerfile
     environment:
       DOCKER: 1
-      ENABLE_CAMERA: ${ENABLE_CAMERA:-false}
+    privileged: true
     volumes:
-      - .:/usr/src/app
+      - .:/usr/src/app:Z
+      - /dev:/dev
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     links:
       - db:db
     ports:

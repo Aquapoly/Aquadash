@@ -114,15 +114,12 @@ Link to Access API docs:
    # 1. Install Docker 
    sudo apt install docker.io docker-compose
 
-   # 2. Camera control
-   export ENABLE_CAMERA=true  # or false to disable
+   # 2. Restart your computer (recommended)
 
-   # 3. Restart your computer (recommended)
-
-   # 4. Build the app container (first time or after updates)
+   # 3. Build the app container (first time or after updates)
   docker-compose build
 
-   # 5 Start Containers
+   # 4. Start Containers
   docker-compose up # Or running in background: docker-compose up -d
    ```
    ⚡ Backend should now be running
@@ -206,7 +203,6 @@ The backend tests use `pytest`.
 - **Windows PowerShell issues:** Use Git Bash for commands if PowerShell blocks execution.  
 - **PostgreSQL connection errors:** Verify that the `postgres` password is set to `aquapoly` and that the DB service is running.  
 - **Docker port already in use** PostgreSQL is probably running **or** A detached container is running.
-- **Camera errors:** Ensure the `ENABLE_CAMERA` environment variable is correctly set before starting containers.
 ---
 <br><br>
 © 2025 Aquadash — Released under the GNU License
