@@ -1,28 +1,19 @@
-from jose import JWTError, jwt
-from . import authentification
+from jose import JWTError, jwt, exceptions
 from fastapi import HTTPException, status, Depends
 import math
 import time
 from sqlalchemy.orm import Session
-from .. import models
+from . import models, auth_utils, manager
 from typing import Annotated
-from app.database import get_db
+from ..database.database import get_db
 
 
-POST_MEASURMENTS_PERMISSION = 2**0
-GET_MEASURMENTS_PERMISSION = 2**1
+POST_MEASUREMENTS_PERMISSION = 2**0
+GET_MEASUREMENTS_PERMISSION = 2**1
 MODIFY_SENSOR_AND_PROTOTYPES_PERMISSION = 2**2
 
 # tokens do nothing in code. I just have nowhere to put them
-POST_MEASURMENTS_TOKEN = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwZXJtaXNzaW9ucyI6MSwiZXhwIjoxNzAwNTk4MDcxfQ.mZbCxkeEgL-qGBI1C1RIXslRf_Vi6lkVUH8zMMxCgu4",
-)
-GET_MEASURMENTS_TOKEN = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwZXJtaXNzaW9ucyI6MiwiZXhwIjoxNzAwNTk4MDcxfQ.IZq-5i2NXYmWM-m3l6sL1BRBQ3S6pdKo7-TkYh3pSH8",
-)
-MODIFY_SENSOR_AND_PROTOTYPES_TOKEN = (
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwZXJtaXNzaW9ucyI6NCwiZXhwIjoxNzAwNTk4MDcxfQ.xHWb6XR31IlapiMbXoRnbBAJuK2mBeN-ZkNeK-enpNM",
-)
+
 
 TOKEN_NOT_AUTHORIZED_ERROR = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,18 +39,16 @@ class Permissions:
     def __init__(self, encoded: None | int = None):
         if encoded == None:
             return
-        self.post_measurment = (
-            math.floor(encoded / POST_MEASURMENTS_PERMISSION)
-        ) % 2 > 0
-        self.get_measurment = (math.floor(encoded / GET_MEASURMENTS_PERMISSION)) % 2 > 0
-        self.modifify_sensors_and_prototype = (
-            math.floor(encoded / MODIFY_SENSOR_AND_PROTOTYPES_PERMISSION)
-        ) % 2 > 0
+        self.post_measurment = bool(encoded & POST_MEASUREMENTS_PERMISSION)
+        self.get_measurment = bool(encoded & GET_MEASUREMENTS_PERMISSION)
+        self.modifify_sensors_and_prototype = bool(
+            encoded & MODIFY_SENSOR_AND_PROTOTYPES_PERMISSION
+)
 
     def encode_to_int(self) -> int:
         return (
-            POST_MEASURMENTS_PERMISSION * self.post_measurment
-            + GET_MEASURMENTS_PERMISSION * self.get_measurment
+            POST_MEASUREMENTS_PERMISSION * self.post_measurment
+            + GET_MEASUREMENTS_PERMISSION * self.get_measurment
             + MODIFY_SENSOR_AND_PROTOTYPES_PERMISSION
             * self.modifify_sensors_and_prototype
         )
@@ -107,8 +96,7 @@ def verify_token_active(token: dict, db: Session):
     username = token["user"]
     if username is None:
         return
-    user = db.query(models.User).filter_by(username=username).first()
-    if not user.logged_in:
+    if not manager.is_user_logged_in(db, username):
         raise TOKEN_EXPIRED_ERROR
 
 
@@ -117,7 +105,7 @@ def verify_token_permission(
     post_measurment_permission_required: bool,
     get_measurement_permission_required: bool,
     modify_sensor_and_prototype_permission_required: bool,
-) -> bool:
+):
     """
     Checks if the provided token has the necessary permissions to perform an action.
     Args:
@@ -128,7 +116,9 @@ def verify_token_permission(
     Raises:
         TOKEN_NOT_AUTHORIZED_ERROR: If the token does not have the required permissions.
     """
-    permission_code = token["permissions"]
+    permission_code = token.get("permissions")
+    if permission_code is None:
+        raise TOKEN_INVALID_ERROR
     perm = Permissions(permission_code)
     if (
         (post_measurment_permission_required and not perm.post_measurment)
@@ -156,22 +146,22 @@ def dict_from_token(token: str) -> dict:
     try:
         return jwt.decode(
             token,
-            authentification.SECRET_KEY,
-            algorithms=authentification.ALGORITHM,
+            auth_utils.SECRET_KEY,
+            algorithms=[auth_utils.ALGORITHM],
             options={
                 "verify_signature": True,
             },
         )
-    except jwt.ExpiredSignatureError as exc:
+    except exceptions.ExpiredSignatureError as exc:
         raise TOKEN_EXPIRED_ERROR from exc
-    except jwt.InvalidSignatureError as exc:
+    except JWTError as exc:
         raise TOKEN_INVALID_ERROR from exc
     except Exception as exc:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR) from exc
 
 
 def needs_prototype_modification_permission(
-    token: Annotated[str, Depends(authentification.oauth2_scheme)],
+    token: Annotated[str, Depends(auth_utils.oauth2_scheme)],
     db: Session = Depends(get_db),
 ):
     """
@@ -187,7 +177,7 @@ def needs_prototype_modification_permission(
 
 
 def needs_measurements_post_permission(
-    token: Annotated[str, Depends(authentification.oauth2_scheme)],
+    token: Annotated[str, Depends(auth_utils.oauth2_scheme)],
     db: Session = Depends(get_db),
 ):
     """
@@ -203,7 +193,7 @@ def needs_measurements_post_permission(
 
 
 def needs_measurements_get_permission(
-    token: Annotated[str, Depends(authentification.oauth2_scheme)],
+    token: Annotated[str, Depends(auth_utils.oauth2_scheme)],
     db: Session = Depends(get_db),
 ):
     """

@@ -1,4 +1,3 @@
-# TODO: séparer et déplacer les schemas dans un dossier schema (renommer le dossier "classes")
 
 from pydantic import BaseModel
 
