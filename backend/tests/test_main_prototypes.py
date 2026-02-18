@@ -107,4 +107,4 @@ def test_post_negative_id_prototype(client: TestClient, db_session: Session):
     new_proto = {"prototype_id": -1, "prototype_name": "Illegal Proto"}
 
     response = client.post("/prototypes", json=new_proto)
-    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
+    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
