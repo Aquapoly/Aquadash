@@ -87,7 +87,7 @@ def get_by_delta(
         h, m, s = map(int, time_part.split(":"))
         delta = timedelta(days=days, hours=h, minutes=m, seconds=s)
     except Exception:
-        raise HTTPException(status_code=400, detail="Format time_delta invalide. Attendu: '365d,00:00:00'")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Format time_delta invalide. Attendu: '365d,00:00:00'")
 
     end_time = datetime.now()
     start_time = end_time - delta
