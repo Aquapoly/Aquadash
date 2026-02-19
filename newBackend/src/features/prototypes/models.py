@@ -3,11 +3,12 @@ from sqlalchemy import (
     String,
     Integer,
 )
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database.database import Base
 
 class Prototype(Base):
     __tablename__ = "prototypes"
 
-    prototype_id = Column(Integer, primary_key=True)
-    prototype_name = Column(String, nullable=False)
+    prototype_id:Mapped[int] = mapped_column(Integer, primary_key=True)
+    prototype_name:Mapped[str] = mapped_column(String, nullable=False)

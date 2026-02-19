@@ -2,11 +2,13 @@ import random
 import pytest
 from httpx import AsyncClient
 import httpx
-from app.main import app
+from src.main import app
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from app import crud, models, schemas
+from src.features.actuators import service as actuator_service, models as actuator_models, schemas as actuator_schemas
+from src.features.prototypes import service as prototype_service, models as prototype_models, schemas as prototype_schemas
+from src.features.measurements import service as measurement_service, models as measurement_models, schemas as measurement_schemas
 
 # Test for prototype routes
 
@@ -30,7 +32,7 @@ def test_get_all_prototypes(client: TestClient, db_session: Session):
 
     # Add new prototypes
     for proto in new_prototypes:
-        crud.post_prototype(db=db_session, prototype=schemas.Prototype(**proto))
+        prototype_service.create(db=db_session, prototype=prototype_schemas.Prototype(**proto))
 
     # Test GET request
     response = client.get("/prototypes")

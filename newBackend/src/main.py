@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from src.api.v1.api_router import api_router
-from src.features.database.database import default_populate, get_db, Base, engine
+from src.features.database.database import get_db, Base, engine
+from src.features.database.populate import default_populate
 
 from fastapi.middleware.cors import CORSMiddleware
 # from fastapi_utils.openapi import simplify_operation_ids
@@ -45,7 +46,7 @@ app.add_middleware(
 
 
 # Include the main API router with a prefix
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router)
 
 
 

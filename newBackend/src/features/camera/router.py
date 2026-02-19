@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 
 from . import service
 
-router = APIRouter(prefix="/sensors", tags=["Sensors"])
+router = APIRouter(prefix="/picture", tags=["Pictures"])
 
 @router.get("/", 
             response_class=StreamingResponse)

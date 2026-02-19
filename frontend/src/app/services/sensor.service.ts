@@ -55,8 +55,8 @@ export class SensorService {
     )}:${this.padNumber(seconds)}`;
   }
 
-  private buildMeasurementsUrl(sensorId: number, queryParams: string): string {
-    return `${this.serverUrl}/${API_ENDPOINTS.MEASUREMENTS}/${sensorId}${queryParams}`;
+  private buildMeasurementsUrl(sensorId: number, queryParams: string, optionalPath = ""): string {
+    return `${this.serverUrl}/${API_ENDPOINTS.MEASUREMENTS}/${optionalPath}${sensorId}${queryParams}`;
   }
 
   getSensorMeasurementsDelta(
@@ -65,7 +65,8 @@ export class SensorService {
   ): Promise<Measurement[]> {
     const url = this.buildMeasurementsUrl(
       sensor_id,
-      `?time_delta=${time_delta.toString()}`
+      `?time_delta=${time_delta.toString()}`,
+      "delta/"
     );
     return firstValueFrom(this.httpClient.get<Measurement[]>(url));
   }
@@ -77,7 +78,8 @@ export class SensorService {
   ): Promise<Measurement[]> {
     const url = this.buildMeasurementsUrl(
       sensor_id,
-      `?start_time=${start_time}+end_time=${end_time}`
+      `?start_time=${start_time}+end_time=${end_time}`,
+      "datetime"
     );
     return firstValueFrom(this.httpClient.get<Measurement[]>(url));
   }

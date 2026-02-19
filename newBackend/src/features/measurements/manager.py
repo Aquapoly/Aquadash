@@ -6,10 +6,10 @@ from datetime import datetime
 from . import models, schemas
 
 
-def create(db: Session, measurement:schemas.Measurement):
+def create(db: Session, measurement:schemas.MeasurementBase):
     query = (
         insert(models.Measurement)
-        .values(**measurement.model_dump())
+        .values(measurement.model_dump())
         .returning(models.Measurement)
     )
     return db.execute(query).scalars().first()
@@ -44,6 +44,10 @@ def post(db:Session, measurement:models.Measurement):
         .returning(models.Measurement)
     )
     return db.execute(query).scalars().first()
+
+def add(db:Session, measurement:models.Measurement):
+    db.add(measurement)
+    return measurement
 
 def delete_all(db:Session):
     return db.query(models.Measurement).delete()

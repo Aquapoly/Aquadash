@@ -53,14 +53,14 @@ def get(
         
     """
     try:
-        if not (start_time or end_time):
+        if not start_time and not end_time:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"No start_time or end time where given"
             )
         measurements = manager.get(db=db, sensor_id=sensor_id, start_time=start_time, end_time=end_time)
-        if not measurements:
-            raise Exception
+        # if not measurements:
+        #     raise Exception
         return measurements
     except Exception as err:
         db.rollback()
@@ -73,7 +73,7 @@ def get(
 def get_by_delta(
     db: Session,
     sensor_id: int,
-    time_delta: timedelta,
+    time_delta: str,
 ):
     """
     Retrieves measurements for a given sensor within a specified time delta.
@@ -86,9 +86,18 @@ def get_by_delta(
     Raises:
         None
     """
+    # Parse "365d,00:00:00" ou "365" (jours) selon ton format
+    try:
+        days, time_part = time_delta.split(",")
+        days = int(days.replace("d", ""))
+        h, m, s = map(int, time_part.split(":"))
+        delta = timedelta(days=days, hours=h, minutes=m, seconds=s)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Format time_delta invalide. Attendu: '365d,00:00:00'")
+
     end_time = datetime.now()
-    start_time = end_time - time_delta
-    return get(db=db, sensor_id=sensor_id, start_time=start_time)
+    start_time = end_time - delta
+    return get(db=db, sensor_id=sensor_id, start_time=start_time, end_time=end_time)
 
 
 def get_last(
@@ -175,6 +184,7 @@ def generate(db:Session, datas:schemas.RandomMeasurements):
     """
     request = db.query(sensor_model).all()
     nb_sensors = len(request)
+    nb_meas = datas.nb_measurements
     while nb_meas % nb_sensors != 0: nb_meas += 1
 
     nb_year_meas = int(nb_meas * datas.yearly_measurements_ratio)
@@ -239,7 +249,7 @@ def post_random(db:Session, datas:schemas.RandomMeasurements):
         db.commit()
         for meas in measurements:
             db_Measurement = models.Measurement(sensor_id=meas[0], value=meas[1], timestamp=meas[2])
-            new_measurement = manager.post(db=db, measurement=db_Measurement)
+            new_measurement = manager.add(db=db, measurement=db_Measurement)
             db.commit()
             db.refresh(new_measurement)
         return {"message": "Données remplacées avec succès."}

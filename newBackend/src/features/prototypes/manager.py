@@ -27,7 +27,7 @@ def get_by_id(db:Session, prototype_id:int):
         select(models.Prototype)
         .where(models.Prototype.prototype_id == prototype_id)
     )
-    return db.execute(query).scalars().first()
+    return db.execute(query).scalars().all()
 
 def get_all(db:Session):
     query = select(models.Prototype)

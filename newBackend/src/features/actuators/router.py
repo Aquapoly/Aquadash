@@ -9,7 +9,7 @@ router = APIRouter(prefix="/actuators", tags=["Actuators"])
 
 ### OK
 @router.get(
-    "prototype/{prototype_id}",
+    "/prototype/{prototype_id}",
     response_model=list[schemas.Actuator],
 )
 async def actuator(prototype_id: int, db: Session = Depends(get_db)):

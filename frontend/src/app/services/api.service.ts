@@ -12,7 +12,7 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   getActuators(prototype_id: number) {
-    return this.http.get(this.serverUrl + `/actuators/${prototype_id}`, {
+    return this.http.get(this.serverUrl + `/actuators/prototype/${prototype_id}`, {
       observe: 'response',
     });
   }

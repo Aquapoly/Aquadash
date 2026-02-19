@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
-from app.main import app
-from app.database import Base, engine, get_db  # Import your existing setup
+from src.main import app
+from src.features.database.database import Base, engine, get_db  # Import your existing setup
 
 @pytest.fixture
 def db_session():

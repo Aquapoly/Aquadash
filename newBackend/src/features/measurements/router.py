@@ -43,7 +43,7 @@ async def get(
 )
 async def get_by_delta(
     sensor_id:int, 
-    time_delta: timedelta,
+    time_delta: str,
     db: Session = Depends(get_db)
 ):  
     return service.get_by_delta(db=db, sensor_id=sensor_id, time_delta=time_delta)

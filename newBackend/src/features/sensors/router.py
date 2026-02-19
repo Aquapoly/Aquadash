@@ -28,7 +28,7 @@ async def get_all(
     return service.get_all(db=db)
 
 @router.get(
-    "/prototype/{prototype_id}", 
+    "/{prototype_id}", 
     response_model=list[schemas.Sensor],
 )
 async def get(
