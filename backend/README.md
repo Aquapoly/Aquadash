@@ -67,7 +67,7 @@ sudo -u postgres createdb aquapoly
 ## ⚡ Running the Server
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn src.main:app --reload
 ```
 
 Access API docs:  
