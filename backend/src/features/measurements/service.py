@@ -54,13 +54,8 @@ def get(
     """
     try:
         if not start_time and not end_time:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No start_time or end time where given"
-            )
+            end_time = datetime.now()
         measurements = manager.get(db=db, sensor_id=sensor_id, start_time=start_time, end_time=end_time)
-        # if not measurements:
-        #     raise Exception
         return measurements
     except Exception as err:
         db.rollback()
@@ -86,7 +81,6 @@ def get_by_delta(
     Raises:
         None
     """
-    # Parse "365d,00:00:00" ou "365" (jours) selon ton format
     try:
         days, time_part = time_delta.split(",")
         days = int(days.replace("d", ""))
