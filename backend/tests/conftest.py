@@ -126,4 +126,5 @@ def dummy_user(db_session: Session):
 @pytest.fixture
 def set_last_image():
     """Set the last image of the camera"""
-    camera._last_image = (b'cute tomato', camera.time.time() + camera.IMAGE_EXPIRE_TIME)
+    import time
+    camera._last_image = (b'cute tomato', time.time() + camera.IMAGE_EXPIRE_TIME)
