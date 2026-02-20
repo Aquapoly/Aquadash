@@ -1,0 +1,20 @@
+[Unit]
+Description=Camera Daemon for /dev/video* devices
+After=network.target
+Wants=network.target
+
+[Service]
+# Ensure the runtime directory exists and has correct permissions
+RuntimeDirectory=camera
+RuntimeDirectoryMode=0750
+User=root
+Group=host-dev
+ExecStart=/usr/bin/python3 /usr/local/bin/camera-daemon.py
+Restart=on-failure
+RestartSec=2s
+# Ensure control socket and symlinks are cleaned up on shutdown
+ExecStopPost=/bin/rm -f /run/camera/control.sock
+ExecStopPost=/bin/rm -f /run/camera/current/*
+
+[Install]
+WantedBy=multi-user.target

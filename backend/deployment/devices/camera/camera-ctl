@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""camera-ctl — send commands to the camera daemon control socket."""
+import argparse
+import socket
+import sys
+
+from camera_commands import CameraCommand as Command
+
+CONTROL_SOCK = "/run/camera/control.sock"
+
+
+def send_command(cmd: str) -> str:
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.connect(CONTROL_SOCK)
+            s.sendall(cmd.encode())
+            s.shutdown(socket.SHUT_WR)
+            return s.recv(4096).decode().strip()
+    except FileNotFoundError:
+        print(f"Error: control socket not found at {CONTROL_SOCK}", file=sys.stderr)
+        print("Is camera-daemon.service running?", file=sys.stderr)
+        sys.exit(1)
+    except ConnectionRefusedError:
+        print("Error: daemon is not accepting connections.", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="camera-ctl",
+        description="Control the Aquadash camera daemon."
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_add = sub.add_parser("add", help="Expose a camera device")
+    p_add.add_argument("device", help="Device path (e.g. /dev/video0)")
+
+    p_remove = sub.add_parser("remove", help="Remove a camera device")
+    p_remove.add_argument("device", help="Device path (e.g. /dev/video0)")
+
+    sub.add_parser("list", help="List active camera devices")
+    sub.add_parser("shutdown", help="Gracefully shut down the daemon")
+
+    args = parser.parse_args()
+
+    if args.command == "add":
+        print(send_command(f"{Command.ADD} {args.device}"))
+    elif args.command == "remove":
+        print(send_command(f"{Command.REMOVE} {args.device}"))
+    elif args.command == "list":
+        result = send_command(Command.LIST)
+        print(result if result else "(no cameras active)")
+    elif args.command == "shutdown":
+        print(send_command(Command.SHUTDOWN))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,89 +1,62 @@
 import pytest
-import imageio.v3 as iio
 from app.services import camera
 import time
 
-# Mock functions
-def mock_iio_imread_success(*args, **kwargs):
-    return b'dummy_image_data'
+FAKE_FRAME = b'encoded_dummy_image_data'
 
 
-def mock_iio_imwrite_success(*args, **kwargs):
-    return b'encoded_dummy_image_data'
+def fetch_frame_success():
+    return FAKE_FRAME
 
 
-def mock_iio_imread_failure(*args, **kwargs):
-    return None
-
-
-def mock_iio_imwrite_failure(*args, **kwargs):
-    return None
+def fetch_frame_failure():
+    raise OSError("No camera available")
 
 
 # Test get_image
 def test_get_image_success(monkeypatch):
-    monkeypatch.setattr(iio, "imread", mock_iio_imread_success)
-    monkeypatch.setattr(iio, "imwrite", mock_iio_imwrite_success)
+    monkeypatch.setattr(camera, "_fetch_frame", fetch_frame_success)
 
     camera._last_image = None
     image = camera.get_image()
     
-    assert image == mock_iio_imwrite_success(), "Should return the encoded image data"
-    assert camera._last_image is not None, "Should replace the last image with the new one"
+    assert image == fetch_frame_success(), "Should return the fetched frame"
+    assert camera._last_image is not None, "Should cache the new image"
 
 
-@pytest.mark.parametrize("last_image", [None, mock_iio_imwrite_success()])
-def test_get_image_read_failure(monkeypatch, last_image):
-    monkeypatch.setattr(iio, "imread", mock_iio_imread_failure)
+def test_get_image_fetch_failure_with_cache(monkeypatch):
+    monkeypatch.setattr(camera, "_fetch_frame", fetch_frame_failure)
 
-    camera._last_image = (last_image, camera._last_image[1])
+    camera._last_image = (FAKE_FRAME, time.time() + camera.IMAGE_EXPIRE_TIME)
     image = camera.get_image()
 
-    assert image == last_image, "Should not return another image than the last image if read fails"
-    assert camera._last_image[0] == last_image, "Should not replace the last image if read fails"
+    assert image == FAKE_FRAME, "Should return cached image when fetch fails"
+    assert camera._last_image[0] == FAKE_FRAME, "Should not replace cache when fetch fails"
 
 
-@pytest.mark.parametrize("last_image", [None, mock_iio_imwrite_success()])
-def test_get_image_write_failure(monkeypatch, last_image):
-    monkeypatch.setattr(iio, "imread", mock_iio_imread_success)
-    monkeypatch.setattr(iio, "imwrite", mock_iio_imwrite_failure)
+def test_get_image_no_cache_no_camera(monkeypatch):
+    monkeypatch.setattr(camera, "_fetch_frame", fetch_frame_failure)
 
-    camera._last_image = (last_image, camera._last_image[1])
-    image = camera.get_image()
-
-    assert image == last_image, "Should not return another image than the last image if write fails"
-    assert camera._last_image[0] == last_image, "Should not replace the last image if write fails"
+    camera._last_image = None
+    with pytest.raises(OSError):
+        camera.get_image()
 
 
 def test_get_image_expired(monkeypatch):
-    monkeypatch.setattr(iio, "imread", mock_iio_imread_success)
-    monkeypatch.setattr(iio, "imwrite", mock_iio_imwrite_success)
+    monkeypatch.setattr(camera, "_fetch_frame", fetch_frame_success)
 
-    camera._last_image = (mock_iio_imwrite_success(), time.time() - 10)
+    camera._last_image = (fetch_frame_success(), time.time() - 10)
     image = camera.get_image()
 
-    assert image == mock_iio_imwrite_success(), "Should return a new image if the last image is expired"
-    assert camera._last_image[0] == mock_iio_imwrite_success(), "Should replace the last image if it's expired"
+    assert image == fetch_frame_success(), "Should return a new image if the last image is expired"
+    assert camera._last_image[0] == fetch_frame_success(), "Should update cache when expired"
 
 
-def test_get_image_expired_read_failure(monkeypatch):
-    monkeypatch.setattr(iio, "imread", mock_iio_imread_failure)
+def test_get_image_expired_fetch_failure(monkeypatch):
+    monkeypatch.setattr(camera, "_fetch_frame", fetch_frame_failure)
 
-    camera._last_image = (mock_iio_imwrite_success(), time.time() - 10)
-    last_image = camera._last_image
+    camera._last_image = (FAKE_FRAME, time.time() - 10)
     image = camera.get_image()
 
-    assert image == last_image[0], "Should not return a new image if it cannot read a new image"
-    assert camera._last_image[0] == mock_iio_imwrite_success(), "Should not replace the last image if it cannot read a new image"
-
-
-def test_get_image_expired_write_failure(monkeypatch):
-    monkeypatch.setattr(iio, "imread", mock_iio_imread_success)
-    monkeypatch.setattr(iio, "imwrite", mock_iio_imwrite_failure)
-
-    camera._last_image = (mock_iio_imwrite_success(), time.time() - 10)
-    last_image = camera._last_image
-    image = camera.get_image()
-
-    assert image == last_image[0], "Should not return a new image if it cannot read a new image"
-    assert camera._last_image[0] == mock_iio_imwrite_success(), "Should not replace the last image if it cannot read a new image"
+    assert image == FAKE_FRAME, "Should return stale cache when fetch fails after expiry"
+    assert camera._last_image[0] == FAKE_FRAME, "Should not replace cache when fetch fails"
