@@ -1,6 +1,5 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
-import subprocess
 import threading
 import time
 import uuid
