@@ -1,0 +1,82 @@
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">@if (running) { Timelapse en cours... } @else { Nouveau Timelapse }</h2>
+
+    <div class="space-y-4">
+      @if (!running) {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"> Fréquence de capture </label>
+          <app-dropdown
+            [options]="frequencyOptions"
+            [selectedValue]="settings.frequency.value"
+            (selectionChange)="onSettingChange('frequency', $event)"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"> Durée totale </label>
+          <app-dropdown
+            [options]="durationOptions"
+            [selectedValue]="settings.duration.value"
+            (selectionChange)="onSettingChange('duration', $event)"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"> Résolution </label>
+          <app-dropdown
+            [options]="resolutionOptions"
+            [selectedValue]="settings.resolution.value"
+            (selectionChange)="onSettingChange('resolution', $event)"
+          />
+        </div>
+
+        @if (isFrequencyTooHigh) {
+          <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            Erreur: Fréquence de capture doit être inférieure à la durée totale
+          </div>
+        }
+
+        @if (expectedFrames !== null && !isFrequencyTooHigh) {
+          <div class="p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <strong>Images attendues:</strong> {{ expectedFrames }}
+          </div>
+        }
+
+        <div class="flex justify-center">
+          <button (click)="start()" [disabled]="isFrequencyTooHigh" [ngClass]="{'bg-gray-500': isFrequencyTooHigh, 'bg-green-500': !isFrequencyTooHigh}" [style.cursor]="isFrequencyTooHigh ? 'not-allowed' : 'pointer'" class="px-4 py-2 text-white rounded">Commencer</button>
+        </div>
+      }
+
+      @if (running) {
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded">
+          <p><strong>Fréquence de capture:</strong> {{ settings.frequency.label }}</p>
+          <p><strong>Durée totale:</strong> {{ settings.duration.label }} </p>
+          <p><strong>Résolution:</strong> {{ settings.resolution.label }}</p>
+        </div>
+
+        <div class="p-3 bg-blue-50 border border-blue-300 rounded">
+            <div class="flex justify-between items-center">
+              <strong>Image {{ frameNumber }} sur {{ expectedFrames }}:</strong>
+              <button (click)="getLatestFrameInfo()" class="px-4 py-2 bg-blue-500 text-white rounded">Refresh</button>
+          </div>
+          @if (timestamp) {
+            <img [src]="'http://localhost:8000/timelapse/latest-frame?t=' + timestamp" width="100%" class="mt-2 rounded" />
+          }
+          <div class="pt-3 flex justify-center text-blue-800">
+            <p><strong>Date de fin attendue:</strong> {{ endDate?.toLocaleString() }}</p>
+          </div>
+        </div>
+
+        @if (error) {
+          <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {{ error }}
+          </div>
+        }
+
+        <div class="flex justify-center">
+          <button (click)="stop()" class="px-4 py-2 bg-red-500 text-white rounded">Arrêter</button>
+        </div>
+      }
+      @if (error && !running) {
+        <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {{ error }}
+        </div>
+      }
+    </div>

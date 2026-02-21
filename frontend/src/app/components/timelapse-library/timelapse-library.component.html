@@ -1,0 +1,48 @@
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">
+        Bibliothèque
+    </h2>
+    @if (error) {
+        <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {{ error }}
+        </div>
+    } @else if (timelapses.length === 0) {
+        <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+            Aucun timelapse enregistré.
+        </div>
+    } @else {
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+            <thead class="bg-gray-50">
+                <tr>
+                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Nom</th>
+                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Date</th>
+                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Images</th>
+                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let timelapse of timelapses" class="hover:bg-gray-50 transition-colors">
+                <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.name }}</td>
+                <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.date }}</td>
+                <td class="py-3 px-4 border-b text-gray-600">{{ timelapse.frames }}</td>
+                <td class="py-3 px-4 border-b">
+                    <div class="flex space-x-2">
+                        <button
+                        (click)="download(timelapse)"
+                        class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                        >
+                        Télécharger
+                        </button>
+                        <button
+                        (click)="delete(timelapse)"
+                        class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                        >
+                        Supprimer
+                        </button>
+                    </div>
+                </td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
+    }
