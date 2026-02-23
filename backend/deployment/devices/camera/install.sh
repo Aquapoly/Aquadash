@@ -2,8 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOYMENT_DIR="$(dirname "$SCRIPT_DIR")"
+DEPLOYMENT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
+INSTALL_DIR="/opt/aquadash-camera"
 BIN_DIR="/usr/local/bin"
 SYSTEMD_DIR="/etc/systemd/system"
 
@@ -32,19 +33,34 @@ if ! id -nG "$USER_NAME" | grep -qw "$GROUP_NAME"; then
     usermod -aG "$GROUP_NAME" "$USER_NAME"
 fi
 
-# --- Python daemon scripts ---
-echo "  Copying daemon scripts to $BIN_DIR"
-install -m 755 "$SCRIPT_DIR/camera_daemon.py" "$BIN_DIR/camera-daemon.py"
-install -m 644 "$SCRIPT_DIR/camera.py"        "$BIN_DIR/camera.py"
-install -m 644 "$SCRIPT_DIR/camera_paths.py"  "$BIN_DIR/camera_paths.py"
+# --- Install Python dependencies ---
+echo "  Checking system's Python dependencies"
+if ! python3 -c "import imageio" 2>/dev/null; then
+    echo "  Installing imageio (required for camera capture)"
+    pip3 install imageio --break-system-packages 2>/dev/null || pip3 install imageio
+fi
 
-# --- camera-ctl helper ---
-echo "  Installing camera-ctl to $BIN_DIR"
-install -m 755 "$SCRIPT_DIR/camera-ctl" "$BIN_DIR/camera-ctl"
+# --- Install camera daemon files ---
+echo "  Installing camera daemon to $INSTALL_DIR"
+mkdir -p "$INSTALL_DIR"
+install -m 755 "$SCRIPT_DIR/camera_daemon.py" "$INSTALL_DIR/camera_daemon.py"
+install -m 644 "$SCRIPT_DIR/camera.py" "$INSTALL_DIR/camera.py"
+install -m 644 "$SCRIPT_DIR/camera_paths.py" "$INSTALL_DIR/camera_paths.py"
+install -m 644 "$SCRIPT_DIR/camera_commands.py" "$INSTALL_DIR/camera_commands.py"
 
-# --- Systemd services ---
+# --- Create camera-ctl wrapper in PATH ---
+echo "  Installing camera-ctl wrapper to $BIN_DIR"
+cat > "$BIN_DIR/camera-ctl" <<EOF
+#!/usr/bin/env bash
+exec "$INSTALL_DIR/camera-ctl" "\$@"
+EOF
+install -m 755 "$SCRIPT_DIR/camera-ctl" "$INSTALL_DIR/camera-ctl"
+chown root:"$GROUP_NAME" "$BIN_DIR/camera-ctl"
+chmod 0750 "$BIN_DIR/camera-ctl"
+
+# --- Install systemd services with path substitution ---
 echo "  Installing systemd services"
-install -m 644 "$SCRIPT_DIR/camera-daemon.service"         "$SYSTEMD_DIR/camera-daemon.service"
+sed "s|__CAMERA_DIR__|$INSTALL_DIR|g" "$SCRIPT_DIR/camera-daemon.service" > "$SYSTEMD_DIR/camera-daemon.service"
 install -m 644 "$DEPLOYMENT_DIR/backend-container.service" "$SYSTEMD_DIR/backend-container.service"
 
 systemctl daemon-reload
@@ -52,13 +68,15 @@ systemctl daemon-reload
 echo ""
 echo "==> Installation complete."
 echo ""
-echo "To start the camera service now:"
-echo "  sudo systemctl start camera-daemon.service"
+echo "Daemon lifecycle (use systemctl):"
+echo "  sudo systemctl start camera-daemon.service    # Start daemon"
+echo "  sudo systemctl stop camera-daemon.service     # Stop daemon"
+echo "  sudo systemctl enable camera-daemon.service   # Auto-start on boot"
+echo "  sudo systemctl status camera-daemon.service   # Check status"
+echo ""
+echo "Camera management (use camera-ctl):"
+echo "  sudo camera-ctl --help                        # Show usage"
+echo ""
+echo "Backend container:"
 echo "  sudo systemctl start backend-container.service"
-echo ""
-echo "To start automatically on boot:"
-echo "  sudo systemctl enable camera-daemon.service"
 echo "  sudo systemctl enable backend-container.service"
-echo ""
-echo "To add a camera once the daemon is running:"
-echo "  camera-ctl add /dev/video0"

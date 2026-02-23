@@ -1,14 +1,14 @@
-import socket
+from socket import socket, AF_UNIX, SOCK_STREAM
 import time
 from pathlib import Path
 
-CAMERA_CURRENT_DIR = Path("/run/camera/current")
+CAMERA_SOCK_DIR = Path("/run/camera")
 IMAGE_EXPIRE_TIME = 5
 
 _last_image: tuple[bytes, float] | None = None
 
 
-def _read_exact(sock: socket.socket, n: int) -> bytes:
+def _read_exact(sock: socket, n: int) -> bytes:
     data = b""
     while len(data) < n:
         chunk = sock.recv(n - len(data))
@@ -20,11 +20,15 @@ def _read_exact(sock: socket.socket, n: int) -> bytes:
 
 def _fetch_frame() -> bytes:
     """Connect to the first available camera socket and retrieve one PNG frame."""
-    sockets = list(CAMERA_CURRENT_DIR.iterdir()) if CAMERA_CURRENT_DIR.exists() else []
+    if not CAMERA_SOCK_DIR.exists():
+        raise OSError("No camera available")
+    
+    # Find first .sock file that isn't control.sock
+    sockets = [s for s in CAMERA_SOCK_DIR.glob("*.sock") if s.name != "control.sock"]
     if not sockets:
         raise OSError("No camera available")
 
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+    with socket(AF_UNIX, SOCK_STREAM) as s:
         s.connect(str(sockets[0]))
         size = int.from_bytes(_read_exact(s, 4), "big")
         return _read_exact(s, size)
