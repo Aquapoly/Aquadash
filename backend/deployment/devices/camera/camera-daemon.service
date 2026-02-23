@@ -9,12 +9,12 @@ RuntimeDirectory=camera
 RuntimeDirectoryMode=0750
 User=root
 Group=host-dev
-ExecStart=/usr/bin/python3 /usr/local/bin/camera-daemon.py
+ExecStart=/usr/bin/python3 __CAMERA_DIR__/camera_daemon.py
+WorkingDirectory=__CAMERA_DIR__
 Restart=on-failure
 RestartSec=2s
-# Ensure control socket and symlinks are cleaned up on shutdown
+# Ensure control socket is cleaned up on shutdown
 ExecStopPost=/bin/rm -f /run/camera/control.sock
-ExecStopPost=/bin/rm -f /run/camera/current/*
 
 [Install]
 WantedBy=multi-user.target

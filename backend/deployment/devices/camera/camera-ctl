@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """camera-ctl — send commands to the camera daemon control socket."""
 import argparse
-import socket
+from socket import socket, AF_UNIX, SOCK_STREAM, SHUT_WR
 import sys
 
 from camera_commands import CameraCommand as Command
@@ -11,10 +11,10 @@ CONTROL_SOCK = "/run/camera/control.sock"
 
 def send_command(cmd: str) -> str:
     try:
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+        with socket(AF_UNIX, SOCK_STREAM) as s:
             s.connect(CONTROL_SOCK)
             s.sendall(cmd.encode())
-            s.shutdown(socket.SHUT_WR)
+            s.shutdown(SHUT_WR)
             return s.recv(4096).decode().strip()
     except FileNotFoundError:
         print(f"Error: control socket not found at {CONTROL_SOCK}", file=sys.stderr)
@@ -32,26 +32,34 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_add = sub.add_parser("add", help="Expose a camera device")
-    p_add.add_argument("device", help="Device path (e.g. /dev/video0)")
+    p_create = sub.add_parser("create", help="Expose a new camera device")
+    p_create.add_argument("name_or_device", help="Logical name or device path")
+    p_create.add_argument("device", nargs="?", help="Device path if name was specified (e.g. /dev/video0)")
+
+    p_rewire = sub.add_parser("rewire", help="Change the device path of an existing camera")
+    p_rewire.add_argument("name", help="Logical name of the camera (e.g. camera0, front, etc.)")
+    p_rewire.add_argument("device", help="New device path (e.g. /dev/video0)")
 
     p_remove = sub.add_parser("remove", help="Remove a camera device")
-    p_remove.add_argument("device", help="Device path (e.g. /dev/video0)")
+    p_remove.add_argument("name", help="Logical name of the camera")
 
     sub.add_parser("list", help="List active camera devices")
-    sub.add_parser("shutdown", help="Gracefully shut down the daemon")
 
     args = parser.parse_args()
 
-    if args.command == "add":
-        print(send_command(f"{Command.ADD} {args.device}"))
+    if args.command == "create":
+        if args.device:  # 2 args: name device
+            cmd = f"{Command.CREATE} {args.name_or_device} {args.device}"
+        else:  # 1 arg: device only
+            cmd = f"{Command.CREATE} {args.name_or_device}"
+        print(send_command(cmd))
+    elif args.command == "rewire":
+        print(send_command(f"{Command.REWIRE} {args.name} {args.device}"))
     elif args.command == "remove":
-        print(send_command(f"{Command.REMOVE} {args.device}"))
+        print(send_command(f"{Command.REMOVE} {args.name}"))
     elif args.command == "list":
         result = send_command(Command.LIST)
         print(result if result else "(no cameras active)")
-    elif args.command == "shutdown":
-        print(send_command(Command.SHUTDOWN))
 
 
 if __name__ == "__main__":

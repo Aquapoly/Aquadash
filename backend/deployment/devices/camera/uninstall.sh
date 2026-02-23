@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+INSTALL_DIR="/opt/aquadash-camera"
 BIN_DIR="/usr/local/bin"
 SYSTEMD_DIR="/etc/systemd/system"
 
@@ -30,11 +31,11 @@ done
 systemctl daemon-reload
 
 # --- Remove installed files ---
-echo "  Removing files from $BIN_DIR"
-rm -f "$BIN_DIR/camera-daemon.py"
-rm -f "$BIN_DIR/camera.py"
-rm -f "$BIN_DIR/camera_paths.py"
+echo "  Removing camera-ctl wrapper from $BIN_DIR"
 rm -f "$BIN_DIR/camera-ctl"
+
+echo "  Removing camera daemon from $INSTALL_DIR"
+rm -rf "$INSTALL_DIR"
 
 # --- Remove user ---
 if id "$USER_NAME" > /dev/null 2>&1; then
