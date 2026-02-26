@@ -1,0 +1,2 @@
+@reboot nmcli con up robots ifname wlan1 >> /var/log/crontab/wifi.log 2>&1
+*/2 * * * * nmcli con up robots ifname wlan1 >> /var/log/crontab/wifi.log 2>&1
