@@ -1,1 +1,10 @@
-<button (click)="onClick()" class="btn-export">Exporter</button>
+<button
+  (click)="onClick()"
+  class="btn-export"
+  [ngStyle]="{
+    'background-color': THEME_COLOR[theme].primary,
+    color: THEME_COLOR[theme].baseContent
+  }"
+>
+  Exporter
+</button>
