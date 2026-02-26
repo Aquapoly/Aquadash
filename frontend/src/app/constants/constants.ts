@@ -96,10 +96,12 @@ export const CHART_CHOICES: { [key in ChartThresholdDisplay]: string } = {
 
 export const MODAL_MESSAGES = {
   SUCCESS_TITLE: 'Succès',
-  SUCCESS_CONTENT: 'Les paramètres ont été mis à jour avec succès',
+  SUCCESS_CONTENT: 'Les paramètres ont été mis à jour avec succès.',
+  SUCCESS_CONTENT_ADDED: 'Nouveau actuateur ajouté avec succès.',
   ERROR_TITLE: 'Erreur',
   ERROR_CONTENT:
-    'Une erreur est survenue lors de la mise à jour des paramètres',
+    'Une erreur est survenue lors de la mise à jour des paramètres.',
+  ERROR_CONTENT_ADDED: 'Une erreur est survenue lors de l\'ajout du nouveau actuateur.',
 } as const;
 
 export const API_DEFAULTS = {
@@ -134,6 +136,8 @@ export const SENSOR_VALIDITY_CLASSES = {
 
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
+  THRESHOLDDISPLAY: 'thresholdDisplay',
+  SENSOR_ORDER: 'sensor_order'
 } as const;
 
 export const DOM_ATTRIBUTES = {

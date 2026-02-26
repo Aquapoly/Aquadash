@@ -16,6 +16,7 @@ from .database import engine, get_db
 from .classes.sensor_type import SensorType
 from .services import camera
 from .services.actuator import get_actuator_activation
+from .services.export_data import export_all_measures_to_csv
 from .security import authentification
 from .security import permissions
 
@@ -168,6 +169,19 @@ async def prototype(prototype_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Prototype not found")
 
 @app.get(
+    "/measurements/export",
+    tags=["Measurements"],
+    response_class=StreamingResponse,
+)
+async def export_all_sensors_to_csv(db: Session = Depends(get_db)):
+    csv_content = export_all_measures_to_csv(db)
+    return StreamingResponse(
+        io.StringIO(csv_content),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=all_sensors_measurements.csv"}
+    )
+
+@app.get(
     "/measurements/{sensor_id}",
     tags=["Measurements"],
     response_model=list[schemas.Measurement],
@@ -310,3 +324,19 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
+
+@app.get(
+    "/docs/openapi.json",
+    tags=["Docs"],
+    summary="OpenAPI JSON",
+    operation_id="openapi_json",
+)
+async def openapi_json():
+    """
+    Returns the OpenAPI JSON for the backend API.
+    """
+    try:
+        return app.openapi()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
