@@ -18,6 +18,8 @@ interface TimelapseSettings {
 })
 export class TimelapseMenuComponent implements OnInit{
   timestamp: number | null = null;
+  // expose SERVER_URL to the template
+  SERVER_URL = SERVER_URL;
 
   frequencyOptions: DropdownOption[] = [
     { label: '5 secondes', value: 5 },
