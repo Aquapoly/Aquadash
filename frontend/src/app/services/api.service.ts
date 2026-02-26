@@ -24,4 +24,11 @@ export class ApiService {
     });
   }
 
+  exportMeasurements() {
+    return this.http.get(this.serverUrl + '/measurements/export', {
+      responseType: 'blob',
+      observe: 'response',
+    });
+  }
+
 }
