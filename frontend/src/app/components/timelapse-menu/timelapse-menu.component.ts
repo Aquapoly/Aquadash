@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { DropdownComponent, DropdownOption } from '../dropdown/dropdown.component';
+import { SERVER_URL } from '@app/environment';
 
 interface TimelapseSettings {
   frequency: DropdownOption;
@@ -66,7 +67,7 @@ export class TimelapseMenuComponent implements OnInit{
       expected_frames: number | null;
       end_date: number | null;
       latest_frame_time: number | null;
-    }>('http://localhost:8000/timelapse/status').subscribe({
+    }>(`${SERVER_URL}/timelapse/status`).subscribe({
       next: (response) => {
         this.running = response.running;
         if (this.running) {
@@ -92,7 +93,7 @@ export class TimelapseMenuComponent implements OnInit{
 
   getLatestFrameInfo() {
     this.http
-    .get<any>('http://localhost:8000/timelapse/frame-info').subscribe({
+    .get<any>(`${SERVER_URL}/timelapse/frame-info`).subscribe({
       next: (response) => {
         this.frameNumber = response.frames_taken;
 
@@ -128,7 +129,7 @@ export class TimelapseMenuComponent implements OnInit{
       resolution: this.settings.resolution.value,
     };
 
-    this.http.post('http://localhost:8000/timelapse/start', payload).subscribe({
+    this.http.post(`${SERVER_URL}/timelapse/start`, payload).subscribe({
       next: () => {
         this.endDate = new Date(Date.now() + (this.settings.duration.value as number) * 1000);
         this.running = true;
@@ -142,7 +143,7 @@ export class TimelapseMenuComponent implements OnInit{
   stop() {
     this.error = null;
 
-    this.http.post('http://localhost:8000/timelapse/stop', {}).subscribe({
+    this.http.post(`${SERVER_URL}/timelapse/stop`, {}).subscribe({
       next: () => {
         this.running = false;
         this.endDate = null;
