@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { SERVER_URL } from '@app/environment';
 
 interface Timelapse {
   id: string;
@@ -24,7 +25,7 @@ export class TimelapseLibraryComponent implements OnInit{
   ngOnInit(): void {
     this.http.get<{
       timelapses: Timelapse[]
-    }>('http://localhost:8000/timelapses').subscribe({
+    }>(`${SERVER_URL}/timelapses`).subscribe({
       next: (response) => {
         this.timelapses = response.timelapses;
       },
@@ -35,12 +36,12 @@ export class TimelapseLibraryComponent implements OnInit{
   }
 
   download(timelapse: Timelapse) {
-    window.open(`http://localhost:8000/timelapse/${timelapse.id}/download`, '_blank');
+    window.open(`${SERVER_URL}/timelapse/${timelapse.id}/download`, '_blank');
   }
 
   delete(timelapse: Timelapse) {
     if (confirm(`Êtes-vous sûr de vouloir supprimer "${timelapse.name}"?`)) {
-      this.http.delete(`http://localhost:8000/timelapse/${timelapse.id}`).subscribe({
+      this.http.delete(`${SERVER_URL}/timelapse/${timelapse.id}`).subscribe({
         next: () => {
           this.timelapses = this.timelapses.filter(t => t.id !== timelapse.id);
         },
