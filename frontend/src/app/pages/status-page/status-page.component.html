@@ -44,7 +44,13 @@
   </div>
   }
 </div>
-<app-export-button></app-export-button>
-<app-camera-picture></app-camera-picture>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem] m-auto">
+  <div class="col-span-12 lg:col-span-6">
+    <app-camera-picture></app-camera-picture>
+  </div>
+  <div class="col-span-12 lg:col-span-6 flex items-end justify-end">
+    <app-export-button></app-export-button>
+  </div>
+</div>
 <span class="text-error hidden"></span>
 <span class="text-neutral hidden"></span>
