@@ -1,54 +1,64 @@
-version: '3.1'
-
 services:
   db:
-    image: postgres
+    image: postgres:18
+    container_name: db
+    restart: always
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: aquapoly
+      POSTGRES_DB: aquapoly
+
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
-    container_name: db
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_PASSWORD: aquapoly
-      POSTGRES_DB: aquapoly
-    restart: always
-    ports:
-      - "5432:5432"
-    expose:
-      - "5432"
-    networks:
-      - postgres
+
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d:Z
 
+    networks:
+      - backend
+
   app:
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
     build:
       context: .
       dockerfile: app.Dockerfile
+
+    container_name: backend-app
+
+    stdin_open: true
+    tty: true
+    restart: always
+
     environment:
       DOCKER: 1
-    privileged: true
+      CAMERA_NAME: ${CAMERA_NAME:-}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: aquapoly
+      DB_NAME: aquapoly
+
     volumes:
       - .:/usr/src/app:Z
-      - /dev:/dev
-    restart: always
+      - /run/camera:/run/camera:z
+
+    user: "1000:${HOST_DEV_GID}"
+
     depends_on:
       db:
         condition: service_healthy
-    links:
-      - db:db
+
     ports:
       - "8000:8000"
-    expose:
-      - "8000"
+
     networks:
-      - postgres
+      - backend
+
 
 networks:
-  postgres:
+  backend:
     driver: bridge

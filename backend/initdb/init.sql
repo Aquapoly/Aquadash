@@ -1,7 +1,13 @@
 -- Ajouter la colonne condition_value si elle n'existe pas déjà
 DO $$ 
 BEGIN
-    IF NOT EXISTS (
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'actuators'
+    )
+    AND NOT EXISTS (
         SELECT 1
         FROM information_schema.columns
         WHERE table_name = 'actuators' AND column_name = 'condition_value'

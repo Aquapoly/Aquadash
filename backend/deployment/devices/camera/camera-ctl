@@ -44,6 +44,7 @@ def main():
     p_remove.add_argument("name", help="Logical name of the camera")
 
     sub.add_parser("list", help="List active camera devices")
+    sub.add_parser("gid", help="Print host-dev group ID")
 
     args = parser.parse_args()
 
@@ -60,6 +61,14 @@ def main():
     elif args.command == "list":
         result = send_command(Command.LIST)
         print(result if result else "(no cameras active)")
+    elif args.command == "gid":
+        import grp
+        try:
+            gid = grp.getgrnam("host-dev").gr_gid
+            print(gid)
+        except KeyError:
+            print("Error: host-dev group not found", file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

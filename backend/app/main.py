@@ -14,7 +14,7 @@ import io
 from . import crud, models, schemas
 from .database import engine, get_db
 from .classes.sensor_type import SensorType
-from .services import camera
+from .services.camera import camera_client, CameraNotAvailableError, CameraSocketNotFoundError
 from .services.actuator import get_actuator_activation
 from .services.export_data import export_all_measures_to_csv
 from .services import timelapse
@@ -234,9 +234,13 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
 @app.get("/picture", response_class=StreamingResponse)
 async def picture():
     try:
-        return StreamingResponse(io.BytesIO(camera.get_image()), media_type="image/png")
-    except OSError:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not available.")
+        return StreamingResponse(io.BytesIO(camera_client.get_image()), media_type="image/png")
+    except PermissionError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Docker permission error. Check docker configuration.")
+    except CameraNotAvailableError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera currently unavailable.")
+    except CameraSocketNotFoundError:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not mounted. Check camera-daemon in the host or config of this container.")
 
 
 # auth stuff
