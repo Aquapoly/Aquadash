@@ -57,7 +57,7 @@
               <button (click)="getLatestFrameInfo()" class="px-4 py-2 bg-blue-500 text-white rounded">Refresh</button>
           </div>
           @if (timestamp) {
-            <img [src]="'http://localhost:8000/timelapse/latest-frame?t=' + timestamp" width="100%" class="mt-2 rounded" />
+            <img [src]="SERVER_URL + '/timelapse/latest-frame?t=' + timestamp" width="100%" class="mt-2 rounded" />
           }
           <div class="pt-3 flex justify-center text-blue-800">
             <p><strong>Date de fin attendue:</strong> {{ endDate?.toLocaleString() }}</p>
