@@ -1,145 +1,184 @@
 #!/usr/bin/env python3
 import os
+import time
+import signal
 from pathlib import Path
 from socket import socket, AF_UNIX, SOCK_STREAM
 from threading import Thread, Lock
 from typing import Dict
-import time
 
 from camera_paths import SOCK_DIR, CONTROL_SOCKET
 from camera_commands import CameraCommand as Command
-from camera import Camera
+from physical_camera import PhysicalCamera
+from logical_camera import LogicalCamera
 
 class CameraDaemon:
-    """Manages multiple cameras and a control socket"""
-    
-    def __init__(
-            self,
-            sock_dir: Path=SOCK_DIR,
-            control_socket_file: Path=CONTROL_SOCKET
-    ):
-        """
-        Args:
-            sock_dir: runtime directory where camera sockets are created
-            cameras: mapping of camera device paths to Camera instances
-            control_socket: path to the control socket for managing cameras
-        """
+    """Manages physical and logical cameras with on-demand frame capture."""
 
-        self.sock_dir: Path = sock_dir
-        self.sock_dir.mkdir(mode=0o750, exist_ok=True)  # normally created by systemd
+    def __init__(self, sock_dir: Path = SOCK_DIR, control_socket_file: Path = CONTROL_SOCKET):
+        self.sock_dir = sock_dir
+        self.control_socket_file = control_socket_file
+        self.lock = Lock()
+        self.running = False
 
-        self.cameras: Dict[str, Camera] = {}   # logical name -> Camera
-        self.lock: Lock = Lock()
-        
-        self.control_socket_file: Path = control_socket_file
+        # Maps physical device path -> PhysicalCamera
+        self.physical_cameras: Dict[str, PhysicalCamera] = {}
+        # Maps logical camera name -> LogicalCamera
+        self.logical_cameras: Dict[str, LogicalCamera] = {}
+
+        self.sock_dir.mkdir(parents=True, exist_ok=True)
+        os.chmod(self.sock_dir, 0o770)
+
         if control_socket_file.exists():
             control_socket_file.unlink()
-
-        self.control_server: socket = socket(AF_UNIX, SOCK_STREAM)
+        self.control_server = socket(AF_UNIX, SOCK_STREAM)
         self.control_server.bind(str(control_socket_file))
         os.chmod(control_socket_file, 0o660)
         self.control_server.listen(1)
 
-        self.running: bool = False
-        self.control_thread: Thread = Thread(target=self._control_loop, daemon=True)
+        self.control_thread = Thread(target=self._control_loop, daemon=True)
 
     def run(self):
         self.running = True
         self.control_thread.start()
         print(f"[Daemon] Control socket listening at {self.control_socket_file}")
 
+    def shutdown(self):
+        self.running = False
+        with self.lock:
+            for cam in self.logical_cameras.values():
+                cam.teardown()
+            for cam in self.physical_cameras.values():
+                cam.shutdown()
+            self.logical_cameras.clear()
+            self.physical_cameras.clear()
+        try:
+            self.control_server.close()
+            self.control_socket_file.unlink()
+        except Exception:
+            pass
+        print("[Daemon] Shutdown complete")
+
+    # --------------------------
+    # Control socket
+    # --------------------------
     def _control_loop(self):
         while self.running:
             try:
                 conn, _ = self.control_server.accept()
-                t: Thread = Thread(target=self._handle_control_conn, args=(conn,), daemon=True)
-                t.start()
+                Thread(target=self._handle_control_conn, args=(conn,), daemon=True).start()
             except Exception as e:
                 print(f"[Daemon] Control accept error: {e}")
 
     def _handle_control_conn(self, conn: socket):
         try:
-            data: str = conn.recv(1024).decode().strip()
+            data = conn.recv(1024).decode().strip()
             if not data:
                 return
-            
-            parts: list[str] = data.split(maxsplit=2)
-            cmd: str = parts[0].upper()
-            arg0: str | None = parts[1] if len(parts) > 1 else None
-            arg1: str | None = parts[2] if len(parts) > 2 else None
-            response: str = ""
+            parts = data.split(maxsplit=2)
+            cmd = parts[0]
+            arg0 = parts[1] if len(parts) > 1 else None
+            arg1 = parts[2] if len(parts) > 2 else None
+            response = ""
 
-            match cmd:
-                case Command.CREATE:
-                    # CREATE supports 1 arg (device) or 2 args (name device)
-                    if arg1:  # 2 args: name device
-                        cam = self.create_camera(arg1, logical_name=arg0)
-                    else:  # 1 arg: device only
-                        cam = self.create_camera(arg0)
-                    response = f"Camera added: {cam.logical_name} ({cam.camera_dev}) -> {cam.sock_path}"
+            with self.lock:
+                match cmd:
+                    case Command.CREATE:
+                        if not arg0:
+                            response = "Missing logical camera name"
+                        else:
+                            logical_name: str = arg0
+                            phys_dev: str = arg1 or logical_name
+                            response = self._create_logical_camera(logical_name, phys_dev)
 
-                case Command.REWIRE:
-                    self.rewire_camera(arg0, arg1)
-                    response = f"Camera rewired: {arg0} -> {arg1}"
+                    case Command.REWIRE:
+                        if not arg0 or not arg1:
+                            response = "rewire requires logical_name and new_physical_device"
+                        else:
+                            logical_name: str = arg0
+                            phys_dev: str = arg1
+                            response = self._rewire_logical_camera(logical_name, phys_dev)
 
-                case Command.REMOVE:
-                    self.remove_camera(arg0)
-                    response = f"Camera removed: {arg0}"
+                    case Command.REMOVE:
+                        if not arg0:
+                            response = "remove requires logical camera name"
+                        else:
+                            logical_name: str = arg0
+                            response = self._remove_logical_camera(logical_name)
 
-                case Command.LIST:
-                    with self.lock:
-                        response = "\n".join(self.cameras.keys())
+                    case Command.LIST:
+                        response = self._get_list()
 
-                case _:
-                    response = f"Unknown command: {cmd}"
+                    case Command.GID:
+                        response = self._get_gid()
+
+                    case _:
+                        response = f"Unknown command: {cmd}"
 
             conn.sendall(response.encode())
-
         finally:
             conn.close()
     
-    def create_camera(self, camera_dev_file: str, logical_name: str | None = None) -> Camera:
-        with self.lock:
-            cam: Camera = Camera(camera_dev_file, logical_name, sock_dir=self.sock_dir)
-            logical_name = cam.logical_name
+    def _get_or_create_physical_camera(self, phys_dev: str) -> PhysicalCamera:
+        if phys_dev in self.physical_cameras:
+            return self.physical_cameras[phys_dev]
 
-            if logical_name in self.cameras:
-                print(f"[Daemon] Camera {logical_name} already exists")
-                return self.cameras[logical_name]
-            
-            self.cameras[cam.logical_name] = cam
-            cam.run()
-            return cam
+        phys_cam = PhysicalCamera(phys_dev)
+        self.physical_cameras[phys_dev] = phys_cam
+        return phys_cam
     
-    def rewire_camera(self, logical_name: str, new_camera_dev_file: str):
-        with self.lock:
-            if logical_name not in self.cameras:
-                raise ValueError(f"Camera {logical_name} does not exist")
-            
-            self.cameras[logical_name].rewire(new_camera_dev_file)
+    def _create_logical_camera(self, logical_name: str, phys_dev: str) -> str:
+        if logical_name in self.logical_cameras:
+            return f"Logical camera {logical_name} already exists"
 
-    def remove_camera(self, logical_name: str):
-        with self.lock:
-            cam: Camera | None = self.cameras.pop(logical_name, None)
-            if not cam:
-                raise ValueError(f"Camera {logical_name} does not exist")
-            
-            cam.teardown()
+        phys_cam: PhysicalCamera = self._get_or_create_physical_camera(phys_dev)
 
-    def shutdown(self):
-        self.running = False
-        with self.lock:
-            for cam in list(self.cameras.values()):
-                cam.teardown()
-            self.cameras.clear()
+        log_cam = LogicalCamera(logical_name, phys_cam, sock_dir=self.sock_dir)
+        self.logical_cameras[logical_name] = log_cam
+        log_cam.run()
+        return f"Logical camera created: {log_cam}"
 
+    def _destroy_physical_camera_if_dangling(self, phys_dev: str) -> None:
+        phys_cam: PhysicalCamera = self.physical_cameras.get(phys_dev)
+        if not phys_cam:
+            return
+
+        if phys_cam.empty():
+            phys_cam.shutdown()
+            self.physical_cameras.pop(phys_dev)
+    
+    def _rewire_logical_camera(self, logical_name: str, phys_dev: str) -> str:
+        log_cam: LogicalCamera = self.logical_cameras.get(logical_name)
+        if not log_cam:
+            return f"Logical camera {arg0} does not exist"
+
+        new_phys_cam: PhysicalCamera = self._get_or_create_physical_camera(phys_dev)
+        old_phys_dev: str = log_cam.reassign_physical_camera(new_phys_cam)
+
+        self._destroy_physical_camera_if_dangling(old_phys_dev)
+
+        return f"Logical camera {logical_name} rewired to {phys_dev} (was {old_phys_dev})"
+
+    def _remove_logical_camera(self, logical_name: str) -> str:
+        log_cam: LogicalCamera = self.logical_cameras.pop(logical_name)
+        if not log_cam:
+            return f"Logical camera {arg0} does not exist"
+        phys_dev: str = log_cam.physical_camera.device_path
+        log_cam.teardown()
+
+        self._destroy_physical_camera_if_dangling(phys_dev)
+
+        return f"Logical camera {logical_name} removed"
+
+    def _get_list(self) -> str:
+        return "\n".join(str(cam) for cam in self.logical_cameras.values())
+
+    def _get_gid(self) -> str:
+        import grp
         try:
-            self.control_server.close()
-            os.remove(self.control_socket_file)
-        except Exception:
-            pass
-
-        print("[Daemon] Shutdown complete")
+            return str(grp.getgrnam("host-dev").gr_gid)
+        except KeyError:
+            return "host-dev group not found"
 
 
 if __name__ == "__main__":
@@ -150,15 +189,11 @@ if __name__ == "__main__":
         daemon.shutdown()
         exit(0)
 
-    from signal import signal, SIGINT, SIGTERM
-
-    signal(SIGINT, shutdown_handler)
-    signal(SIGTERM, shutdown_handler)
+    signal.signal(signal.SIGINT, shutdown_handler)
+    signal.signal(signal.SIGTERM, shutdown_handler)
 
     daemon.run()
-
     print("[Daemon] Running. Use control socket to CREATE/REWIRE/REMOVE/LIST cameras.")
 
-    # main thread just sleeps
     while daemon.running:
         time.sleep(1)

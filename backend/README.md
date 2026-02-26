@@ -7,202 +7,222 @@ FastAPI backend for monitoring and controlling a hydroponics system.
 
 ## 🚀 Quick Start
 
-### To get the backend running on your computer, install Python 3.8+ and Git (optionnal) :
+### Prerequisites
 
-### 🐧 On Linux
+#### 1. Software
 
-  ```bash
-  # Install python3:
-  sudo apt update && sudo apt install python3
- 
-  # Install git
-  sudo apt install git
-  ```
-### 🪟 On Windows:  
-  **These versions** are recomended: :  
- - [Python](https://apps.microsoft.com/detail/9PNRBTZXMB4Z?hl=en-us&gl=CA&ocid=pdpshare)  
- - [Git Bash](https://git-scm.com/install/windows) 
+**🐧 Linux:**
+
+```bash
+sudo apt update && sudo apt install python3 git
+```
+
+**🪟 Windows:**
+
+- [Python 3.8+](https://apps.microsoft.com/detail/9PNRBTZXMB4Z?hl=en-us&gl=CA&ocid=pdpshare)
+- [Git Bash](https://git-scm.com/install/windows)
+
+**Docker (optional):**
+
+- **Linux:** `sudo apt install docker.io docker-compose-plugin`
+- **Windows:** [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) with WSL2
+
+It is recommended that you use Docker mode for development and production. It is also recommended that you restart your computer after having installed docker.
+
+_Note: You may need to [add your user to the `docker` group](https://docs.docker.com/engine/install/linux-postinstall/) to run docker commands without sudo._
+
+#### 2. Python dependencies
+
+The `run.py` script needs the `python-dotenv` package to load environment variables from the `.env` file. Install it globally for your user on the host system:
+
+```bash
+pip install python-dotenv
+```
 
 ---
 
-## 🛠 Development Setup
+## 📷 Step 1: Device Services
 
-### 1. Virtual Environment
+### Camera Daemon
 
-From the `Aquadash/backend` folder, open a terminal and run:
+Whether you want camera functionality or not, install the camera daemon on the **host system** first. It is required for Docker mode, and will be used for native mode if you want to use the camera. It is an intermediary between the camera and the backend for secure access to your devices or lackthereof.
+
+#### Installation
 
 ```bash
-python -m venv .venv
+cd deployment/devices/camera
+sudo ./install.sh
 ```
 
-### Activate The Environment
+#### Start the service
 
-**🐧 On Linux/ 🍎 On MacOS:**
+```bash
+sudo systemctl start camera-daemon.service
+```
+
+#### Create a camera
+
+Replace `camera0` with whatever camera name suits you.
+
+```bash
+sudo camera-ctl create camera0 /dev/video0
+sudo camera-ctl list  # Verify
+```
+
+#### Documentation
+
+See [`deployment/devices/camera/README.md`](deployment/devices/camera/README.md) for more information on the camera daemon and camera-ctl.
+
+---
+
+## 🛠 Step 2: Setup
+
+### Configuration
+
+1. **Copy environment template:**
+
+```bash
+cp .env.example .env
+```
+
+2. **Edit `.env` to configure:**
+   - `DOCKER=1` for Docker mode, `DOCKER=0` for native Python
+   - `CAMERA_NAME=camera0` (or any other name you want to use, such as `front` or `back`, etc.)
+   - `HOST_ENV_GID=...`
+
+To obtain the correct value of `HOST_ENV_GID`, execute this command, after having started the camera daemon:
+
+```bash
+sudo camera-ctl gid  # Will print the required value for HOST_ENV_GID to stdout
+```
+
+### 🐘 Native PostgreSQL + Python Setup
+
+**Only if `DOCKER=0` in `.env`**
+
+Your only manual steps are installing PostgreSQL and creating the database. The rest is handled by the script.
+
+**🐧 Linux:**
+
+```bash
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'aquapoly';"
+sudo -u postgres createdb aquapoly
+```
+
+**🪟 Windows:**
+
+- Install [pgAdmin 4](https://www.pgadmin.org/download/pgadmin-4-windows/)
+- Set `postgres` user password to `aquapoly`
+- Create `aquapoly` database
+
+### Docker Setup
+
+**Only if `DOCKER=1` in `.env`**
+
+Only building the containers is required. Everything else is handled by the `run.py` script.
+
+**Build containers:**
+
+```bash
+docker compose build
+```
+
+---
+
+## ▶️ Step 3: Run
+
+The `run.py` script is cross-platform and will acquire your mode from your previously-configured `.env` file to run the appropriate backend.
+
+You can run it directly with:
+
+```bash
+./run
+./run -d        # Docker: detached mode
+./run --reload  # Native: auto-reload on changes
+```
+
+The script automatically:
+
+- Loads configuration from `.env`
+- Detects Docker vs Native mode
+- Creates virtual environment and installs dependencies (Native mode, first run)
+- Gets host-dev GID for camera access (Docker mode)
+- Starts the appropriate backend
+
+In docker mode, additional arguments get passed to `docker compose up`.
+
+In native mode, additional arguments get passed to `uvicorn`.
+
+_Note: You can also invoke python explicitly as `python run <args>`._
+
+---
+
+## 🔗 Access
+
+- **API Documentation:** http://localhost:8000/docs
+- **Camera Endpoint:** http://localhost:8000/picture
+
+---
+
+## 🧪 Testing
+
+### Run Tests in Docker
+
+```bash
+docker compose up -d
+docker exec -it <container_name> /bin/sh
+cd /usr/src/app
+pytest                          # All tests
+pytest tests/test_example.py    # Specific test
+pytest --cov-report=html        # Coverage report
+```
+
+### Run Tests Natively
 
 ```bash
 source .venv/bin/activate
-```
-🪟 **On Windows:**
-
- In **VS Code** :  
-  - `Ctrl + Shift + P` → `Python: Select Interpreter` → enter path to `backend/.venv/Scripts/python.exe`
-
-  Or in the **Terminal** :
-```powershell
-.\.venv\Scripts\activate
-```
----
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
+pytest
 ```
 
----
-
-## 🗄 Database Configuration
-
-The backend uses **PostgreSQL 12+**.  
-You can install it directly or use **[Docker](#docker-option-en)** for a simpler setup.
-
-## 🐘 Option A — Native PostgreSQL Installation
-
-
-- ### 🐧 On Linux
-
-   ```bash
-   # 1. Install PostgreSQL
-   sudo apt install postgresql postgresql-contrib
-
-   # 2. Start service
-   sudo systemctl start postgresql
-
-   # 3. Set password (aquapoly)
-   sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'aquapoly';"
-
-   # 4. Create database
-   sudo -u postgres createdb aquapoly
-
-   # 5. Start the backend
-  uvicorn app.main:app --reload
-
-   ```
-   ⚡ Backend should now be running
-
-- ### 🪟 On Windows
-   1. Install **[pgAdmin 4](https://www.pgadmin.org/download/pgadmin-4-windows/)** from the official site
-   2. Use pgAdmin4 to :
-      - Set password for `postgres` user (aquapoly)
-      - Create `aquapoly` database
-   3. Start backend on a terminal (from backend folder) :
-         ```powershell
-         uvicorn app.main:app --reload
-         ```
-      ⚡ Backend should now be running
----
-
-Link to Access API docs:  
-🔗 [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## 🐋 Option B — Using Docker <a id="docker-option-en"></a>
-
-- ### 🐧 On Linux
-
-   ```bash
-   # 1. Install Docker 
-   sudo apt install docker.io docker-compose
-
-   # 2. Restart your computer (recommended)
-
-   # 3. Build the app container (first time or after updates)
-  docker-compose build
-
-   # 4. Start Containers
-  docker-compose up # Or running in background: docker-compose up -d
-   ```
-   ⚡ Backend should now be running
-
-- ### 🪟 On Windows
-
-  1. Get **[Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/)** from the official site  and lauch the installer
-  2. Check **Use Wsl2** 
-  3. Restat your computer once the install is finished
-  4. Build and lauch the container (from backend folder):
-      ```bash
-      # Build Container
-      docker-compose build
-
-      # Start Containers
-      docker-compose up # Or running in background: docker-compose up -d
-      ```
-   ⚡ Backend should now be running
-
----
-Link to Access API docs:  
-🔗 [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## 🧪 Running Backend Test Cases
-
-The backend tests use `pytest`.
-
-### Running Tests in Docker
-
-1. **Start your backend container**:
-   ```bash
-   docker-compose up -d backend
-   ```
-
-2. **Access the container**:
-   - **Docker Desktop**: Click on your container → "Open in Terminal"
-   - **Command Line**:
-     ```bash
-     docker ps # List containers
-     docker exec -it backend_container_name /bin/sh # Enter container
-     ```
-
-3. **Navigate to the app directory** (if not already current directory):
-   ```bash
-   cd /usr/src/app
-   ```
-
-4. **Run tests**:
-   - Run all tests:
-     ```bash
-     pytest
-     ```
-   - Run specific test file:
-     ```bash
-     pytest tests/test_example.py
-     ```
-   - Run coverage report:
-     ```bash
-     pytest --cov-report=html
-     ```
-     - Open the `htmlcov/index.html` file in your browser to view the coverage report.
 ---
 
 ## 📚 Developer Resources
 
-| Technology | Documentation |
-|------------|---------------|
-| FastAPI | https://fastapi.tiangolo.com |
-| SQLAlchemy | https://www.sqlalchemy.org |
-| Pydantic | https://pydantic-docs.helpmanual.io |
-| PostgreSQL | https://www.postgresql.org/docs |
-| Docker | https://www.docker.com/ |
-| Pytest | https://docs.pytest.org/en/stable/ |
+| Technology | Documentation                       |
+| ---------- | ----------------------------------- |
+| FastAPI    | https://fastapi.tiangolo.com        |
+| SQLAlchemy | https://www.sqlalchemy.org          |
+| Pydantic   | https://pydantic-docs.helpmanual.io |
+| PostgreSQL | https://www.postgresql.org/docs     |
+| Docker     | https://www.docker.com/             |
+| Pytest     | https://docs.pytest.org/en/stable/  |
 
 ---
 
 ## 💡 Troubleshooting
 
-- **Windows PowerShell issues:** Use Git Bash for commands if PowerShell blocks execution.  
-- **PostgreSQL connection errors:** Verify that the `postgres` password is set to `aquapoly` and that the DB service is running.  
-- **Docker port already in use** PostgreSQL is probably running **or** A detached container is running.
+**PostgreSQL connection errors:**
+
+- Verify password is `aquapoly`
+- Check service is running: `sudo systemctl status postgresql`
+
+**Docker port already in use:**
+
+- PostgreSQL may be running natively
+- Or a detached container is already running: `docker ps`
+
+**Camera not available:**
+
+- Ensure camera daemon is running: `sudo systemctl status camera-daemon.service`
+- Verify camera exists: `sudo camera-ctl list`
+- Check CAMERA_NAME in `.env` matches camera name
+
+**Windows PowerShell issues:**
+
+- Use Git Bash for shell commands
+
 ---
-<br><br>
+
 © 2025 Aquadash — Released under the GNU License

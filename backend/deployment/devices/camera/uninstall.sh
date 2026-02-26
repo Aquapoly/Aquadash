@@ -8,7 +8,7 @@ SYSTEMD_DIR="/etc/systemd/system"
 GROUP_NAME="host-dev"
 USER_NAME="camera"
 
-SERVICES=("camera-daemon.service" "backend-container.service")
+SERVICES=("camera-daemon.service")
 
 echo "==> Uninstalling Aquadash camera service"
 
@@ -52,6 +52,15 @@ if getent group "$GROUP_NAME" > /dev/null 2>&1; then
     else
         echo "  Skipping group removal: $GROUP_NAME still has members ($members)"
     fi
+fi
+
+# --- Remove SELinux policy (if installed) ---
+if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+    echo "  Removing SELinux camera policy..."
+
+    semodule -r aquadash_camera >/dev/null 2>&1 || true
+    semanage fcontext -d '/run/camera(/.*)?' >/dev/null 2>&1 || true
+    restorecon -Rv /run/camera >/dev/null 2>&1 || true
 fi
 
 echo ""
