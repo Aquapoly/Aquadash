@@ -12,13 +12,14 @@ import {
 } from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
+import { ExportButtonComponent } from '@app/components/export-button/export-button.component';
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule, CameraPictureComponent],
+  imports: [LineChartComponent, FormsModule, CameraPictureComponent, ExportButtonComponent],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
