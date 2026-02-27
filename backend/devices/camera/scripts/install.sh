@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOYMENT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+HOST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../host"
 
 INSTALL_DIR="/opt/aquadash-camera"
 BIN_DIR="/usr/local/bin"
@@ -12,7 +11,7 @@ GROUP_NAME="host-dev"
 USER_NAME="camera"
 
 POLICY_NAME="aquadash_camera"
-SELINUX_DIR="$SCRIPT_DIR/selinux"
+SELINUX_DIR="$HOST_DIR/selinux"
 
 echo "==> Installing Aquadash camera service"
 
@@ -36,23 +35,22 @@ if ! id -nG "$USER_NAME" | grep -qw "$GROUP_NAME"; then
     usermod -aG "$GROUP_NAME" "$USER_NAME"
 fi
 
-# --- Install Python dependencies ---
-echo "  Checking system's Python dependencies"
-for pkg in imageio opencv-python-headless; do
-    if ! python3 -c "import ${pkg//-/_}" 2>/dev/null; then
-        echo "  Installing $pkg (required for camera capture)"
-        pip3 install "$pkg" --break-system-packages 2>/dev/null || pip3 install "$pkg"
-    fi
-done
-
 # --- Install camera daemon files ---
 echo "  Installing camera daemon to $INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
-install -m 755 "$SCRIPT_DIR/camera_daemon.py" "$INSTALL_DIR/camera_daemon.py"
-install -m 644 "$SCRIPT_DIR/physical_camera.py" "$INSTALL_DIR/physical_camera.py"
-install -m 644 "$SCRIPT_DIR/logical_camera.py" "$INSTALL_DIR/logical_camera.py"
-install -m 644 "$SCRIPT_DIR/camera_paths.py" "$INSTALL_DIR/camera_paths.py"
-install -m 644 "$SCRIPT_DIR/camera_commands.py" "$INSTALL_DIR/camera_commands.py"
+chown -R root:"$GROUP_NAME" "$INSTALL_DIR"
+chmod -R 750 "$INSTALL_DIR"
+
+install -m 644 "$HOST_DIR"/*.py "$INSTALL_DIR"
+install -m 755 "$HOST_DIR/camera_daemon.py" "$INSTALL_DIR"
+
+# --- Create virtual environment ---
+echo "  Creating Python virtual environment..."
+python3 -m venv "$INSTALL_DIR/.venv"
+
+echo "  Installing Python dependencies into venv..."
+"$INSTALL_DIR/.venv/bin/pip" install --upgrade pip --quiet
+"$INSTALL_DIR/.venv/bin/pip" install -r "$HOST_DIR/requirements.txt" --quiet
 
 # --- Create camera-ctl wrapper in PATH ---
 echo "  Installing camera-ctl wrapper to $BIN_DIR"
@@ -60,13 +58,13 @@ cat > "$BIN_DIR/camera-ctl" <<EOF
 #!/usr/bin/env bash
 exec "$INSTALL_DIR/camera-ctl" "\$@"
 EOF
-install -m 755 "$SCRIPT_DIR/camera-ctl" "$INSTALL_DIR/camera-ctl"
+install -m 755 "$HOST_DIR/camera-ctl" "$INSTALL_DIR/camera-ctl"
 chown root:"$GROUP_NAME" "$BIN_DIR/camera-ctl"
 chmod 0750 "$BIN_DIR/camera-ctl"
 
 # --- Install systemd services with path substitution ---
 echo "  Installing systemd services"
-sed "s|__CAMERA_DIR__|$INSTALL_DIR|g" "$SCRIPT_DIR/camera-daemon.service" \
+sed "s|__CAMERA_DIR__|$INSTALL_DIR|g" "$HOST_DIR/camera-daemon.service" \
     > "$SYSTEMD_DIR/camera-daemon.service"
 systemctl daemon-reload
 
@@ -81,7 +79,11 @@ if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
 
     # Apply file context
     semanage fcontext -a -t camera_socket_t '/run/camera/[^/]+\.sock' 2>/dev/null || true
-    semanage fcontext -a -t var_run_t '/run/camera' 2>/dev/null || true
+    if ! semanage fcontext -l | grep -q '/run/camera'; then
+        semanage fcontext -a -t var_run_t '/run/camera'
+    else
+        semanage fcontext -m -t var_run_t '/run/camera'
+    fi
 
     echo "  SELinux policy installed"
 fi

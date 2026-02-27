@@ -14,7 +14,7 @@ Group=host-dev
 ExecStartPre=/usr/sbin/restorecon -Rv /run/camera
 
 # Daemon
-ExecStart=/usr/bin/python3 __CAMERA_DIR__/camera_daemon.py
+ExecStart=__CAMERA_DIR__/.venv/bin/python __CAMERA_DIR__/camera_daemon.py
 WorkingDirectory=__CAMERA_DIR__
 
 # Cleanup sockets on stop

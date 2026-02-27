@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse, StreamingResponse
@@ -14,8 +14,8 @@ import io
 from . import crud, models, schemas
 from .database import engine, get_db
 from .classes.sensor_type import SensorType
-from .services.camera import camera_client, CameraNotAvailableError, CameraSocketNotFoundError
 from .services.actuator import get_actuator_activation
+from .services.camera import get_picture
 from .services.export_data import export_all_measures_to_csv
 from .services import timelapse
 from .security import authentification
@@ -231,17 +231,10 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
     return crud.get_actuators(db=db, prototype_id=prototype_id)
 
 
-@app.get("/picture", response_class=StreamingResponse)
+@app.get("/picture")
 async def picture():
-    try:
-        return StreamingResponse(io.BytesIO(camera_client.get_image()), media_type="image/png")
-    except PermissionError:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Docker permission error. Check docker configuration.")
-    except CameraNotAvailableError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera currently unavailable.")
-    except CameraSocketNotFoundError:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not mounted. Check camera-daemon in the host or config of this container.")
-
+    pic: bytes = await get_picture()
+    return Response(content=pic, media_type="image/png")
 
 # auth stuff
 @app.post("/token", response_model=schemas.Token)

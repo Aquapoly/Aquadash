@@ -1,97 +1,82 @@
-#!/usr/bin/env python3
-"""
-Aquadash Backend Launch Script
-Loads configuration from .env and starts the application in native or Docker mode
-"""
+#!/usr/bin/env bash
+set -euo pipefail
 
-import os
-import sys
-import subprocess
-import platform
-from pathlib import Path
-from dotenv import load_dotenv
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# Just to avoid system-wide dotenv installation
-def load_env(env_file: Path) -> dict:
-    """Load environment variables from .env file"""
-    env_vars = {}
-    if not env_file.exists():
-        print("[Error] .env file not found")
-        print("  Copy .env.example to .env and configure settings:")
-        print("      cp .env.example .env")
-        sys.exit(1)
-    
-    with open(env_file) as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                if '=' in line:
-                    key, value = line.split('=', 1)
-                    env_vars[key.strip()] = value.strip()
-    
-    print("[Info] Loaded configuration from .env")
-    return env_vars
+# --- Load .env ---
+if [[ ! -f .env ]]; then
+    echo "[Error] .env file not found"
+    echo "  Copy .env.example to .env and configure settings:"
+    echo "      cp .env.example .env"
+    exit 1
+fi
 
-def run_docker(args: list):
-    """Run in Docker mode"""
-    print("[Info] Starting with docker compose...")
-    
-    cmd = ['docker', 'compose', 'up'] + args
-    subprocess.run(cmd, env=os.environ.copy())
+set -a
+source .env
+set +a
 
-def run_native(args: list):
-    """Run in native Python mode"""
-    script_dir = Path(__file__).parent
-    venv_dir = script_dir / '.venv'
-    
-    if not venv_dir.exists():
-        print("[Info] Virtual environment not found at .venv")
-        print("[Info] Creating virtual environment...")
-        subprocess.run([sys.executable, '-m', 'venv', str(venv_dir)], check=True)
-        
-        print("[Info] Installing dependencies...")
-        pip_exe = venv_dir / ('Scripts' if platform.system() == 'Windows' else 'bin') / 'pip'
-        subprocess.run(
-            [str(pip_exe), 'install', '-r', 'requirements.txt'],
-            stdout=subprocess.DEVNULL,
-            check=True
-        )
-    
-    # Determine Python executable in venv
-    python_exe: Path = venv_dir / 'Scripts' / 'python.exe' if platform.system() == 'Windows' else venv_dir / 'bin' / 'python'
-    
-    print("[Info] Starting uvicorn...")
-    
-    # Build uvicorn command
-    cmd = [str(python_exe), '-m', 'uvicorn', 'app.main:app', '--reload'] + args
-    subprocess.run(cmd, env=os.environ.copy())
+echo "[Info] Loaded configuration from .env"
 
-def main():
-    script_dir: str = Path(__file__).parent
-    os.chdir(script_dir)
-    
-    # Load .env
-    load_dotenv(script_dir / '.env')
-    
-    # Get mode
-    docker_mode: bool = os.getenv('DOCKER') == '1'
-    mode_str: str = "Docker" if docker_mode else "Native"
-    print(f"[Info] Mode: {mode_str}")
-    
-    # Display camera configuration
-    camera_name: str | None = os.getenv('CAMERA_NAME')
-    if camera_name:
-        print(f"[Info] Camera: {camera_name}")
-    else:
-        print("[Warning] No camera configured")
-    
-    print()
-    
-    # Get additional arguments
-    args = sys.argv[1:]
-    
-    # Run based on mode
-    run_docker(args) if docker_mode else run_native(args)
+# --- Helpers ---
+start_app() {
+    echo "[Info] Starting app stack (db + app)..."
+    docker compose up -d app $BUILD_FLAG
+}
 
-if __name__ == '__main__':
-    main()
+start_cam() {
+    echo "[Info] Starting camera block..."
+
+    if sudo systemctl is-active --quiet camera-daemon; then
+        echo "[Info] camera-daemon already running"
+    else
+        echo "[Info] Starting camera-daemon..."
+        sudo systemctl start camera-daemon
+    fi
+
+    if [[ -z "${CAMERA_NAME:-}" || -z "${CAMERA_DEVICE:-}" ]]; then
+        echo "[Error] CAMERA_NAME and CAMERA_DEVICE must be set in .env"
+        exit 1
+    fi
+
+    echo "[Info] Registering camera: ${CAMERA_NAME} on ${CAMERA_DEVICE}"
+    if sudo camera-ctl list | grep -q "$CAMERA_NAME"; then
+        echo "[Info] Camera ${CAMERA_NAME} already registered, skipping"
+    else
+        sudo camera-ctl create "$CAMERA_NAME" "$CAMERA_DEVICE"
+    fi
+
+    echo "[Info] Starting cam_client container..."
+    docker compose up -d cam_client $BUILD_FLAG
+}
+
+# --- Dispatch ---
+BUILD_FLAG=""
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        --build) BUILD_FLAG="--build" ;;
+        *) ARGS+=("$arg") ;;
+    esac
+done
+
+MODE="${ARGS[0]:-all}"
+
+case "$MODE" in
+    app)
+        start_app
+        ;;
+    cam)
+        start_cam
+        ;;
+    all)
+        start_app
+        start_cam
+        ;;
+    *)
+        echo "[Error] Unknown mode: $MODE"
+        echo "Usage: $0 [app|cam|all] <--build>"
+        echo "  (no argument defaults to 'all')"
+        exit 1
+        ;;
+esac
