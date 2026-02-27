@@ -71,6 +71,11 @@ export class ConfigurationPageComponent implements OnInit {
     this.newActuatorModal?.showModal();
   }
 
+  showModifyActuatorForm() {
+
+    
+  }
+
   sortTable(column: string): void {
     if (this.sortColumn === column) {
       this.sortDirection =
