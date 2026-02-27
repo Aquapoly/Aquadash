@@ -27,6 +27,11 @@ start_app() {
 start_cam() {
     echo "[Info] Starting camera block..."
 
+    if [[ -z "${CAMERA_NAME:-}" || -z "${CAMERA_DEVICE:-}" ]]; then
+        echo "[Error] CAMERA_NAME and CAMERA_DEVICE must be set in .env"
+        exit 1
+    fi
+
     if sudo systemctl is-active --quiet camera-daemon; then
         echo "[Info] camera-daemon already running"
     else
@@ -34,10 +39,8 @@ start_cam() {
         sudo systemctl start camera-daemon
     fi
 
-    if [[ -z "${CAMERA_NAME:-}" || -z "${CAMERA_DEVICE:-}" ]]; then
-        echo "[Error] CAMERA_NAME and CAMERA_DEVICE must be set in .env"
-        exit 1
-    fi
+    HOST_DEV_GID=$(sudo camera-ctl gid)
+    export HOST_DEV_GID
 
     echo "[Info] Registering camera: ${CAMERA_NAME} on ${CAMERA_DEVICE}"
     if sudo camera-ctl list | grep -q "$CAMERA_NAME"; then

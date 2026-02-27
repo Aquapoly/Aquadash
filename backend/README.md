@@ -29,53 +29,11 @@ sudo apt update && sudo apt install python3 git
 
 It is recommended that you use Docker mode for development and production. It is also recommended that you restart your computer after having installed docker.
 
-_Note: You may need to [add your user to the `docker` group](https://docs.docker.com/engine/install/linux-postinstall/) to run docker commands without sudo._
-
-#### 2. Python dependencies
-
-The `run.py` script needs the `python-dotenv` package to load environment variables from the `.env` file. Install it globally for your user on the host system:
-
-```bash
-pip install python-dotenv
-```
+_Note: It is possible you may need to [add your user to the `docker` group](https://docs.docker.com/engine/install/linux-postinstall/) to run docker commands without sudo._
 
 ---
 
-## 📷 Step 1: Device Services
-
-### Camera Daemon
-
-Whether you want camera functionality or not, install the camera daemon on the **host system** first. It is required for Docker mode, and will be used for native mode if you want to use the camera. It is an intermediary between the camera and the backend for secure access to your devices or lackthereof.
-
-#### Installation
-
-```bash
-cd deployment/devices/camera
-sudo ./install.sh
-```
-
-#### Start the service
-
-```bash
-sudo systemctl start camera-daemon.service
-```
-
-#### Create a camera
-
-Replace `camera0` with whatever camera name suits you.
-
-```bash
-sudo camera-ctl create camera0 /dev/video0
-sudo camera-ctl list  # Verify
-```
-
-#### Documentation
-
-See [`deployment/devices/camera/README.md`](deployment/devices/camera/README.md) for more information on the camera daemon and camera-ctl.
-
----
-
-## 🛠 Step 2: Setup
+## 🛠 Step 1: Setup
 
 ### Configuration
 
@@ -86,21 +44,21 @@ cp .env.example .env
 ```
 
 2. **Edit `.env` to configure:**
-   - `DOCKER=1` for Docker mode, `DOCKER=0` for native Python
-   - `CAMERA_NAME=camera0` (or any other name you want to use, such as `front` or `back`, etc.)
-   - `HOST_ENV_GID=...`
 
-To obtain the correct value of `HOST_ENV_GID`, execute this command, after having started the camera daemon:
+Minimally, you must set:
 
-```bash
-sudo camera-ctl gid  # Will print the required value for HOST_ENV_GID to stdout
-```
+- `DOCKER=1` for Docker mode, `DOCKER=0` for native Python (deprecated)
+
+If you want to use the camera, you will also have to set these:
+
+- `CAMERA_NAME=camera0` (any name you like, such as `front` or `top`, etc.)
+- `CAMERA_DEVICE=/dev/video0` (usually)
 
 ### 🐘 Native PostgreSQL + Python Setup
 
 **Only if `DOCKER=0` in `.env`**
 
-Your only manual steps are installing PostgreSQL and creating the database. The rest is handled by the script.
+Your only manual steps are installing PostgreSQL and creating the database. The rest is handled by the `run` script.
 
 **🐧 Linux:**
 
@@ -121,41 +79,53 @@ sudo -u postgres createdb aquapoly
 
 **Only if `DOCKER=1` in `.env`**
 
-Only building the containers is required. Everything else is handled by the `run.py` script.
+The first time you use `run`, pass it the `--build` option.
 
-**Build containers:**
+---
+
+## 📷 Step 2: Device Services (Optional)
+
+### Camera Daemon
+
+A camera daemon is necessary on the host if you want to wire a camera into the system. You must install it on the host.
+
+#### Installation
 
 ```bash
-docker compose build
+sudo ./devices/camera/scripts/install.sh
 ```
+
+#### Documentation
+
+For a quickstart, you do not have to interact further with the camera daemon.
+
+However, it is possible to manually issue commands to it. See [`deployment/devices/camera/README.md`](deployment/devices/camera/README.md) for more information on the camera daemon and camera-ctl utilities.
 
 ---
 
 ## ▶️ Step 3: Run
 
-The `run.py` script is cross-platform and will acquire your mode from your previously-configured `.env` file to run the appropriate backend.
-
-You can run it directly with:
+Use the `run` script as such:
 
 ```bash
-./run
-./run -d        # Docker: detached mode
-./run --reload  # Native: auto-reload on changes
+./run app [--build] # Spin up the app only
+./run cam [--build] # Spin up the cam-client only
+./run [--build]     # Spin up the app & cam-client
 ```
+
+If you pass the `--build` flag, all involved containers will be rebuilt.
 
 The script automatically:
 
 - Loads configuration from `.env`
-- Detects Docker vs Native mode
-- Creates virtual environment and installs dependencies (Native mode, first run)
-- Gets host-dev GID for camera access (Docker mode)
-- Starts the appropriate backend
+- Starts the appropriate backend containers
 
-In docker mode, additional arguments get passed to `docker compose up`.
+For the camera, it also:
 
-In native mode, additional arguments get passed to `uvicorn`.
+- Determnines host-dev GID for camera access
+- Launches the host daemon and creates a logical camera
 
-_Note: You can also invoke python explicitly as `python run <args>`._
+Note that for the `cam` command, you will be required to enter credentials in order for the script to be able to use `systemctl` and `camera-ctl`.
 
 ---
 
@@ -198,6 +168,7 @@ pytest
 | PostgreSQL | https://www.postgresql.org/docs     |
 | Docker     | https://www.docker.com/             |
 | Pytest     | https://docs.pytest.org/en/stable/  |
+| systemd    | https://systemd.io/                 |
 
 ---
 
@@ -217,7 +188,9 @@ pytest
 
 - Ensure camera daemon is running: `sudo systemctl status camera-daemon.service`
 - Verify camera exists: `sudo camera-ctl list`
-- Check CAMERA_NAME in `.env` matches camera name
+- Check `CAMERA_NAME` in `.env` matches camera name
+- Check `CAMERA_DEVICE` in `.env` matches camera device path
+- (Windows) Make sure your camera is exposed to WSL via usbipd
 
 **Windows PowerShell issues:**
 
