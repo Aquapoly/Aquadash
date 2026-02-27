@@ -17,7 +17,7 @@ services:
       start_period: 10s
 
     volumes:
-      - ./initdb:/docker-entrypoint-initdb.d:Z
+      - ./initdb:/docker-entrypoint-initdb.d
 
     networks:
       - backend
@@ -43,10 +43,9 @@ services:
       DB_NAME: aquapoly
 
     volumes:
-      - .:/usr/src/app:Z
-      - /run/camera:/run/camera:z
+      - .:/usr/src/app
 
-    user: "1000:${HOST_DEV_GID}"
+    user: "1000:1000"
 
     depends_on:
       db:
@@ -80,7 +79,7 @@ services:
     volumes:
       - /run/camera:/run/camera:z
 
-    user: "1000:${HOST_DEV_GID}"
+    user: "1000:${HOST_DEV_GID:-0}"
 
     networks:
       - backend
