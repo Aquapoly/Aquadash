@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""camera-ctl — send commands to the camera daemon control socket."""
+import argparse
+from socket import socket, AF_UNIX, SOCK_STREAM, SHUT_WR
+import sys
+
+from camera_commands import CameraCommand as Command
+
+
+CONTROL_SOCK = "/run/camera/control.sock"
+HOST_DEV_GROUP = "host-dev"
+
+
+def _send_command(cmd: str) -> str:
+    try:
+        with socket(AF_UNIX, SOCK_STREAM) as s:
+            s.connect(CONTROL_SOCK)
+            s.sendall(cmd.encode())
+            s.shutdown(SHUT_WR)
+            return s.recv(4096).decode().strip()
+    except FileNotFoundError:
+        print(f"Error: control socket not found at {CONTROL_SOCK}", file=sys.stderr)
+        print("Is camera-daemon.service running?", file=sys.stderr)
+        sys.exit(1)
+    except ConnectionRefusedError:
+        print("Error: daemon is not accepting connections.", file=sys.stderr)
+        sys.exit(1)
+
+
+def _do_create(args: argparse.Namespace) -> None:
+    if args.device:  # 2 args: name device
+        cmd = f"{Command.CREATE} {args.name_or_device} {args.device}"
+    else:  # 1 arg: device only
+        cmd = f"{Command.CREATE} {args.name_or_device}"
+    print(_send_command(cmd))
+
+def _do_rewire(args: argparse.Namespace) -> None:
+    print(_send_command(f"{Command.REWIRE} {args.name} {args.device}"))
+
+def _do_remove(args: argparse.Namespace) -> None:
+    print(_send_command(f"{Command.REMOVE} {args.name}"))
+
+def _do_list() -> None:
+    result = _send_command(Command.LIST)
+    print(result if result else "(no cameras active)")
+
+def _do_gid() -> None:
+    import grp
+    try:
+        gid = grp.getgrnam(HOST_DEV_GROUP).gr_gid
+        print(gid)
+    except KeyError:
+        print(f"Error: {HOST_DEV_GROUP} group not found", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="camera-ctl",
+        description="Control the Aquadash camera daemon."
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_create = sub.add_parser("create", help="Expose a new logical camera")
+    p_create.add_argument("name_or_device", help="Logical name or device path")
+    p_create.add_argument("device", nargs="?", help="Device path if name was specified (e.g. /dev/video0)")
+
+    p_rewire = sub.add_parser("rewire", help="Change the device path of an existing logical camera")
+    p_rewire.add_argument("name", help="Logical name of the camera (e.g. camera0, front, etc.)")
+    p_rewire.add_argument("device", help="New device path (e.g. /dev/video0)")
+
+    p_remove = sub.add_parser("remove", help="Remove a logical camera")
+    p_remove.add_argument("name", help="Logical name of the camera")
+
+    sub.add_parser("list", help="List existing logical cameras")
+    sub.add_parser("gid", help=f"Print {HOST_DEV_GROUP} group ID")
+
+    args = parser.parse_args()
+
+    match args.command:
+        case Command.CREATE:
+            _do_create(args)
+            
+        case Command.REWIRE:
+            _do_rewire(args)
+
+        case Command.REMOVE:
+            _do_remove(args)
+
+        case Command.LIST:
+            _do_list()
+        
+        case Command.GID:
+            _do_gid()
+
+if __name__ == "__main__":
+    main()
