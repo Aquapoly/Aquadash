@@ -1,5 +1,7 @@
-# Default: Use CRLF for all files
+# Default: Use CRLF for all files except scripts
 * text eol=crlf
+*.sh text eol=lf
+run text eol=lf
 
 # Exceptions: Use LF for script files
 *.sh text eol=lf
