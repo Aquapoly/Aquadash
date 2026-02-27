@@ -108,12 +108,14 @@ However, it is possible to manually issue commands to it. See [`deployment/devic
 Use the `run` script as such:
 
 ```bash
-./run app [--build] # Spin up the app only
-./run cam [--build] # Spin up the cam-client only
-./run [--build]     # Spin up the app & cam-client
+./run app [--build] [--native] # Spin up the app only
+./run cam [--build] [--native] # Spin up the cam-client only
+./run [--build]     [--native] # Spin up the app & cam-client
 ```
 
 If you pass the `--build` flag, all involved containers will be rebuilt.
+
+Pass the `--native` flag if you are not launching the containerized app.
 
 The script automatically:
 

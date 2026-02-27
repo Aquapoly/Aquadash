@@ -19,14 +19,8 @@ set +a
 echo "[Info] Loaded configuration from .env"
 
 # --- Helpers ---
-start_app() {
-    echo "[Info] Starting app stack (db + app)..."
-    docker compose up -d app $BUILD_FLAG
-}
 
-start_cam() {
-    echo "[Info] Starting camera block..."
-
+start_cam_daemon() {
     if [[ -z "${CAMERA_NAME:-}" || -z "${CAMERA_DEVICE:-}" ]]; then
         echo "[Error] CAMERA_NAME and CAMERA_DEVICE must be set in .env"
         exit 1
@@ -39,27 +33,65 @@ start_cam() {
         sudo systemctl start camera-daemon
     fi
 
-    HOST_DEV_GID=$(sudo camera-ctl gid)
-    export HOST_DEV_GID
-
     echo "[Info] Registering camera: ${CAMERA_NAME} on ${CAMERA_DEVICE}"
     if sudo camera-ctl list | grep -q "$CAMERA_NAME"; then
         echo "[Info] Camera ${CAMERA_NAME} already registered, skipping"
     else
         sudo camera-ctl create "$CAMERA_NAME" "$CAMERA_DEVICE"
     fi
+}
+
+start_app() {
+    echo "[Info] Starting app stack (db + app)..."
+    docker compose up -d $BUILD_FLAG app
+}
+
+start_cam() {
+    echo "[Info] Starting camera block..."
+    start_cam_daemon
+
+    HOST_DEV_GID=$(sudo camera-ctl gid)
+    export HOST_DEV_GID
 
     echo "[Info] Starting cam_client container..."
-    docker compose up -d cam_client $BUILD_FLAG
+    docker compose up -d $BUILD_FLAG cam_client
+}
+
+start_app_native() {
+    echo "[Info] Starting app natively..."
+    if [[ ! -d .venv ]]; then
+        echo "[Info] Creating virtual environment..."
+        python3 -m venv .venv
+        echo "[Info] Installing dependencies..."
+        .venv/bin/pip install -r requirements.txt --quiet
+    fi
+    .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+}
+
+start_cam_native() {
+    echo "[Info] Starting camera block natively..."
+    start_cam_daemon
+
+    cd "$SCRIPT_DIR/devices/camera/client"
+    if [[ ! -d .venv ]]; then
+        echo "[Info] Creating virtual environment..."
+        python3 -m venv .venv
+        echo "[Info] Installing dependencies..."
+        .venv/bin/pip install -r requirements.txt --quiet
+    fi
+    .venv/bin/uvicorn main:app --host 0.0.0.0 --port 9000
 }
 
 # --- Dispatch ---
 BUILD_FLAG=""
+NATIVE=false
 ARGS=()
+
 for arg in "$@"; do
     case "$arg" in
-        --build) BUILD_FLAG="--build" ;;
-        *) ARGS+=("$arg") ;;
+        --build)  BUILD_FLAG="--build" ;;
+        --native) NATIVE=true ;;
+        *)        ARGS+=("$arg") ;;
     esac
 done
 
@@ -67,18 +99,23 @@ MODE="${ARGS[0]:-all}"
 
 case "$MODE" in
     app)
-        start_app
+        $NATIVE && start_app_native || start_app
         ;;
     cam)
-        start_cam
+        $NATIVE && start_cam_native || start_cam
         ;;
     all)
-        start_app
-        start_cam
+        if $NATIVE; then
+            start_app_native &
+            start_cam_native
+        else
+            start_app
+            start_cam
+        fi
         ;;
     *)
         echo "[Error] Unknown mode: $MODE"
-        echo "Usage: $0 [app|cam|all] <--build>"
+        echo "Usage: $0 [app|cam|all] [--build] [--native]"
         echo "  (no argument defaults to 'all')"
         exit 1
         ;;
