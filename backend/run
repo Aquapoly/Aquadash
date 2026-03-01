@@ -31,6 +31,16 @@ start_cam_daemon() {
     else
         echo "[Info] Starting camera-daemon..."
         sudo systemctl start camera-daemon
+
+        echo -n "[Info] Waiting for control socket"
+        for i in {1..30}; do
+            if sudo test -S /run/camera/control.sock; then
+                echo " ready"
+                break
+            fi
+            echo -n "."
+            sleep 1
+        done
     fi
 
     echo "[Info] Registering camera: ${CAMERA_NAME} on ${CAMERA_DEVICE}"
@@ -107,7 +117,18 @@ case "$MODE" in
     all)
         if $NATIVE; then
             start_app_native &
+            APP_PID=$!
+
             start_cam_native
+            CAM_PID=$!
+
+            cleanup() {
+                kill "$APP_PID" "$CAM_PID" 2>/dev/null || true
+                "$SCRIPT_DIR/kill --native"
+            }
+
+            trap cleanup EXIT
+
         else
             start_app
             start_cam
@@ -120,3 +141,5 @@ case "$MODE" in
         exit 1
         ;;
 esac
+
+echo "[Info] Services started successfully"
