@@ -1,3 +1,7 @@
+volumes:
+  # To persist timelapse data
+  timelapse_data:
+
 services:
   db:
     image: postgres:18
@@ -78,6 +82,7 @@ services:
 
     volumes:
       - /run/camera:/run/camera:z
+      - timelapse_data:/timelapses
 
     user: "1000:${HOST_DEV_GID:-0}"
 
