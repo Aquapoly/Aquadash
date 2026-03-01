@@ -40,6 +40,10 @@ class CameraClient:
             size = int.from_bytes(CameraClient._read_exact(s, 4), "big")
             return CameraClient._read_exact(s, size)
 
+    def capture(self) -> bytes:
+        """Always fetches a fresh frame directly from the camera socket."""
+        return self._fetch_frame()
+
     def get_image(self) -> bytes:
         """
         Retrieves the latest camera image, refreshing it if expired.
@@ -56,7 +60,7 @@ class CameraClient:
         if self.last_image is not None and self.last_image[1] >= call_time:
             return self.last_image[0]
 
-        im = self._fetch_frame()
+        im = self.capture()
         self.last_image = (im, time.time() + self.IMAGE_EXPIRE_TIME)
 
         return self.last_image[0]

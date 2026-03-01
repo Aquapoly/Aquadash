@@ -25,7 +25,7 @@ export class TimelapseLibraryComponent implements OnInit{
   ngOnInit(): void {
     this.http.get<{
       timelapses: Timelapse[]
-    }>(`${SERVER_URL}/timelapses`).subscribe({
+    }>(`${SERVER_URL}/timelapse`).subscribe({
       next: (response) => {
         this.timelapses = response.timelapses;
       },
