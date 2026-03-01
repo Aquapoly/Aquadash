@@ -23,6 +23,10 @@ docs.zip
 archive.zip
 logs
 
+# SELinux build artifacts
+*.pp
+*.mod
+
 # vim temporary files
 *~
 .*.sw?

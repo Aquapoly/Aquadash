@@ -72,18 +72,10 @@ systemctl daemon-reload
 if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
     echo "  Configuring SELinux policy..."
 
-    # Compile and install module
-    checkmodule -M -m -o "$SELINUX_DIR/$POLICY_NAME.mod" "$SELINUX_DIR/$POLICY_NAME.te"
-    semodule_package -o "$SELINUX_DIR/$POLICY_NAME.pp" -m "$SELINUX_DIR/$POLICY_NAME.mod"
-    semodule -i "$SELINUX_DIR/$POLICY_NAME.pp"
-
-    # Apply file context
-    semanage fcontext -a -t camera_socket_t '/run/camera/[^/]+\.sock' 2>/dev/null || true
-    if ! semanage fcontext -l | grep -q '/run/camera'; then
-        semanage fcontext -a -t var_run_t '/run/camera'
-    else
-        semanage fcontext -m -t var_run_t '/run/camera'
-    fi
+    checkmodule -M -m -o "$SELINUX_DIR/camera_container.mod" "$SELINUX_DIR/camera_container.te"
+    semodule_package -o "$SELINUX_DIR/camera_container.pp" -m "$SELINUX_DIR/camera_container.mod"
+    semodule -i "$SELINUX_DIR/camera_container.pp"
+    restorecon -Rv /run/camera 2>/dev/null || true
 
     echo "  SELinux policy installed"
 fi
