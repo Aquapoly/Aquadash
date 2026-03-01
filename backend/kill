@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+kill_cam_daemon() {
+    if sudo systemctl is-active --quiet camera-daemon; then
+        echo "[Info] Killing camera-daemon"
+        sudo systemctl stop camera-daemon
+    else
+        echo "[Info] camera-daemon not running"
+    fi
+}
+
+kill_cam() {
+    echo "[Info] Killing camera block..."
+    docker compose down cam_client
+    kill_cam_daemon
+}
+
+kill_app() {
+    echo "[Info] Killing app stack (db + app)..."
+    docker compose down app db
+}
+
+MODE="${1:-all}"
+
+case "$MODE" in
+    app)
+        kill_app
+        ;;
+    cam)
+        kill_cam
+        ;;
+    all)
+        kill_app
+        kill_cam
+        ;;
+    *)
+        echo "[Error] Unknown mode: $MODE"
+        echo "Usage: $0 [app|cam|all]"
+        echo "  (no argument defaults to 'all')"
+        exit 1
+        ;;
+esac
+
+echo "[Info] Services killed successfully"
