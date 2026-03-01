@@ -9,8 +9,6 @@ FastAPI backend for monitoring and controlling a hydroponics system.
 
 ### Prerequisites
 
-#### 1. Software
-
 **🐧 Linux:**
 
 ```bash
@@ -29,7 +27,7 @@ sudo apt update && sudo apt install python3 git
 
 It is recommended that you use Docker mode for development and production. It is also recommended that you restart your computer after having installed docker.
 
-_Note: It is possible you may need to [add your user to the `docker` group](https://docs.docker.com/engine/install/linux-postinstall/) to run docker commands without sudo._
+_Note: It is possible you may need to [add your user to the Docker group](https://docs.docker.com/engine/install/linux-postinstall/) to run Docker commands without sudo._
 
 ---
 
@@ -43,11 +41,11 @@ _Note: It is possible you may need to [add your user to the `docker` group](http
 cp .env.example .env
 ```
 
-2. **Edit `.env` to configure:**
+2. **Configure `.env`:**
 
 Minimally, you must set:
 
-- `DOCKER=1` for Docker mode, `DOCKER=0` for native Python (deprecated)
+- `DOCKER=1` for Docker mode, `DOCKER=0` for native Python
 
 If you want to use the camera, you will also have to set these:
 
@@ -79,38 +77,36 @@ sudo -u postgres createdb aquapoly
 
 **Only if `DOCKER=1` in `.env`**
 
-The first time you use `run`, pass it the `--build` option.
+The first time you use `run` ([step 3](#️-step-3-run)), pass it the `--build` option.
 
 ---
 
-## 📷 Step 2: Device Services (Optional)
-
-### Camera Daemon
+## 📷 Step 2: Camera Daemon (Optional)
 
 A camera daemon is necessary on the host if you want to wire a camera into the system. You must install it on the host.
 
-#### Installation
+### Installation
 
 ```bash
 sudo ./devices/camera/scripts/install.sh
 ```
 
-#### Documentation
+### Documentation
 
 For a quickstart, you do not have to interact further with the camera daemon.
 
-However, it is possible to manually issue commands to it. See [`deployment/devices/camera/README.md`](deployment/devices/camera/README.md) for more information on the camera daemon and camera-ctl utilities.
+However, it is possible to have finer control over the daemon and to issue commands to it. You can consult [`devices/camera/README.md`](devices/camera/README.md) for more information on the camera daemon and camera-ctl utilities.
 
 ---
 
 ## ▶️ Step 3: Run
 
-Use the `run` script as such:
+You can run a single instance of the Aquadash backend via the `run` script:
 
 ```bash
 ./run app [--build] [--native] # Spin up the app only
-./run cam [--build] [--native] # Spin up the cam-client only
-./run [--build]     [--native] # Spin up the app & cam-client
+./run cam [--build] [--native] # Spin up the camera block
+./run [--build]     [--native] # Spin up the app & camera block
 ```
 
 If you pass the `--build` flag, all involved containers will be rebuilt.
@@ -128,6 +124,28 @@ For the camera, it also:
 - Launches the host daemon and creates a logical camera
 
 Note that for the `cam` command, you will be required to enter credentials in order for the script to be able to use `systemctl` and `camera-ctl`.
+
+### Advanced
+
+If you want finer control or if you want to run multiple instances of Aquadash at once, you will need to [launch and control the camera daemon](devices/camera/README.md), and you will need to provide the relevant environment variables to `docker compose` yourself.
+
+---
+
+## 🛑 Step 4: Stop
+
+You can use the `kill` script to take down your instance of the Aquadash backend:
+
+```bash
+./kill app # Kill the app
+./kill cam # Kill the camera block
+./kill     # Kill the app & camera block
+```
+
+Again, for the `cam` command, your credentials will be asked, this time in order to user `system-ctl` only.
+
+### Advanced
+
+If you want to finer control over multiple instances of Aquadash, or if you do not want to kill the camera daemon, for example, you would do well to `docker compose down` manually or with a different custom script, and to [control the camera daemon yourself](devices/camera/README.md).
 
 ---
 
