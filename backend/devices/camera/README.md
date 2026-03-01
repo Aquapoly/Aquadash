@@ -28,9 +28,9 @@ A systemd-managed daemon that exposes camera devices via Unix sockets for contai
                             │
                             ▼
 ┌────────────────────────────────────────────────────────────┐
-│ Docker Container (backend)                                 │
-│ - Runs with --group-add host-dev                           │
-│ - Mounts /run/camera:/run/camera:ro                        │
+│ Docker Container (cam_client)                              │
+│ - Runs with group host-dev                                 │
+│ - Mounts /run/camera:/run/camera:z                         │
 │ - Reads frames from camera sockets                         │
 └────────────────────────────────────────────────────────────┘
 ```
@@ -53,10 +53,9 @@ sudo ./install.sh
 This will:
 
 1. Create `host-dev` group and `camera` system user
-2. Install Python dependencies (imageio)
-3. Copy daemon files to `/opt/aquadash-camera/`
-4. Create wrapper script at `/usr/local/bin/camera-ctl`
-5. Install systemd service files
+2. Copy daemon files to `/opt/aquadash-camera/`
+3. Create wrapper script at `/usr/local/bin/camera-ctl`
+4. Install systemd service files
 
 ### Uninstall
 
@@ -94,17 +93,20 @@ sudo journalctl -u camera-daemon.service -f
 ### Camera Management (camera-ctl)
 
 ```bash
-# Create a (logical) camera on specified device (its name will be the literal device name)
+# Create a camera on specified device (its logical name will be the literal device name)
 sudo camera-ctl create /dev/video0  # Created camera named video0
 
-# Create a (logical) camera with specified name on specified device
+# Create a camera with specified logical name on specified device
 sudo camera-ctl create front-cam /dev/video1
+
+# Remove a camera by its logical name (e.g. default camera on /dev/video0)
+sudo camera-ctl remove video0
 
 # List active cameras
 sudo camera-ctl list
 
-# Remove a camera by its logical name (e.g. default camera on /dev/video0)
-sudo camera-ctl remove video0
+# Get group id of host-dev
+sudo camera-ctl gid
 
 # Show help
 sudo camera-ctl --help
@@ -122,9 +124,9 @@ You may also use the rewire capabilities to swap a logical camera's data stream 
 
 - **Path:** `/run/camera/control.sock`
 - **Commands:**
-  - `ADD_CAMERA <device_path>` — Expose a camera device
-  - `REMOVE_CAMERA <device_path>` — Remove a camera device
-  - `LIST_CAMERAS` — List active camera devices
+  - `create <logical_name> <device_path>` — Expose a camera device
+  - `remove <logical_name>` — Remove a camera device
+  - `list` — List active camera devices
 
 ### Camera Sockets
 
@@ -134,26 +136,6 @@ You may also use the rewire capabilities to swap a logical camera's data stream 
   2. Server sends 4-byte big-endian frame length
   3. Server sends PNG frame bytes
   4. Connection closes
-
-Example Python client:
-
-```python
-import socket
-
-def read_frame(sock_path):
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-        s.connect(sock_path)
-        size = int.from_bytes(s.recv(4), "big")
-        frame = b""
-        while len(frame) < size:
-            chunk = s.recv(size - len(frame))
-            if not chunk:
-                raise ConnectionError("Socket closed")
-            frame += chunk
-        return frame
-
-frame_png = read_frame("/run/camera/video0.sock")
-```
 
 ## Security
 
@@ -178,20 +160,13 @@ To grant access to a user:
 sudo usermod -aG host-dev <username>
 ```
 
-### SELinux
-
-If SELinux is enforcing and you encounter permission errors, ensure Python has the correct context:
-
-```bash
-sudo restorecon -v /usr/bin/python3*
-```
-
 ## Files
 
 ### Installed Files
 
 - `/opt/aquadash-camera/camera_daemon.py` — Main daemon executable
-- `/opt/aquadash-camera/camera.py` — Camera class
+- `/opt/aquadash-camera/logical_camera.py` — LogicalCamera class
+- `/opt/aquadash-camera/physical_camera.py` — PhysicalCamera class
 - `/opt/aquadash-camera/camera_paths.py` — Path constants
 - `/opt/aquadash-camera/camera_commands.py` — Command enum
 - `/opt/aquadash-camera/camera-ctl` — CLI tool
@@ -201,35 +176,17 @@ sudo restorecon -v /usr/bin/python3*
 ### Source Files
 
 - `camera_daemon.py` — Daemon implementation
-- `camera.py` — Per-camera socket server
+- `logical_camera.py` — Per-camera socket server
+- `physical_camera.py` — Manages access to hardware by logical cameras
 - `camera_paths.py` — Shared path constants
 - `camera_commands.py` — Command protocol definitions
 - `camera-ctl` — CLI tool
 - `camera-daemon.service` — Service template (uses `__CAMERA_DIR__` placeholder)
 - `install.sh` — Installation script
 - `uninstall.sh` — Uninstallation script
+- `requirements.txt` — Requirements used by the installation script
 
 ## Troubleshooting
-
-### Daemon won't start (exit code 203)
-
-**Symptom:** `systemctl status` shows `Main PID: ... (code=exited, status=203/EXEC)`
-
-**Causes:**
-
-1. SELinux blocking Python execution
-2. Missing execute permissions on daemon file
-
-**Solutions:**
-
-```bash
-# Fix SELinux context
-sudo restorecon -v /usr/bin/python3*
-
-# Verify daemon is executable
-ls -l /opt/aquadash-camera/camera_daemon.py
-# Should show: -rwxr-xr-x
-```
 
 ### Daemon crashes (exit code 1)
 
@@ -241,7 +198,6 @@ sudo journalctl -u camera-daemon.service -n 50
 
 **Common issues:**
 
-- Missing `imageio` dependency (should be auto-installed by `install.sh`)
 - Permission denied accessing `/dev/video*` (daemon runs as root, should have access)
 - Socket binding errors (check if `/run/camera/` exists and has correct permissions)
 
@@ -277,7 +233,7 @@ sudo camera-ctl add /dev/video0
 1. Daemon is running: `sudo systemctl status camera-daemon.service`
 2. Camera is added: `sudo camera-ctl list`
 3. Socket exists: `sudo ls -l /run/camera/`
-4. Backend container has `--group-add host-dev` and mounts `/run/camera:/run/camera:ro`
+4. cam-client container has group `host-dev` and mounts `/run/camera:/run/camera:z`
 
 ## Development
 
@@ -298,33 +254,14 @@ sudo systemctl start camera-daemon.service
 sudo systemctl stop camera-daemon.service
 
 # Run daemon in foreground
-sudo python3 /opt/aquadash-camera/camera_daemon.py
+sudo /opt/aquadash-camera/.venv/bin/python /opt/aquadash-camera/camera_daemon.py
 ```
 
-## Integration with Backend
+## Integration With Backend
 
-The backend's `app/services/camera.py` connects to camera sockets in `/run/camera/`:
+The cam-client container connects to camera sockets in `/run/camera/`:
 
-```python
-# backend/app/services/camera.py
-CAMERA_SOCK_DIR = Path("/run/camera")
+The cam-client container must:
 
-def _fetch_frame() -> bytes:
-    sockets = [s for s in CAMERA_SOCK_DIR.glob("*.sock")
-               if s.name != "control.sock"]
-    if not sockets:
-        raise OSError("No camera available")
-
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-        s.connect(str(sockets[0]))
-        size = int.from_bytes(s.recv(4), "big")
-        return s.recv(size)
-```
-
-The backend container must:
-
-1. Mount `/run/camera:/run/camera:ro`
-2. Run with `--group-add $(getent group host-dev | cut -d: -f3)`
-3. Ensure user inside container is in the host-dev group
-
-See `backend/deployment/backend-container.service` for the complete configuration.
+1. Mount `/run/camera:/run/camera:z`
+2. Run with group host-dev, e.g. `--group-add $(getent group host-dev | cut -d: -f3)`
