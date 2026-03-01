@@ -35,17 +35,11 @@ echo "  Killing any remaining Python processes from $INSTALL_DIR"
 pkill -f "$INSTALL_DIR" >/dev/null 2>&1 || true
 sleep 1  # allow processes to exit
 
-# --- Remove /run/camera and SELinux contexts ---
-echo "  Removing /run/camera directory and SELinux policy if present..."
-if [ -d /run/camera ]; then
-    rm -rf /run/camera
-fi
-
+# --- Remove SELinux policy if applicable ---
 if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
-    semodule -r aquadash_camera >/dev/null 2>&1 || true
-    semanage fcontext -d '/run/camera(/.*)?' >/dev/null 2>&1 || true
-    semanage fcontext -d '/run/camera' >/dev/null 2>&1 || true
-    restorecon -Rv /run/camera >/dev/null 2>&1 || true
+    echo "  Removing SELinux policy..."
+    semodule -r camera_container >/dev/null 2>&1 || true
+    echo "  SELinux policy removed"
 fi
 
 # --- Remove installed files ---

@@ -17,7 +17,7 @@ services:
       start_period: 10s
 
     volumes:
-      - ./initdb:/docker-entrypoint-initdb.d
+      - ./initdb:/docker-entrypoint-initdb.d:Z
 
     networks:
       - backend
@@ -43,7 +43,7 @@ services:
       DB_NAME: aquapoly
 
     volumes:
-      - .:/usr/src/app
+      - .:/usr/src/app:z
 
     user: "1000:1000"
 
