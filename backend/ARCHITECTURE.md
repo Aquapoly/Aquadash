@@ -64,15 +64,15 @@ Apart from enabling camera functionality for Aquadash, the goal of this block is
 
 ## Service: `camera-daemon`
 
-The `camera-daemon` service is a host systemd-managed service. Its responsability is to expose camera devices from the host as logical cameras accessible by `cam-client`.
+The `camera-daemon` service is a host systemd-managed service. Its responsibility is to expose camera devices from the host as logical cameras accessible by `cam-client`.
 
 The service creates a runtime directory at `/run/camera` upon starting. There, it will expose logical cameras as Unix sockets. Running the basic `run cam` command will launch the service with a single camera as specified in `.env`.
 
-The goal of the service is to create a layer of abstraction between Docker (i.e. `cam-client`) and the physical devices of the host. The Docker container is able to mount on a logical camera socket, notwithstanding the actual existence of a physical camera at the other hand.
+The goal of the service is to create a layer of abstraction between Docker (i.e. `cam-client`) and the physical devices of the host. The Docker container is able to mount on a logical camera socket, regardless of whether a physical camera is currently present at that device path.
 
 This unlocks the potential for hot-plugging or hot-rewiring cameras, and also supports multiple logical camera channels.
 
-It also serves to increase security. Indeed, it only allows camera access to a narrow group of users, of which `cam-client` is, a priori, the only member (excluding root), and from the perspective of Docker, only over a socket with a specific communication protocol.
+It also serves to increase security. Indeed, it only allows camera access to a narrow group of users, of which `cam-client` is effectively the only member (excluding root), and from the perspective of Docker, only over a socket with a specific communication protocol.
 
 More detailed documentation on `camera-daemon` is available [here](devices/camera/README.md).
 
@@ -84,4 +84,4 @@ It listens on port `:9000` over the `backend` secure Docker network, and there e
 
 It stores timelapses in the `timelapse_data` volume (as `/timelapses` internally) in order for them to persist through shutdowns — you wouldn't want to lose an entire 7-day timelapse to a service outage!
 
-It makes use of `/tmp/timelapses` to temporarily store timelapse frames when assembling a video from them.
+It makes use of the container-local `/tmp/timelapses` to temporarily store timelapse frames when assembling a video from said frames.
