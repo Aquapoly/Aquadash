@@ -1,6 +1,8 @@
+Here's the rewritten README:
+
 # Camera Service
 
-A systemd-managed daemon that exposes camera devices via Unix sockets for containerized applications.
+A systemd-managed daemon that exposes host camera devices via Unix sockets to containerized applications.
 
 ## Architecture
 
@@ -19,17 +21,17 @@ A systemd-managed daemon that exposes camera devices via Unix sockets for contai
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ /run/camera/                                         │  │
 │  │ ├── control.sock (0660 root:host-dev)                │  │
-│  │ ├── video0.sock  (0660 root:host-dev) [per camera]   │  │
-│  │ └── top-cam.sock  (0660 root:host-dev) [per camera]  │  │
+│  │ ├── webcam.sock  (0660 root:host-dev) [per camera]   │  │
+│  │ └── top-cam.sock (0660 root:host-dev) [per camera]   │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                           │                                │
-│                           │ (read-only mount)              │
+│                           │ (bind mount)                   │
 └───────────────────────────┼────────────────────────────────┘
                             │
                             ▼
 ┌────────────────────────────────────────────────────────────┐
-│ Docker Container (cam_client)                              │
-│ - Runs with group host-dev                                 │
+│ Docker Container (cam-client)                              │
+│ - Runs as 1000:host-dev                                    │
 │ - Mounts /run/camera:/run/camera:z                         │
 │ - Reads frames from camera sockets                         │
 └────────────────────────────────────────────────────────────┘
@@ -42,95 +44,86 @@ A systemd-managed daemon that exposes camera devices via Unix sockets for contai
 - Python 3.x with pip
 - systemd
 - Root access (sudo)
+- SELinux (optional — policy module installed automatically if enabled)
 
 ### Install
 
 ```bash
-cd backend/deployment/devices/camera
-sudo ./install.sh
+sudo ./backend/devices/camera/scripts/install.sh
 ```
 
 This will:
 
-1. Create `host-dev` group and `camera` system user
-2. Copy daemon files to `/opt/aquadash-camera/`
-3. Create wrapper script at `/usr/local/bin/camera-ctl`
-4. Install systemd service files
+1. Create the `host-dev` group and `camera` system user
+2. Copy daemon files to `/opt/aquadash-camera/` and set up a Python virtual environment
+3. Install a `camera-ctl` wrapper at `/usr/local/bin/camera-ctl`
+4. Install and register the `camera-daemon` systemd service
+5. Install the SELinux policy module if SELinux is enabled
 
 ### Uninstall
 
 ```bash
-sudo ./uninstall.sh
+sudo ./backend/devices/camera/scripts/uninstall.sh
 ```
 
 This will:
 
-1. Stop and remove systemd services
+1. Stop and disable the systemd service and remove its unit file
 2. Remove installed files from `/opt/aquadash-camera/` and `/usr/local/bin/`
-3. Remove `camera` user and `host-dev` group (if empty)
+3. Remove the `camera` user and `host-dev` group (if no remaining members)
+4. Remove the SELinux policy module if SELinux is enabled
 
 ## Usage
 
-### Daemon Lifecycle (systemctl)
+### Daemon Lifecycle
 
 ```bash
-# Start daemon
-sudo systemctl start camera-daemon.service
-
-# Stop daemon
-sudo systemctl stop camera-daemon.service
-
-# Enable auto-start on boot
-sudo systemctl enable camera-daemon.service
-
-# Check status
-sudo systemctl status camera-daemon.service
-
-# View logs
-sudo journalctl -u camera-daemon.service -f
+sudo systemctl start camera-daemon.service    # Start
+sudo systemctl stop camera-daemon.service     # Stop
+sudo systemctl enable camera-daemon.service   # Enable auto-start on boot
+sudo systemctl status camera-daemon.service   # Check status
+sudo journalctl -u camera-daemon.service -f   # Follow logs
 ```
 
-### Camera Management (camera-ctl)
+### Camera Management
 
 ```bash
-# Create a camera on specified device (its logical name will be the literal device name)
-sudo camera-ctl create /dev/video0  # Created camera named video0
+# Create a logical camera with an explicit name on a device
+sudo camera-ctl create front-cam /dev/video0
 
-# Create a camera with specified logical name on specified device
-sudo camera-ctl create front-cam /dev/video1
+# Create a logical camera using the device name as the logical name
+sudo camera-ctl create /dev/video0            # Results in logical name "video0"
 
-# Remove a camera by its logical name (e.g. default camera on /dev/video0)
-sudo camera-ctl remove video0
+# Rewire a logical camera to a different physical device
+sudo camera-ctl rewire front-cam /dev/video1
 
-# List active cameras
+# Remove a logical camera
+sudo camera-ctl remove front-cam
+
+# List active logical cameras
 sudo camera-ctl list
 
-# Get group id of host-dev
+# Get the GID of the host-dev group
 sudo camera-ctl gid
 
 # Show help
 sudo camera-ctl --help
 ```
 
-Mounting a camera on a device that does not currently exist or may not continue to exist indefinitely is perfectly allowed. This means that you can hot-plug your a camera at some device location.
+Mounting a logical camera on a device that does not currently exist is allowed — the daemon will serve frames as soon as the device becomes available. This enables hot-plugging: you can register a camera before physically connecting it. Likewise, you can disconnect it at will after that.
 
-You may also use the rewire capabilities to swap a logical camera's data stream from a device to another without shutting anything down.
-
-**Note:** `camera-ctl` requires sudo or membership in the `host-dev` group.
+**Note:** `camera-ctl` requires `sudo` or membership in the `host-dev` group.
 
 ## Protocol
 
 ### Control Socket
 
 - **Path:** `/run/camera/control.sock`
-- **Commands:**
-  - `create <logical_name> <device_path>` — Expose a camera device
-  - `remove <logical_name>` — Remove a camera device
-  - `list` — List active camera devices
+- **Commands:** `create`, `rewire`, `remove`, `list`, `gid` (see `camera-ctl --help`)
 
 ### Camera Sockets
 
-- **Path:** `/run/camera/<device_name>.sock` (e.g., `video0.sock` for `/dev/video0`)
+- **Path:** `/run/camera/<logical_name>.sock`
 - **Protocol:** Length-prefixed PNG frames
   1. Client connects to socket
   2. Server sends 4-byte big-endian frame length
@@ -141,127 +134,81 @@ You may also use the rewire capabilities to swap a logical camera's data stream 
 
 ### Permissions
 
-- `/run/camera/` directory: `0750 root:host-dev`
-- Control socket: `0660 root:host-dev`
-- Camera sockets: `0660 root:host-dev`
-- `camera-ctl` wrapper: `0750 root:host-dev`
+| Path                        | Mode   | Owner           |
+| --------------------------- | ------ | --------------- |
+| `/run/camera/`              | `0750` | `root:host-dev` |
+| `/run/camera/control.sock`  | `0660` | `root:host-dev` |
+| `/run/camera/<name>.sock`   | `0660` | `root:host-dev` |
+| `/usr/local/bin/camera-ctl` | `0750` | `root:host-dev` |
 
-### Access Control
-
-Only users in the `host-dev` group can:
-
-- Execute `camera-ctl`
-- Connect to control socket
-- Read from camera sockets
-
-To grant access to a user:
+Only members of `host-dev` can execute `camera-ctl` and connect to camera sockets. To grant access to a user:
 
 ```bash
 sudo usermod -aG host-dev <username>
+# Log out and back in for group membership to take effect
 ```
 
-## Files
+### SELinux
 
-### Installed Files
+If SELinux is enabled, the install script automatically compiles and loads a policy module (`camera_container`) that permits `cam-client` to connect to camera sockets across the container boundary. The uninstall script removes it.
 
-- `/opt/aquadash-camera/camera_daemon.py` — Main daemon executable
-- `/opt/aquadash-camera/logical_camera.py` — LogicalCamera class
-- `/opt/aquadash-camera/physical_camera.py` — PhysicalCamera class
-- `/opt/aquadash-camera/camera_paths.py` — Path constants
-- `/opt/aquadash-camera/camera_commands.py` — Command enum
-- `/opt/aquadash-camera/camera-ctl` — CLI tool
-- `/usr/local/bin/camera-ctl` — Wrapper script (restricted to host-dev)
-- `/etc/systemd/system/camera-daemon.service` — Systemd service unit
+## Source Files
 
-### Source Files
-
-- `camera_daemon.py` — Daemon implementation
-- `logical_camera.py` — Per-camera socket server
-- `physical_camera.py` — Manages access to hardware by logical cameras
-- `camera_paths.py` — Shared path constants
-- `camera_commands.py` — Command protocol definitions
-- `camera-ctl` — CLI tool
-- `camera-daemon.service` — Service template (uses `__CAMERA_DIR__` placeholder)
-- `install.sh` — Installation script
-- `uninstall.sh` — Uninstallation script
-- `requirements.txt` — Requirements used by the installation script
+| File                          | Description                                           |
+| ----------------------------- | ----------------------------------------------------- |
+| `camera_daemon.py`            | Main daemon entry point                               |
+| `logical_camera.py`           | Per-camera Unix socket server                         |
+| `physical_camera.py`          | Physical device access, shared across logical cameras |
+| `camera_paths.py`             | Shared path constants                                 |
+| `camera_commands.py`          | Control protocol command definitions                  |
+| `camera-ctl`                  | CLI tool                                              |
+| `camera-daemon.service`       | Systemd service unit template                         |
+| `scripts/install.sh`          | Installation script                                   |
+| `scripts/uninstall.sh`        | Uninstallation script                                 |
+| `requirements.txt`            | Python dependencies                                   |
+| `selinux/camera_container.te` | SELinux policy source                                 |
 
 ## Troubleshooting
 
-### Daemon crashes (exit code 1)
-
-**Check logs:**
+### Daemon fails to start
 
 ```bash
 sudo journalctl -u camera-daemon.service -n 50
 ```
 
-**Common issues:**
+Common causes:
 
-- Permission denied accessing `/dev/video*` (daemon runs as root, should have access)
-- Socket binding errors (check if `/run/camera/` exists and has correct permissions)
+- `/run/camera/` permissions incorrect — the service recreates this directory on start, so a manual `rm -rf /run/camera` followed by a restart could resolve it
+- SELinux denying execution — check `sudo ausearch -m avc -ts recent` and ensure the policy module is loaded (`sudo semodule -l | grep camera`)
 
-### camera-ctl: Permission denied
+### `camera-ctl: Permission denied`
 
-**Symptom:** `bash: /usr/local/bin/camera-ctl: Permission denied`
-
-**Solution:** Run as root (`sudo`), or add your user to the `host-dev` group:
+Run with `sudo`, or add your user to `host-dev` and re-login:
 
 ```bash
 sudo usermod -aG host-dev $USER
-# Log out and back in for group membership to take effect
 ```
 
-### No cameras detected
+### `cam-client` cannot connect to camera socket
 
-**Check available devices:**
-
-```bash
-ls -l /dev/video*
-```
-
-**Add camera manually:**
-
-```bash
-sudo camera-ctl add /dev/video0
-```
-
-### Backend can't connect to camera socket
-
-**Verify:**
+Verify in order:
 
 1. Daemon is running: `sudo systemctl status camera-daemon.service`
-2. Camera is added: `sudo camera-ctl list`
-3. Socket exists: `sudo ls -l /run/camera/`
-4. cam-client container has group `host-dev` and mounts `/run/camera:/run/camera:z`
+2. Camera is registered: `sudo camera-ctl list`
+3. Socket exists: `sudo ls -la /run/camera/`
+4. `cam-client` mounts `/run/camera` and runs with the `host-dev` GID
 
-## Development
-
-### Testing Changes
-
-After modifying source files, reinstall:
+### Running the daemon manually (for debugging)
 
 ```bash
-sudo ./uninstall.sh
-sudo ./install.sh
-sudo systemctl start camera-daemon.service
-```
-
-### Running Manually (for debugging)
-
-```bash
-# Stop systemd service first
 sudo systemctl stop camera-daemon.service
-
-# Run daemon in foreground
 sudo /opt/aquadash-camera/.venv/bin/python /opt/aquadash-camera/camera_daemon.py
 ```
 
-## Integration With Backend
+### Reinstalling after source changes
 
-The cam-client container connects to camera sockets in `/run/camera/`:
-
-The cam-client container must:
-
-1. Mount `/run/camera:/run/camera:z`
-2. Run with group host-dev, e.g. `--group-add $(getent group host-dev | cut -d: -f3)`
+```bash
+sudo ./backend/devices/camera/scripts/uninstall.sh
+sudo ./backend/devices/camera/scripts/install.sh
+sudo systemctl start camera-daemon.service
+```
