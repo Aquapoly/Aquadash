@@ -119,12 +119,13 @@ case "$MODE" in
             start_app_native &
             APP_PID=$!
 
-            start_cam_native
+            start_cam_native &
             CAM_PID=$!
+            wait
 
             cleanup() {
                 kill "$APP_PID" "$CAM_PID" 2>/dev/null || true
-                "$SCRIPT_DIR/kill --native"
+                "$SCRIPT_DIR/kill" --native
             }
 
             trap cleanup EXIT
