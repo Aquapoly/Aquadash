@@ -1,0 +1,27 @@
+[Unit]
+Description=Camera Daemon for /dev/video* devices
+After=network.target
+Wants=network.target
+
+[Service]
+# Ensure /run/camera exists with correct mode and ownership
+RuntimeDirectory=camera
+RuntimeDirectoryMode=0770
+User=root
+Group=host-dev
+
+# Ensure SELinux contexts are correct at every start
+ExecStartPre=/usr/sbin/restorecon -Rv /run/camera
+
+# Daemon
+ExecStart=__CAMERA_DIR__/.venv/bin/python __CAMERA_DIR__/camera_daemon.py
+WorkingDirectory=__CAMERA_DIR__
+
+# Cleanup sockets on stop
+ExecStopPost=/bin/rm -f /run/camera/*.sock
+
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=multi-user.target

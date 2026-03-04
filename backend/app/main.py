@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import FileResponse, StreamingResponse
@@ -14,10 +14,9 @@ import io
 from . import crud, models, schemas
 from .database import engine, get_db
 from .classes.sensor_type import SensorType
-from .services import camera
 from .services.actuator import get_actuator_activation
+from .services import cam_client as camera_service
 from .services.export_data import export_all_measures_to_csv
-from .services import timelapse
 from .security import authentification
 from .security import permissions
 
@@ -231,13 +230,10 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
     return crud.get_actuators(db=db, prototype_id=prototype_id)
 
 
-@app.get("/picture", response_class=StreamingResponse)
+@app.get("/picture")
 async def picture():
-    try:
-        return StreamingResponse(io.BytesIO(camera.get_image()), media_type="image/png")
-    except OSError:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Camera not available.")
-
+    pic: bytes = await camera_service.get_picture()
+    return Response(content=pic, media_type="image/png")
 
 # auth stuff
 @app.post("/token", response_model=schemas.Token)
@@ -344,63 +340,39 @@ async def openapi_json():
 
 # TIMELAPSE
 @app.post("/timelapse/start")
-def start_timelapse(config: timelapse.TimelapseConfig) -> dict:
-    try:
-        return timelapse.start_timelapse(config)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+async def start_timelapse(config: dict) -> dict:
+    return await camera_service.start_timelapse(config)
 
 @app.post("/timelapse/stop")
-def stop_timelapse() -> dict:
-    try:
-        return timelapse.stop_timelapse()
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+async def stop_timelapse() -> dict:
+    return await camera_service.stop_timelapse()
 
 @app.get("/timelapse/status")
-def timelapse_status() -> dict:
-    return timelapse.get_timelapse_status()
-
+async def timelapse_status() -> dict:
+    return await camera_service.get_timelapse_status()
 
 @app.get("/timelapse/frame-info")
-def timelapse_frame_info() -> dict:
-    return timelapse.get_timelapse_frame_info()
-
+async def timelapse_frame_info() -> dict:
+    return await camera_service.get_timelapse_frame_info()
 
 @app.get("/timelapse/latest-frame")
-def get_latest_frame():
-    try:
-        frame_path = timelapse.get_latest_frame()
-        return FileResponse(frame_path)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+async def get_latest_frame():
+    image_bytes = await camera_service.get_latest_timelapse_frame()
+    return Response(content=image_bytes, media_type="image/jpeg")
 
-
-@app.get("/timelapses")
-def list_timelapses_endpoint() -> dict:
-    timelapses = timelapse.list_timelapses()
-    return {"timelapses": timelapses}
+@app.get("/timelapse")
+async def list_timelapses_endpoint() -> dict:
+    return await camera_service.list_timelapses()
 
 @app.get("/timelapse/{timelapse_id}/download")
-def download_timelapse(timelapse_id: str):
-    try:
-        video_path = timelapse.download_timelapse(timelapse_id)
-        return FileResponse(
-            video_path,
-            media_type="video/mp4",
-            filename=f"timelapse_{timelapse_id}.mp4"
-        )
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def download_timelapse(timelapse_id: str):
+    video_bytes = await camera_service.download_timelapse(timelapse_id)
+    return Response(
+        content=video_bytes,
+        media_type="video/mp4",
+        headers={"Content-Disposition": f"attachment; filename=timelapse_{timelapse_id}.mp4"}
+    )
 
 @app.delete("/timelapse/{timelapse_id}")
-def delete_timelapse(timelapse_id: str) -> dict:
-    try:
-        return timelapse.delete_timelapse(timelapse_id)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def delete_timelapse(timelapse_id: str) -> dict:
+    return await camera_service.delete_timelapse(timelapse_id)

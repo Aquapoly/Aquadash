@@ -1,0 +1,9 @@
+fastapi
+imageio
+uvicorn
+
+httpx
+
+pytest # only for development, should not be in production
+pytest-asyncio # only for development, should not be in production
+pytest-cov # only for development, should not be in production

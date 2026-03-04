@@ -1,4 +1,4 @@
-# Default: Use CRLF for all files
+# Default: Use CRLF for all files except scripts
 * text eol=crlf
 
 # Exceptions: Use LF for script files
@@ -6,3 +6,7 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 
+# Exceptions: Scripts with no extension
+run text eol=lf
+kill test eol=lf
+camera-ctl text eol=lf
