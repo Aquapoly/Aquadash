@@ -3,6 +3,7 @@ import { SensorType } from './sensor-type';
 export enum TemperatureUnit {
   Celsius = 'Celsius',
   Fahrenheit = 'Fahrenheit',
+  Kelvin = 'Kelvin',
 }
 
 export enum EcUnit {

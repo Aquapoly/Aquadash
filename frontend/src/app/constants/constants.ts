@@ -206,16 +206,36 @@ export const API_ENDPOINTS = {
 export const SENSOR_UNIT_CONFIG: SensorUnitConfig = {
   [SensorType.temperature]: {
     defaultUnit: TemperatureUnit.Celsius,
-    availableUnits: [TemperatureUnit.Celsius, TemperatureUnit.Fahrenheit],
+    availableUnits: [
+      TemperatureUnit.Celsius,
+      TemperatureUnit.Fahrenheit,
+      TemperatureUnit.Kelvin,
+    ],
     conversions: {
       [TemperatureUnit.Celsius]: {
         [TemperatureUnit.Fahrenheit]: {
           convert: (value: number) => (value * 9) / 5 + 32,
         },
+        [TemperatureUnit.Kelvin]: {
+          convert: (value: number) => value + 273.15,
+        },
       },
+
       [TemperatureUnit.Fahrenheit]: {
         [TemperatureUnit.Celsius]: {
           convert: (value: number) => ((value - 32) * 5) / 9,
+        },
+        [TemperatureUnit.Kelvin]: {
+          convert: (value: number) => ((value - 32) * 5) / 9 + 273.15,
+        },
+      },
+
+      [TemperatureUnit.Kelvin]: {
+        [TemperatureUnit.Celsius]: {
+          convert: (value: number) => value - 273.15,
+        },
+        [TemperatureUnit.Fahrenheit]: {
+          convert: (value: number) => ((value - 273.15) * 9) / 5 + 32,
         },
       },
     },
