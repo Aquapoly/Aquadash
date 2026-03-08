@@ -12,14 +12,28 @@ import {
 } from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
-import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDropList,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
+import { SensorType } from '@app/interfaces/sensor-type';
+import { SensorDisplayUnit } from '@app/interfaces/sensor-unit';
+import { SensorUnitService } from '@app/services/sensor-unit.service';
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule, CameraPictureComponent, CdkDrag, CdkDropList],
+  imports: [
+    LineChartComponent,
+    FormsModule,
+    CameraPictureComponent,
+    CdkDrag,
+    CdkDropList,
+  ],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
@@ -28,10 +42,12 @@ export class StatusPageComponent implements OnInit {
   public chartSize: number = STATUS_PAGE_DEFAULTS.CHART_SIZE_INITIAL;
   selectedThresholdsDisplay: ChartThresholdDisplay =
     ChartThresholdDisplay.ColoredBackgroundWithLine;
+  public selectedUnits: Partial<Record<SensorType, SensorDisplayUnit>> = {};
 
   constructor(
     private readonly sensorService: SensorService,
-    private readonly globalSettings: GlobalSettingsService
+    private readonly globalSettings: GlobalSettingsService,
+    private readonly sensorUnitService: SensorUnitService,
   ) {}
 
   get chartChoices(): string[] {
@@ -47,7 +63,11 @@ export class StatusPageComponent implements OnInit {
 
   getLastMeasurement(sensor: Sensor): string {
     const measurement = this.findSensorMeasurement(sensor.sensor_id);
-    return measurement?.toString() ?? STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
+    if (measurement === undefined) {
+      return STATUS_PAGE_DEFAULTS.NO_DATA_MESSAGE;
+    }
+
+    return this.convertAndRoundValue(sensor, measurement).toString();
   }
 
   getSensorValidity(sensor: Sensor): string {
@@ -57,60 +77,74 @@ export class StatusPageComponent implements OnInit {
       return SENSOR_VALIDITY_CLASSES.NEUTRAL;
     }
 
-    if (this.isCriticalThreshold(measurement, sensor)) {
+    const convertedMeasurement = this.getConvertedMeasurement(sensor);
+
+    if (!convertedMeasurement) {
+      return SENSOR_VALIDITY_CLASSES.NEUTRAL;
+    }
+
+    if (this.isCriticalThreshold(convertedMeasurement, sensor)) {
       return SENSOR_VALIDITY_CLASSES.ERROR;
     }
 
-    if (this.isWarningThreshold(measurement, sensor)) {
+    if (this.isWarningThreshold(convertedMeasurement, sensor)) {
       return SENSOR_VALIDITY_CLASSES.WARNING;
     }
 
     return SENSOR_VALIDITY_CLASSES.SUCCESS;
   }
 
+  getAvailableUnits(sensor: Sensor): SensorDisplayUnit[] {
+    return this.sensorUnitService.getAvailableUnits(sensor.sensor_type);
+  }
+
   updateThresholdDisplay() {
     this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
   }
 
-  protected drop(event: CdkDragDrop<any>){
+  protected drop(event: CdkDragDrop<any>) {
     moveItemInArray(this.sensors, event.previousIndex, event.currentIndex);
     this.globalSettings.saveSensorOrder(this.getSensorArray());
   }
 
-  private orderSensors():void{
+  private orderSensors(): void {
     const order: string[] = this.globalSettings.getSensorOrder();
-    this.sensors.sort( (a,b)=> {
+    this.sensors.sort((a, b) => {
       const indexA = order.indexOf(a.sensor_type);
       const indexB = order.indexOf(b.sensor_type);
-    
+
       const posA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA;
       const posB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB;
-    
+
       return posA - posB;
     });
   }
 
-  private getSensorArray():string[]{
+  private getSensorArray(): string[] {
     let order: string[] = [];
-    this.sensors.forEach(x => order.push(x.sensor_type));
+    this.sensors.forEach((x) => order.push(x.sensor_type));
     return order;
   }
 
   private isCriticalThreshold(measurement: number, sensor: Sensor): boolean {
     return (
-      measurement < sensor.threshold_critically_low ||
-      measurement > sensor.threshold_critically_high
+      measurement <
+        this.getConvertedThreshold(sensor, sensor.threshold_critically_low) ||
+      measurement >
+        this.getConvertedThreshold(sensor, sensor.threshold_critically_high)
     );
   }
 
   private isWarningThreshold(measurement: number, sensor: Sensor): boolean {
     return (
-      measurement < sensor.threshold_low || measurement > sensor.threshold_high
+      measurement < this.getConvertedThreshold(sensor, sensor.threshold_low) ||
+      measurement > this.getConvertedThreshold(sensor, sensor.threshold_high)
     );
   }
 
-    private async loadData() {
+  private async loadData() {
     this.sensors = await this.sensorService.getSensors();
+    this.initializeSelectedUnits();
     this.orderSensors();
     this.chartSize =
       STATUS_PAGE_DEFAULTS.CHART_SIZE_DIVISOR /
@@ -120,11 +154,57 @@ export class StatusPageComponent implements OnInit {
         const last_measurement: Measurement =
           await this.sensorService.getLastMeasurement(sensor.sensor_id);
         return [sensor.sensor_id, last_measurement?.value];
-      })
+      }),
     );
   }
 
   private findSensorMeasurement(sensorId: number): number | undefined {
     return this.sensorLastMeasurements.find((msr) => msr[0] === sensorId)?.[1];
+  }
+
+  onUnitChange(sensorType: SensorType, unit: SensorDisplayUnit): void {
+    this.selectedUnits[sensorType] = unit;
+  }
+
+  getConvertedThreshold(sensor: Sensor, threshold: number): number {
+    return this.convertAndRoundValue(sensor, threshold);
+  }
+
+  private initializeSelectedUnits(): void {
+    this.sensors.forEach((sensor) => {
+      if (!this.selectedUnits[sensor.sensor_type]) {
+        const defaultUnit = this.sensorUnitService.getDefaultUnit(
+          sensor.sensor_type,
+        );
+        if (defaultUnit) {
+          this.selectedUnits[sensor.sensor_type] = defaultUnit;
+        }
+      }
+    });
+  }
+
+  private getConvertedMeasurement(sensor: Sensor): number | undefined {
+    const measurement = this.findSensorMeasurement(sensor.sensor_id);
+
+    if (measurement === undefined) {
+      return undefined;
+    }
+
+    return this.convertAndRoundValue(sensor, measurement);
+  }
+
+  private convertAndRoundValue(sensor: Sensor, value: number): number {
+    const displayedUnit = this.getDisplayedUnit(sensor);
+    const convertedValue = this.sensorUnitService.convertSensorValue(
+      sensor,
+      value,
+      displayedUnit,
+    );
+
+    return this.sensorUnitService.roundValue(convertedValue);
+  }
+
+  getDisplayedUnit(sensor: Sensor): string {
+    return this.selectedUnits[sensor.sensor_type] ?? sensor.sensor_unit;
   }
 }
