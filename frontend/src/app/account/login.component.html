@@ -1,0 +1,44 @@
+<div class="login-wrapper">
+    <div class="login-container">
+        <img src="https://i.postimg.cc/zXy0LbWR/Screenshot-2026-03-11-185641.png" alt="Logo" class="logo-img" />
+        <h1 class="app-title">Aquadash</h1>
+        <div class="card">
+            <h4 class="card-header">Login</h4>
+            <div class="card-body">
+                <form [formGroup]="form" (ngSubmit)="onSubmit()">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" formControlName="username" class="form-control" [ngClass]="{ 'is-invalid': submitted && f['username'].errors }" />
+                        @if (submitted && f['username'].errors) {
+                            <div class="invalid-feedback">
+                                @if (f['username'].errors?.['required']) {
+                                    <div>Username is required</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" formControlName="password" class="form-control" [ngClass]="{ 'is-invalid': submitted && f['password'].errors }" />
+                        @if (submitted && f['password'].errors) {
+                            <div class="invalid-feedback">
+                                @if (f['password'].errors?.['required']) {
+                                    <div>Password is required</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <button [disabled]="loading" class="btn btn-primary">
+                            @if (loading) {
+                                <span class="spinner-border-sm"></span>
+                            }
+                            Login
+                        </button>
+                        <a routerLink="/register" class="btn btn-link">Register</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
