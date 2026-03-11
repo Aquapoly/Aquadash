@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Time,
     func,
+    CheckConstraint
 )
 import enum
 from .classes.activation_condition import ActivationCondition
@@ -23,6 +24,11 @@ class Prototype(Base):
 
     prototype_id = Column(Integer, primary_key=True)
     prototype_name = Column(String, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("prototype_id>=0", name="check_id_prototype_positive"),
+    )
+
 
 
 class Sensor(Base):
@@ -39,6 +45,10 @@ class Sensor(Base):
     threshold_critically_high = Column(Float, nullable=False)
     sensor_unit = Column(String, nullable=False)
 
+    __table_args__ = (
+        CheckConstraint("sensor_id>=0", name="check_id_sensor_positive"),
+    )
+
 
 class Measurement(Base):
     __tablename__ = "measurements"
@@ -52,6 +62,10 @@ class Measurement(Base):
     )
     value = Column(Float, nullable=False)
 
+    __table_args__ = (
+        CheckConstraint("measurement_id>=0", name="check_id_measurement_positive"),
+    )
+
 class Actuator(Base):
     __tablename__ = "actuators"
     actuator_id = Column(Integer, primary_key=True)
@@ -64,6 +78,10 @@ class Actuator(Base):
     enabled = Column(Boolean, nullable=False, default=True)
     last_activated = Column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("actuator_id>=0", name="check_id_actuator_positive"),
     )
 
 

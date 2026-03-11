@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { SERVER_URL } from '@app/environment';
 import { Actuator } from '@app/interfaces/actuator';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +20,12 @@ export class ApiService {
 
   patchActuators(actuators: Actuator[]) {
     return this.http.patch(this.serverUrl + '/actuators', actuators, {
+      observe: 'response',
+    });
+  }
+
+  postActuator(actuator: Actuator) {
+    return this.http.post(this.serverUrl + '/actuators', actuator, {
       observe: 'response',
     });
   }

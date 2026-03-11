@@ -1,8 +1,17 @@
-import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
-@Component({ templateUrl: 'login.component.html' })
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [ReactiveFormsModule, CommonModule, RouterLink],
+  templateUrl: 'login.component.html',
+  styleUrl: 'login.component.scss',
+   encapsulation: ViewEncapsulation.None
+})
 export class LoginComponent implements OnInit {
     form!: FormGroup;
     loading = false;
@@ -20,5 +29,12 @@ export class LoginComponent implements OnInit {
             password: ['', Validators.required]
         });
     }
-     
+
+    get f() { return this.form.controls; }
+
+    onSubmit() {
+        this.submitted = true;
+        if (this.form.invalid) return;
+        this.loading = true;
+    }
 }

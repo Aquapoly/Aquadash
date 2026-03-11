@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 # from fastapi_utils.openapi import simplify_operation_ids
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
@@ -16,6 +16,8 @@ from .database import engine, get_db
 from .classes.sensor_type import SensorType
 from .services import camera
 from .services.actuator import get_actuator_activation
+from .services.export_data import export_all_measures_to_csv
+from .services import timelapse
 from .security import authentification
 from .security import permissions
 
@@ -168,6 +170,19 @@ async def prototype(prototype_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Prototype not found")
 
 @app.get(
+    "/measurements/export",
+    tags=["Measurements"],
+    response_class=StreamingResponse,
+)
+async def export_all_sensors_to_csv(db: Session = Depends(get_db)):
+    csv_content = export_all_measures_to_csv(db)
+    return StreamingResponse(
+        io.StringIO(csv_content),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=all_sensors_measurements.csv"}
+    )
+
+@app.get(
     "/measurements/{sensor_id}",
     tags=["Measurements"],
     response_model=list[schemas.Measurement],
@@ -310,3 +325,82 @@ async def post_random_measurements(
             db.add(db_Measurement)
             db.commit()
             db.refresh(db_Measurement)
+
+@app.get(
+    "/docs/openapi.json",
+    tags=["Docs"],
+    summary="OpenAPI JSON",
+    operation_id="openapi_json",
+)
+async def openapi_json():
+    """
+    Returns the OpenAPI JSON for the backend API.
+    """
+    try:
+        return app.openapi()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# TIMELAPSE
+@app.post("/timelapse/start")
+def start_timelapse(config: timelapse.TimelapseConfig) -> dict:
+    try:
+        return timelapse.start_timelapse(config)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/timelapse/stop")
+def stop_timelapse() -> dict:
+    try:
+        return timelapse.stop_timelapse()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/timelapse/status")
+def timelapse_status() -> dict:
+    return timelapse.get_timelapse_status()
+
+
+@app.get("/timelapse/frame-info")
+def timelapse_frame_info() -> dict:
+    return timelapse.get_timelapse_frame_info()
+
+
+@app.get("/timelapse/latest-frame")
+def get_latest_frame():
+    try:
+        frame_path = timelapse.get_latest_frame()
+        return FileResponse(frame_path)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/timelapses")
+def list_timelapses_endpoint() -> dict:
+    timelapses = timelapse.list_timelapses()
+    return {"timelapses": timelapses}
+
+@app.get("/timelapse/{timelapse_id}/download")
+def download_timelapse(timelapse_id: str):
+    try:
+        video_path = timelapse.download_timelapse(timelapse_id)
+        return FileResponse(
+            video_path,
+            media_type="video/mp4",
+            filename=f"timelapse_{timelapse_id}.mp4"
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/timelapse/{timelapse_id}")
+def delete_timelapse(timelapse_id: str) -> dict:
+    try:
+        return timelapse.delete_timelapse(timelapse_id)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
