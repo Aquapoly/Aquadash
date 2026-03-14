@@ -48,12 +48,9 @@ class Sensor(Base):
     __table_args__ = (
         CheckConstraint("sensor_id>=0", name="check_id_sensor_positive"),
         CheckConstraint(
-            "(threshold_critically_low <= threshold_low AND "
+            "threshold_critically_low <= threshold_low AND "
             "threshold_low <= threshold_high AND "
-            "threshold_high <= threshold_critically_high) OR "
-            "(threshold_critically_low >= threshold_low AND "
-            "threshold_low >= threshold_high AND "
-            "threshold_high >= threshold_critically_high)",
+            "threshold_high <= threshold_critically_high",
             name="check_threshold_values"
         ),
     )
