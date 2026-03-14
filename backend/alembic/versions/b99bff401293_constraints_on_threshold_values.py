@@ -21,12 +21,9 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     op.create_check_constraint("check_threshold_values", "sensors", 
-            "(threshold_critically_low <= threshold_low AND "
+            "threshold_critically_low <= threshold_low AND "
             "threshold_low <= threshold_high AND "
-            "threshold_high <= threshold_critically_high) OR "
-            "(threshold_critically_low >= threshold_low AND "
-            "threshold_low >= threshold_high AND "
-            "threshold_high >= threshold_critically_high)")
+            "threshold_high <= threshold_critically_high")
 
 
 def downgrade() -> None:
