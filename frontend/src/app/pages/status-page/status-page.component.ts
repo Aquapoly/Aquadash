@@ -13,13 +13,15 @@ import {
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
 import { ExportButtonComponent } from '@app/components/export-button/export-button.component';
+import {CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray} from '@angular/cdk/drag-drop';
+
 
 @Component({
   selector: 'app-status-page',
   standalone: true,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',
-  imports: [LineChartComponent, FormsModule, CameraPictureComponent, ExportButtonComponent],
+  imports: [LineChartComponent, FormsModule, CameraPictureComponent, ExportButtonComponent, CdkDrag, CdkDropList],
 })
 export class StatusPageComponent implements OnInit {
   public sensors: Sensor[] = [];
@@ -39,24 +41,6 @@ export class StatusPageComponent implements OnInit {
   }
   ngOnInit() {
     this.loadData();
-  }
-
-  private async loadData() {
-    this.sensors = await this.sensorService.getSensors();
-    this.chartSize =
-      STATUS_PAGE_DEFAULTS.CHART_SIZE_DIVISOR /
-      Math.ceil(this.sensors.length / this.columnCount);
-    this.sensorLastMeasurements = await Promise.all(
-      this.sensors.map(async (sensor) => {
-        const last_measurement: Measurement =
-          await this.sensorService.getLastMeasurement(sensor.sensor_id);
-        return [sensor.sensor_id, last_measurement?.value];
-      })
-    );
-  }
-
-  private findSensorMeasurement(sensorId: number): number | undefined {
-    return this.sensorLastMeasurements.find((msr) => msr[0] === sensorId)?.[1];
   }
 
   getSensorTitle(sensor: Sensor): string {
@@ -86,6 +70,34 @@ export class StatusPageComponent implements OnInit {
     return SENSOR_VALIDITY_CLASSES.SUCCESS;
   }
 
+  updateThresholdDisplay() {
+    this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
+  }
+
+  protected drop(event: CdkDragDrop<any>){
+    moveItemInArray(this.sensors, event.previousIndex, event.currentIndex);
+    this.globalSettings.saveSensorOrder(this.getSensorArray());
+  }
+
+  private orderSensors():void{
+    const order: string[] = this.globalSettings.getSensorOrder();
+    this.sensors.sort( (a,b)=> {
+      const indexA = order.indexOf(a.sensor_type);
+      const indexB = order.indexOf(b.sensor_type);
+    
+      const posA = indexA === -1 ? Number.MAX_SAFE_INTEGER : indexA;
+      const posB = indexB === -1 ? Number.MAX_SAFE_INTEGER : indexB;
+    
+      return posA - posB;
+    });
+  }
+
+  private getSensorArray():string[]{
+    let order: string[] = [];
+    this.sensors.forEach(x => order.push(x.sensor_type));
+    return order;
+  }
+
   private isCriticalThreshold(measurement: number, sensor: Sensor): boolean {
     return (
       measurement < sensor.threshold_critically_low ||
@@ -99,7 +111,22 @@ export class StatusPageComponent implements OnInit {
     );
   }
 
-  updateThresholdDisplay() {
-    this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
+    private async loadData() {
+    this.sensors = await this.sensorService.getSensors();
+    this.orderSensors();
+    this.chartSize =
+      STATUS_PAGE_DEFAULTS.CHART_SIZE_DIVISOR /
+      Math.ceil(this.sensors.length / this.columnCount);
+    this.sensorLastMeasurements = await Promise.all(
+      this.sensors.map(async (sensor) => {
+        const last_measurement: Measurement =
+          await this.sensorService.getLastMeasurement(sensor.sensor_id);
+        return [sensor.sensor_id, last_measurement?.value];
+      })
+    );
+  }
+
+  private findSensorMeasurement(sensorId: number): number | undefined {
+    return this.sensorLastMeasurements.find((msr) => msr[0] === sensorId)?.[1];
   }
 }

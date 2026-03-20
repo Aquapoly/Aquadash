@@ -13,3 +13,5 @@ pytest # only for development, should not be in production
 httpx
 pytest-asyncio # only for development, should not be in production
 pytest-cov # only for development, should not be in production
+alembic # for database migrations, development
+tzdata
