@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { ModalComponent } from '@app/components/modal/modal.component';
 import { NewActuatorModalComponent } from '@app/components/new-actuator-modal/new-actuator-modal.component';
+import { ModifyActuatorModalComponent } from '@app/modify-actuator-modal/modify-actuator-modal.component';
 import { HttpStatusCode, HttpClient } from '@angular/common/http';
 import tippy from 'tippy.js';
 import { CommonModule } from '@angular/common';
@@ -21,12 +22,13 @@ import { Dictionary, error } from 'highcharts';
   selector: 'app-actuator-page',
   templateUrl: './configuration-page.component.html',
   styleUrl: './configuration-page.component.scss',
-  imports: [FormsModule, ModalComponent, CommonModule, NewActuatorModalComponent],
+  imports: [FormsModule, ModalComponent, CommonModule, NewActuatorModalComponent, ModifyActuatorModalComponent],
 })
 export class ConfigurationPageComponent implements OnInit {
   actuators: Actuator[] = [];
   @ViewChild('responseModal') modal: ModalComponent | undefined;
   @ViewChild('newActuatorModal') newActuatorModal: NewActuatorModalComponent | undefined;
+  @ViewChild('modifyActuatorModal') modifyActuatorModal : ModifyActuatorModalComponent | undefined;
 
   sortColumn: string = '';
   sortDirection: SortDirection = SortDirection.ASC;
@@ -35,7 +37,7 @@ export class ConfigurationPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.api.getActuators(API_DEFAULTS.ACTUATORS_PAGE).subscribe((res) => {
-      this.actuators = res.body as Actuator[];      
+      this.actuators = res.body as Actuator[]; 
     });
   }
 
@@ -63,7 +65,7 @@ export class ConfigurationPageComponent implements OnInit {
     });
   }
 
-  showNewActuatorForm() {    
+  showNewActuatorForm() {   
     if(this.newActuatorModal) {
       this.newActuatorModal.actuatorNumber = this.actuators.length+1;
       this.newActuatorModal.addActuatorMethod = (actuator: Actuator) => this.addActuator(actuator);
@@ -71,9 +73,13 @@ export class ConfigurationPageComponent implements OnInit {
     this.newActuatorModal?.showModal();
   }
 
-  showModifyActuatorForm() {
-
-    
+  showModifyActuatorForm(actuator: Actuator) {
+    if(this.modifyActuatorModal) {
+      this.modifyActuatorModal.actuatorName = actuator.actuator_name; // TODO: not saved in database!
+      this.modifyActuatorModal.actuatorType = actuator.actuator_type;
+      this.modifyActuatorModal.modifyActuatorMethod = (actuator: Actuator) => this.modifyActuator(actuator);
+    }
+    this.modifyActuatorModal?.showModal(actuator);
   }
 
   sortTable(column: string): void {
@@ -100,7 +106,7 @@ export class ConfigurationPageComponent implements OnInit {
   }
 
   addActuator(actuatorToAdd: Actuator) {
-    // Ajouter à la liste des actuateurs
+    // Add to actuator list
       this.api.postActuator(actuatorToAdd).subscribe((res)=>{
         if(res.status === HttpStatusCode.Ok) {
           this.actuators.push(actuatorToAdd);
@@ -111,6 +117,10 @@ export class ConfigurationPageComponent implements OnInit {
           this.modal.showModal();
         }
       });
+  }
+
+  modifyActuator(actuatorToModify: Actuator) {
+    // TODO:
   }
 
 }
