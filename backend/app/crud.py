@@ -256,6 +256,22 @@ def post_measurement(db: Session, measurement: schemas.MeasurementBase):
     return result
 
 
+def delete_measurement(db: Session, measurement_id: int):
+    """
+    Deletes the measurement with the given id.
+    Args:
+        db (Session): SQLAlchemy session.
+        measurement_id (int): The ID of the measurement to delete.
+    Raises:
+        HTTPException: Code 404 if the measurement doesn't exist.
+    """
+    measurement = db.get(models.Measurement, measurement_id)
+    if measurement is None:
+        raise HTTPException(status_code=404, detail="Measurement not found")
+    db.delete(measurement)
+    db.commit()
+
+
 def post_user(db: Session, username: str, password: str):
     """
     Creates and inserts a new user into the database.
