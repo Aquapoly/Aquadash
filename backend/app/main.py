@@ -230,7 +230,7 @@ async def get_last_measurement(
 async def delete_measurement(
     measurement_id: int, db: Session = Depends(get_db)
 ):
-    return crud.delete_measurement(db, measurement_id)
+    crud.delete_measurement(db, measurement_id)
 
 
 @app.get(
