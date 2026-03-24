@@ -1,0 +1,49 @@
+name: Generate Aquadash API Docs
+
+on:
+  push:
+    tags:
+      - '*release*'
+
+permissions:
+  contents: write
+
+jobs:
+  api-doc-gen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start Aquadash backend (docker-compose)
+        working-directory: backend
+        run: |
+          docker compose up -d --build
+          echo "Waiting for OpenAPI endpoint. Max timeout 2 minutes"
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/docs/openapi.json > /dev/null; then
+              echo "Backend running"
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://localhost:8000/docs/openapi.json > /dev/null
+
+      - name: Generate OpenAPI JSON
+        run: |
+          curl -fsS http://localhost:8000/docs/openapi.json -o aquadash-openapi.json
+          echo "OpenAPI JSON generated successfully"
+          cat aquadash-openapi.json | jq '.' > /dev/null || (echo "Invalid JSON" && exit 1)
+
+      - name: Tear down backend
+        working-directory: backend
+        if: always()
+        run: docker compose down
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: aquadash-openapi.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
