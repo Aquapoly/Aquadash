@@ -5,6 +5,14 @@ CAM_CLIENT_BASE_URL: str = "http://cam-client:9000"
 PICTURE: str = "/picture"
 TIMELAPSE: str = "/timelapse"
 
+_client: httpx.AsyncClient | None = None
+TIMEOUT_SECONDS: float = 5.0
+
+async def get_client() -> httpx.AsyncClient:
+    global _client
+    if _client is None:
+        _client = httpx.AsyncClient(timeout=TIMEOUT_SECONDS)
+    return _client
 
 def _unavailable(detail: str = "Camera service unavailable."):
     raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=detail)
@@ -14,35 +22,41 @@ def _not_found(detail: str = "Not found."):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
 
 
-async def _get(path: str, timeout: float = 5.0) -> httpx.Response:
+async def _get(path: str, timeout: float | None = None) -> httpx.Response:
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.get(f"{CAM_CLIENT_BASE_URL}{path}")
-            return response
+        client = await get_client()
+        url = f"{CAM_CLIENT_BASE_URL}{path}"
+        if timeout is None:
+            response = await client.get(url)
+        else:
+            response = await client.get(url, timeout=timeout)
+        return response
     except (httpx.RequestError, httpx.ConnectError):
         _unavailable()
 
 
-async def _post(path: str, json: dict = None, timeout: float = 5.0) -> httpx.Response:
+async def _post(path: str, json: dict = None) -> httpx.Response:
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(f"{CAM_CLIENT_BASE_URL}{path}", json=json)
-            return response
+        client = await get_client()
+        url = f"{CAM_CLIENT_BASE_URL}{path}"
+        response = await client.post(url, json=json)
+        return response
     except (httpx.RequestError, httpx.ConnectError):
         _unavailable()
 
 
-async def _delete(path: str, timeout: float = 5.0) -> httpx.Response:
+async def _delete(path: str) -> httpx.Response:
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.delete(f"{CAM_CLIENT_BASE_URL}{path}")
-            return response
+        client = await get_client()
+        url = f"{CAM_CLIENT_BASE_URL}{path}"
+        response = await client.delete(url)
+        return response
     except (httpx.RequestError, httpx.ConnectError):
         _unavailable()
 
 
 async def get_picture() -> bytes:
-    response = await _get(PICTURE, timeout=2.0)
+    response = await _get(PICTURE)
     if not response.is_success:
         _not_found("Camera unavailable.")
     return response.content
@@ -117,3 +131,13 @@ async def get_timelapse_frame_info() -> dict:
         "frames_taken": data["frames_taken"],
         "latest_frame_time": data["latest_frame_time"],
     }
+
+
+async def close_client() -> None:
+    """Close the shared AsyncClient instance if it exists."""
+    global _client
+    if _client is not None:
+        try:
+            await _client.aclose()
+        finally:
+            _client = None

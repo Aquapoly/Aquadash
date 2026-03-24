@@ -28,9 +28,15 @@ sensors_data = dict()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db = next(get_db())  
-    crud.default_populate_database(db)  
-    yield
+    db = next(get_db())
+    crud.default_populate_database(db)
+    try:
+        yield
+    finally:
+        try:
+            await camera_service.close_client()
+        except Exception:
+            pass
 
 
 app = FastAPI(lifespan=lifespan)
