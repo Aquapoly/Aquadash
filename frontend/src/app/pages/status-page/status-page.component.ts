@@ -12,6 +12,7 @@ import {
 } from '@app/constants/constants';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { LineChartComponent } from '@app/components/line-chart/line-chart.component';
+import { ExportButtonComponent } from '@app/components/export-button/export-button.component';
 import {
   CdkDrag,
   CdkDragDrop,
@@ -22,6 +23,7 @@ import { SensorType } from '@app/interfaces/sensor-type';
 import { SensorDisplayUnit } from '@app/interfaces/sensor-unit';
 import { SensorUnitService } from '@app/services/sensor-unit.service';
 
+
 @Component({
   selector: 'app-status-page',
   standalone: true,
@@ -31,6 +33,7 @@ import { SensorUnitService } from '@app/services/sensor-unit.service';
     LineChartComponent,
     FormsModule,
     CameraPictureComponent,
+    ExportButtonComponent,
     CdkDrag,
     CdkDropList,
   ],
