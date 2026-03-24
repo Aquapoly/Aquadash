@@ -6,14 +6,15 @@ class PhysicalCamera:
         self.device_path = device_path
         self.lock = Lock()
         self.cap = cv2.VideoCapture(device_path, cv2.CAP_V4L2)
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+        self.cap.set(cv2.CAP_PROP_FPS, 30)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.count = 0
 
     def capture_frame(self) -> bytes | None:
         with self.lock:
-            # Flush stale frames
-            for _ in range(3):
-                self.cap.grab()
+            # Flush stale frame
+            self.cap.grab()
 
             ret, frame = self.cap.read()
             if not ret:
