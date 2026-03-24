@@ -8,5 +8,5 @@
 
 # Exceptions: Scripts with no extension
 run text eol=lf
-kill test eol=lf
+kill text eol=lf
 camera-ctl text eol=lf
