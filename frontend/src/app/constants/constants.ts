@@ -1,4 +1,9 @@
 import { SensorType } from '@app/interfaces/sensor-type';
+import {
+  EcUnit,
+  SensorUnitConfig,
+  TemperatureUnit,
+} from '@app/interfaces/sensor-unit';
 
 export const LIGHT_THEME: string = 'light';
 export const DARK_THEME: string = 'dracula';
@@ -101,7 +106,8 @@ export const MODAL_MESSAGES = {
   ERROR_TITLE: 'Erreur',
   ERROR_CONTENT:
     'Une erreur est survenue lors de la mise à jour des paramètres.',
-  ERROR_CONTENT_ADDED: 'Une erreur est survenue lors de l\'ajout du nouveau actuateur.',
+  ERROR_CONTENT_ADDED:
+    "Une erreur est survenue lors de l'ajout du nouveau actuateur.",
 } as const;
 
 export const API_DEFAULTS = {
@@ -137,7 +143,7 @@ export const SENSOR_VALIDITY_CLASSES = {
 export const LOCAL_STORAGE_KEYS = {
   THEME: 'theme',
   THRESHOLDDISPLAY: 'thresholdDisplay',
-  SENSOR_ORDER: 'sensor_order'
+  SENSOR_ORDER: 'sensor_order',
 } as const;
 
 export const DOM_ATTRIBUTES = {
@@ -196,3 +202,58 @@ export const API_ENDPOINTS = {
   SENSORS: 'sensors',
   LAST: 'last',
 } as const;
+
+export const SENSOR_UNIT_CONFIG: SensorUnitConfig = {
+  [SensorType.temperature]: {
+    defaultUnit: TemperatureUnit.Celsius,
+    availableUnits: [
+      TemperatureUnit.Celsius,
+      TemperatureUnit.Fahrenheit,
+      TemperatureUnit.Kelvin,
+    ],
+    conversions: {
+      [TemperatureUnit.Celsius]: {
+        [TemperatureUnit.Fahrenheit]: {
+          convert: (value: number) => (value * 9) / 5 + 32,
+        },
+        [TemperatureUnit.Kelvin]: {
+          convert: (value: number) => value + 273.15,
+        },
+      },
+
+      [TemperatureUnit.Fahrenheit]: {
+        [TemperatureUnit.Celsius]: {
+          convert: (value: number) => ((value - 32) * 5) / 9,
+        },
+        [TemperatureUnit.Kelvin]: {
+          convert: (value: number) => ((value - 32) * 5) / 9 + 273.15,
+        },
+      },
+
+      [TemperatureUnit.Kelvin]: {
+        [TemperatureUnit.Celsius]: {
+          convert: (value: number) => value - 273.15,
+        },
+        [TemperatureUnit.Fahrenheit]: {
+          convert: (value: number) => ((value - 273.15) * 9) / 5 + 32,
+        },
+      },
+    },
+  },
+  [SensorType.ec]: {
+    defaultUnit: EcUnit.MilliSiemensPerCm,
+    availableUnits: [EcUnit.MilliSiemensPerCm, EcUnit.MicroSiemensPerCm],
+    conversions: {
+      [EcUnit.MilliSiemensPerCm]: {
+        [EcUnit.MicroSiemensPerCm]: {
+          factor: 1000,
+        },
+      },
+      [EcUnit.MicroSiemensPerCm]: {
+        [EcUnit.MilliSiemensPerCm]: {
+          factor: 0.001,
+        },
+      },
+    },
+  },
+};
