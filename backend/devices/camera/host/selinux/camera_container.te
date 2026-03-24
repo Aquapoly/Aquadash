@@ -1,4 +1,3 @@
-
 module camera_container 1.0;
 
 require {
