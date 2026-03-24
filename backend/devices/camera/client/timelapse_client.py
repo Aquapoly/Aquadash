@@ -8,7 +8,7 @@ import uuid
 import imageio.v3 as iio3
 from pydantic import BaseModel
 
-from .camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError
+from camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError
 
 TIMELAPSES_DIR = Path("/timelapses")
 VIDEO_TEMP_DIR = Path("/tmp/timelapses")

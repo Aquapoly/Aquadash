@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 
-from .camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError, CAMERA_NAME
-from .timelapse_client import TimelapseClient, TimelapseConfig
+from camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError, CAMERA_NAME
+from timelapse_client import TimelapseClient, TimelapseConfig
 
 app = FastAPI()
 
