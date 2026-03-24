@@ -16,10 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Start Aquadash backend (docker-compose)
+      - name: Start Aquadash database (backend dependency)
         working-directory: backend
         run: |
-          docker compose up -d --build
+          docker compose up -d db
+          sleep 10
+
+      - name: Start Aquadash backend
+        working-directory: backend
+        run: |
+          docker compose up -d --build app
           echo "Waiting for OpenAPI endpoint. Max timeout 2 minutes"
           for i in $(seq 1 60); do
             if curl -fsS http://localhost:8000/docs/openapi.json > /dev/null; then
