@@ -1,6 +1,7 @@
 volumes:
   # To persist timelapse data
   timelapse_data:
+  postgres_data:
 
 services:
   db:
@@ -22,6 +23,7 @@ services:
 
     volumes:
       - ./initdb:/docker-entrypoint-initdb.d:Z
+      - postgres_data:/var/lib/postgresql
 
     networks:
       - backend
