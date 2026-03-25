@@ -13,17 +13,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Aquadash
         uses: actions/checkout@v4
+        with:
+          path: aquadash
 
       - name: Start Aquadash database (backend dependency)
-        working-directory: backend
+        working-directory: aquadash/backend
         run: |
           docker compose up -d db
           sleep 10
 
       - name: Start Aquadash backend
-        working-directory: backend
+        working-directory: aquadash/backend
         run: |
           docker compose up -d --build app
           echo "Waiting for OpenAPI endpoint. Max timeout 2 minutes"
@@ -36,20 +38,30 @@ jobs:
           done
           curl -fsS http://localhost:8000/docs/openapi.json > /dev/null
 
-      - name: Generate OpenAPI JSON
+      - name: Checkout Aquapedia
+        uses: actions/checkout@v4
+        with:
+          repository: Aquapoly/aquapedia
+          path: aquapedia
+          token: ${{ secrets.AQUAPEDIA_READ_TOKEN }}
+
+      - name: Update API documentation on the wiki
+        working-directory: aquapedia/api-doc-gen
         run: |
-          curl -fsS http://localhost:8000/docs/openapi.json -o aquadash-openapi.json
-          echo "OpenAPI JSON generated successfully"
-          cat aquadash-openapi.json | jq '.' > /dev/null || (echo "Invalid JSON" && exit 1)
+          cat > .env << EOF
+          AQUAPEDIA_API_KEY=${{ secrets.AQUAPEDIA_API_TOKEN }}
+          AQUAPEDIA_URL=http://wiki.aquapoly.ca
+          BASE_PATH=Poles/Informatique
+          LOCALE=fr
+          EOF
+
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+          python docgen.py --url http://localhost:8000/docs/openapi.json --app-name aquadash --output ./output --sync
 
       - name: Tear down backend
         working-directory: backend
         if: always()
         run: docker compose down
-
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: aquadash-openapi.json
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
