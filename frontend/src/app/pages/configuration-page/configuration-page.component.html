@@ -68,13 +68,19 @@
         } @for(actuator of actuators;track actuator.actuator_id){
         <tr class="hover">
           <td>
-            <button class="btn btn-sm btn-square btn-ghost hover:bg-primary/0" (click)='showModifyActuatorForm(actuator)'>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="fill-primary-content/60 hover:fill-primary">
-                <ellipse rx="2" ry="2" transform="translate(10.5 10)" stroke-width="0"/>
-                <ellipse rx="2" ry="2" transform="translate(5 10)" stroke-width="0"/>
-                <ellipse rx="2" ry="2" transform="translate(16 10)" stroke-width="0"/>
-              </svg>
-            </button>
+            <div class="dropdown dropdown-hover">
+              <div tabindex="0" role="button" class="btn btn-sm btn-square btn-ghost hover:bg-primary/0">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="fill-primary/50 hover:fill-primary">
+                  <ellipse rx="1.5" ry="1.5" transform="translate(10.5 10)" stroke-width="0"/>
+                  <ellipse rx="1.5" ry="1.5" transform="translate(5 10)" stroke-width="0"/>
+                  <ellipse rx="1.5" ry="1.5" transform="translate(16 10)" stroke-width="0"/>
+                </svg>
+              </div>
+              <ul class="dropdown-content menu rounded-box bg-base-200 z-10 w-52 p-2 shadow-sm shadow-primary">
+                <li class="hover:bg-secondary/30 rounded" (click)='showModifyActuatorForm(actuator)'><a>Modifier</a></li>
+                <li class="hover:bg-error/30 rounded"><a>Supprimer</a></li>
+              </ul>
+            </div>
           </td>
           <td>
             {{ actuator.actuator_name || getNameFromType(actuator.actuator_type) }}
