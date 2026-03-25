@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout Aquadash
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: aquadash
 
@@ -39,7 +39,7 @@ jobs:
           curl -fsS http://localhost:8000/docs/openapi.json > /dev/null
 
       - name: Checkout Aquapedia
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: Aquapoly/aquapedia
           path: aquapedia
