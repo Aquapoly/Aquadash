@@ -15,12 +15,22 @@ jobs:
     steps:
       - name: Wiki health check
         run: |
-          if ! { curl --max-time 15 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca | grep -q "200\|301\|302"; }; then 
+          HTTP_CODE=$(curl --max-time 15 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca)
+          echo "Wiki health check: HTTP $HTTP_CODE"
+
+          echo "## Wiki Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: http://wiki.aquapoly.ca" >> $GITHUB_STEP_SUMMARY
+          echo "- **HTTP status code**: $HTTP_CODE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+          if ! echo "$HTTP_CODE" | grep -q "200\|301\|302"; then 
             echo "::error title=Wiki health check failed::wiki.aquapoly.ca not reachable. API documentation was not updated."
-            echo "## Wiki Unreachable" >> $GITHUB_STEP_SUMMARY
+            echo "Health check failed." >> $GITHUB_STEP_SUMMARY
             echo "The wiki at http://wiki.aquapoly.ca is currently down or unreachable." >> $GITHUB_STEP_SUMMARY
             echo "API documentation was not updated." >> $GITHUB_STEP_SUMMARY
             exit 1
+          else
+            echo "Health check passed." >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Checkout Aquadash
