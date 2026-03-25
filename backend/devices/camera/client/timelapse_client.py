@@ -79,7 +79,9 @@ class TimelapseClient:
             self._state.running = False
             thread = self._state.thread
 
-        thread.join(timeout=2.0)
+        thread.join(timeout=10.0)
+        if thread.is_alive():
+            raise RuntimeError("Failed to stop timelapse thread")
 
         with self._lock:
             self._state.reset()
@@ -148,13 +150,15 @@ class TimelapseClient:
 
         try:
             with iio3.imopen(str(video_path), "w", plugin="pyav") as writer:
+                writer.init_video_stream("libx264", fps=30)
                 for frame_path in frames:
                     frame = iio3.imread(frame_path)
-                    writer.write(frame, fps=30)
-            return video_path
+                    writer.write_frame(frame)
         except Exception as e:
             video_path.unlink(missing_ok=True)
             raise RuntimeError(f"Video assembly failed: {e}")
+
+        return video_path
 
     def delete(self, timelapse_id: str) -> dict:
         timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
@@ -189,8 +193,6 @@ class TimelapseClient:
                     break
 
             now: float = time.time()
-            if now >= end_time:
-                break
 
             if now >= next_capture:
                 frame_time: int = int(now)
@@ -201,6 +203,9 @@ class TimelapseClient:
                         self._state.latest_frame_time = frame_time
                         self._state.latest_frame_path = frame_path
                 next_capture += config.frequency
+            
+            if now >= end_time:
+                break
 
             time.sleep(0.1)
 

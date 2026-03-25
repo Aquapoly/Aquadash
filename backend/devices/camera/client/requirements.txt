@@ -1,5 +1,6 @@
 fastapi
 imageio
+imageio[pyav]
 uvicorn
 
 httpx
