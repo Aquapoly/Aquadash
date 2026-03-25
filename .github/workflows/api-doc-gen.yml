@@ -13,6 +13,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Wiki health check
+        run: |
+          if ! { curl --max-time 15 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca | grep -q "200\|301\|302"; }; then 
+            echo "::error::Wiki (wiki.aquapoly.ca) is not reachable. API documentation was not updated."
+            echo "## Wiki Unreachable" >> $GITHUB_STEP_SUMMARY
+            echo "The wiki at http://wiki.aquapoly.ca is currently down or unreachable." >> $GITHUB_STEP_SUMMARY
+            echo "API documentation was not updated." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
       - name: Checkout Aquadash
         uses: actions/checkout@v6
         with:
@@ -48,14 +58,6 @@ jobs:
       - name: Update API documentation on the wiki
         working-directory: aquapedia/api-doc-gen
         run: |
-          if ! { curl --max-time 30 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca | grep -q "200\|301\|302"; }; then 
-            echo "::warning::Wiki (wiki.aquapoly.ca) is not reachable. API documentation was not updated."
-            echo "## Wiki Unreachable" >> $GITHUB_STEP_SUMMARY
-            echo "The wiki at http://wiki.aquapoly.ca is currently down or unreachable." >> $GITHUB_STEP_SUMMARY
-            echo "API documentation was not updated." >> $GITHUB_STEP_SUMMARY
-            exit 0
-          fi
-
           cat > .env << EOF
           AQUAPEDIA_API_KEY=${{ secrets.AQUAPEDIA_API_TOKEN }}
           AQUAPEDIA_URL=http://wiki.aquapoly.ca
