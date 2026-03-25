@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Wiki health check
         run: |
-          HTTP_CODE=$(curl -L --max-time 15 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca)
+          HTTP_CODE=$(curl -L --max-time 15 -sS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca)
           echo "Wiki health check: HTTP $HTTP_CODE"
 
           echo "## Wiki Health Check" >> $GITHUB_STEP_SUMMARY
