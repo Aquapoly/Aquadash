@@ -222,6 +222,17 @@ async def get_last_measurement(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sensor ID has no measurements.")
     return result
 
+
+@app.delete(
+        "/measurements/{measurement_id}",
+        tags=["Measurements"],
+)
+async def delete_measurement(
+    measurement_id: int, db: Session = Depends(get_db)
+):
+    crud.delete_measurement(db, measurement_id)
+
+
 @app.get(
     "/actuators/{prototype_id}",
     tags=["Actuators"],
