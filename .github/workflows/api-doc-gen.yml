@@ -61,7 +61,6 @@ jobs:
           cat > .env << EOF
           AQUAPEDIA_API_KEY=${{ secrets.AQUAPEDIA_API_TOKEN }}
           AQUAPEDIA_URL=http://wiki.aquapoly.ca
-          BASE_PATH=Poles/Informatique
           LOCALE=fr
           EOF
 
@@ -69,7 +68,7 @@ jobs:
           source .venv/bin/activate
           pip install -r requirements.txt
 
-          python docgen.py --url http://localhost:8000/docs/openapi.json --app-name aquadash --output ./output --sync
+          python docgen.py --url http://localhost:8000/docs/openapi.json --app-path poleinfo/aquadash --output ./output --sync
 
       - name: Tear down backend
         working-directory: aquadash/backend
