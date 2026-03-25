@@ -16,7 +16,7 @@ jobs:
       - name: Wiki health check
         run: |
           if ! { curl --max-time 15 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca | grep -q "200\|301\|302"; }; then 
-            echo "::error::Wiki (wiki.aquapoly.ca) is not reachable. API documentation was not updated."
+            echo "::error title=Wiki health check failed::wiki.aquapoly.ca not reachable. API documentation was not updated."
             echo "## Wiki Unreachable" >> $GITHUB_STEP_SUMMARY
             echo "The wiki at http://wiki.aquapoly.ca is currently down or unreachable." >> $GITHUB_STEP_SUMMARY
             echo "API documentation was not updated." >> $GITHUB_STEP_SUMMARY
@@ -51,7 +51,7 @@ jobs:
             fi
             sleep 2
           done
-          
+
           curl -fsS http://localhost:8000/docs/openapi.json > /dev/null
 
           echo "started=true" >> $GITHUB_OUTPUT
