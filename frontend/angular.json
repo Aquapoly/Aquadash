@@ -47,6 +47,13 @@
           "defaultConfiguration": "production"
         },
         "serve": {
+          "options": {
+            "allowedHosts": [
+              "oasys.aquapoly.ca",
+              "132.207.155.37",
+              "localhost"
+            ]
+          }
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
