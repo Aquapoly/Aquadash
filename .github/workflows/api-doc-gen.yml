@@ -29,16 +29,21 @@ jobs:
           path: aquadash
 
       - name: Start Aquadash database (backend dependency)
+        id: containers_database
         working-directory: aquadash/backend
         run: |
           docker compose up -d db
           sleep 10
 
+          echo "started=true" >> $GITHUB_OUTPUT
+
       - name: Start Aquadash backend
+        id: containers_backend
         working-directory: aquadash/backend
         run: |
           docker compose up -d --build app
           echo "Waiting for OpenAPI endpoint. Max timeout 2 minutes"
+
           for i in $(seq 1 60); do
             if curl -fsS http://localhost:8000/docs/openapi.json > /dev/null; then
               echo "Backend running"
@@ -46,7 +51,10 @@ jobs:
             fi
             sleep 2
           done
+          
           curl -fsS http://localhost:8000/docs/openapi.json > /dev/null
+
+          echo "started=true" >> $GITHUB_OUTPUT
 
       - name: Checkout Aquapedia
         uses: actions/checkout@v6
@@ -72,5 +80,5 @@ jobs:
 
       - name: Tear down backend
         working-directory: aquadash/backend
-        if: always()
+        if: steps.containers_database.started == 'true' || steps.containers_backend.started == 'true'
         run: docker compose down
