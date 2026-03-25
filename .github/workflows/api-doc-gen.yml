@@ -48,7 +48,7 @@ jobs:
       - name: Update API documentation on the wiki
         working-directory: aquapedia/api-doc-gen
         run: |
-          if ! curl -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca | grep -q "200\|301\|302"; then 
+          if ! { curl --max-time 30 -fsS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca | grep -q "200\|301\|302"; }; then 
             echo "::warning::Wiki (wiki.aquapoly.ca) is not reachable. API documentation was not updated."
             echo "## Wiki Unreachable" >> $GITHUB_STEP_SUMMARY
             echo "The wiki at http://wiki.aquapoly.ca is currently down or unreachable." >> $GITHUB_STEP_SUMMARY
