@@ -1,0 +1,94 @@
+name: Generate Aquadash API Docs
+
+on:
+  push:
+    tags:
+      - '*release*'
+
+permissions:
+  contents: write
+
+jobs:
+  api-doc-gen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wiki health check
+        run: |
+          HTTP_CODE=$(curl -L --max-time 15 -sS -o /dev/null -w "%{http_code}" http://wiki.aquapoly.ca)
+          echo "Wiki health check: HTTP $HTTP_CODE"
+
+          echo "## Wiki Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: http://wiki.aquapoly.ca" >> $GITHUB_STEP_SUMMARY
+          echo "- **HTTP status code**: $HTTP_CODE" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+          if ! echo "$HTTP_CODE" | grep -q "200"; then 
+            echo "::error title=Wiki health check failed::wiki.aquapoly.ca not reachable. API documentation was not updated."
+            echo "Health check failed." >> $GITHUB_STEP_SUMMARY
+            echo "The wiki at http://wiki.aquapoly.ca is currently down or unreachable." >> $GITHUB_STEP_SUMMARY
+            echo "API documentation was not updated." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "Health check passed." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Checkout Aquadash
+        uses: actions/checkout@v6
+        with:
+          path: aquadash
+
+      - name: Start Aquadash database (backend dependency)
+        id: containers_database
+        working-directory: aquadash/backend
+        run: |
+          docker compose up -d db
+          sleep 10
+
+          echo "started=true" >> $GITHUB_OUTPUT
+
+      - name: Start Aquadash backend
+        id: containers_backend
+        working-directory: aquadash/backend
+        run: |
+          docker compose up -d --build app
+          echo "Waiting for OpenAPI endpoint. Max timeout 2 minutes"
+
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/docs/openapi.json > /dev/null; then
+              echo "Backend running"
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS http://localhost:8000/docs/openapi.json > /dev/null
+
+          echo "started=true" >> $GITHUB_OUTPUT
+
+      - name: Checkout Aquapedia
+        uses: actions/checkout@v6
+        with:
+          repository: Aquapoly/aquapedia
+          path: aquapedia
+          token: ${{ secrets.AQUAPEDIA_READ_TOKEN }}
+
+      - name: Update API documentation on the wiki
+        working-directory: aquapedia/api-doc-gen
+        run: |
+          cat > .env << EOF
+          AQUAPEDIA_API_KEY=${{ secrets.AQUAPEDIA_API_TOKEN }}
+          AQUAPEDIA_URL=http://wiki.aquapoly.ca
+          LOCALE=fr
+          EOF
+
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+
+          python docgen.py --url http://localhost:8000/docs/openapi.json --app-path poleinfo/aquadash --output ./output --sync
+
+      - name: Tear down backend
+        working-directory: aquadash/backend
+        if: steps.containers_database.started == 'true' || steps.containers_backend.started == 'true'
+        run: docker compose down
