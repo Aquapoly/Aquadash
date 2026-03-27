@@ -1,0 +1,111 @@
+<div class="flex items-center justify-center min-h-screen">
+  <div class="flex flex-col items-center w-full max-w-lg">
+
+
+    <div class="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+      <div class="card-body p-6">
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          <fieldset class="fieldset bg-base-200 rounded-box p-6">
+            <legend class="fieldset-legend text-lg mb-2">
+              Register
+            </legend>
+           
+            
+           <label class="label" for="username">First Name</label>
+            <input
+              id="First Name"
+              type="text"
+              formControlName="firstName"
+              placeholder="Enter your first name"
+              class="input input-bordered w-full"
+              [class.input-error]="submitted && f['firstName'].errors"
+            />
+
+            @if (submitted && f['firstName'].errors) {
+              <p class="label-text-alt text-error mt-1">
+                @if (f['firstName'].errors && f['firstName'].errors['required']) {
+                  First name is required
+                }
+              </p>
+            }
+            
+            
+            <label class="label" for="username">Last Name</label>
+            <input
+              id="Last Name"
+              type="text"
+              formControlName="lastName"
+              placeholder="Enter your last name"
+              class="input input-bordered w-full"
+              [class.input-error]="submitted && f['lastName'].errors"
+            />
+
+            @if (submitted && f['lastName'].errors) {
+              <p class="label-text-alt text-error mt-1">
+                @if (f['lastName'].errors && f['lastName'].errors['required']) {
+                  Last name is required
+                }
+              </p>
+            }
+            
+
+            <label class="label" for="username">Username</label>
+            <input
+              id="username"
+              type="text"
+              formControlName="username"
+              placeholder="Create your username"
+              class="input input-bordered w-full"
+              [class.input-error]="submitted && f['username'].errors"
+            />
+
+            @if (submitted && f['username'].errors) {
+              <p class="label-text-alt text-error mt-1">
+                @if (f['username'].errors && f['username'].errors['required']) {
+                  Username is required
+                }
+              </p>
+            }
+
+            <label class="label mt-4" for="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              formControlName="password"
+              placeholder="Create your password"
+              class="input input-bordered w-full"
+              [class.input-error]="submitted && f['password'].errors"
+            />
+
+            @if (submitted && f['password'].errors) {
+              <p class="label-text-alt text-error mt-1">
+                @if (f['password'].errors && f['password'].errors['required']) {
+                  Password is required
+                }
+              </p>
+            }
+
+            <div class="flex items-center gap-2 mt-6">
+              <button [disabled]="loading" class="btn btn-primary">
+                @if (loading) {
+                  <span class="loading loading-spinner loading-sm"></span>
+                }
+                Create Account
+              </button>
+          
+              <a routerLink="/login" class="btn btn-link">
+                Cancel
+              </a>
+            </div>
+
+          </fieldset>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
