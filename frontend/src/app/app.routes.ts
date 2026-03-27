@@ -4,7 +4,6 @@ import { ConfigurationPageComponent } from '@app/pages/configuration-page/config
 import { Time } from 'highcharts';
 import { TimelapseComponent } from './pages/timelapse/timelapse.component';
 import { LoginComponent } from '@app/account/login.component'; 
-import { RegisterComponent } from '@app/account/register.component';
  
 export const routes: Routes = [
   { path: '', redirectTo: 'status', pathMatch: 'full' },
@@ -12,5 +11,4 @@ export const routes: Routes = [
   { path: 'configurations', component: ConfigurationPageComponent },
   { path: 'timelapse', component: TimelapseComponent },
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent }
 ];
