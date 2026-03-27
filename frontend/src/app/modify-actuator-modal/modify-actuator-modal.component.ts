@@ -13,8 +13,6 @@ import { Actuator } from '@app/interfaces/actuator';
 export class ModifyActuatorModalComponent {
 
     @ViewChild('modifyActuatorModal') modifyActuatorModal: ElementRef<HTMLDialogElement> | undefined;
-    @Input() actuatorName: string;
-    @Input() actuatorType: string;
     @Input() modifyActuatorMethod: Function | undefined;
     
     actuator: Actuator | undefined;
@@ -24,17 +22,15 @@ export class ModifyActuatorModalComponent {
       type: '',
     };
 
-    constructor() {
-      this.actuatorType = '';
-      this.actuatorName = '';
-    }
-
     showModal(actuator: Actuator) {
       this.actuator = actuator;
-      this.actuatorName = actuator.actuator_name;
-      this.actuatorType = actuator.actuator_type;
-      this.formInput.name = this.getNameFromType(this.actuatorType);
-      this.formInput.type = this.actuatorType;
+
+      this.actuator.actuator_name = actuator.actuator_name ? actuator.actuator_name : "{name_not_saved}";
+      this.actuator.actuator_type = actuator.actuator_type;
+
+      this.formInput.name = this.actuator.actuator_name;
+      this.formInput.type = this.actuator.actuator_type;
+
       const modal = this.modifyActuatorModal?.nativeElement.showModal();
     }
 
@@ -42,20 +38,24 @@ export class ModifyActuatorModalComponent {
       return ActuatorTypeToName[type];
     }
 
+    getActuatorName() {
+      return this.actuator?.actuator_name;
+    }
+
     onTypeChange(newType: string) {
       this.formInput.type = newType;
     }
 
     onSubmit(event: Event) {
-      // Validation
-      if (!this.formInput['type']) {
-        this.formInput['type'] = this.actuatorType;
-      }
-      if (!this.formInput['name']) {
-        this.formInput['name'] = this.actuatorName;
-      }
-
       if(this.actuator) {
+        // Validation
+        if (!this.formInput['type']) {
+          this.formInput['type'] = this.actuator.actuator_type;
+        }
+        if (!this.formInput['name']) {
+          this.formInput['name'] = this.actuator.actuator_name;
+        }
+
         this.actuator.actuator_name = this.formInput['name'];
         this.actuator.actuator_type = this.formInput['type'];
       }

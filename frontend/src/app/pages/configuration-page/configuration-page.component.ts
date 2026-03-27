@@ -75,8 +75,6 @@ export class ConfigurationPageComponent implements OnInit {
 
   showModifyActuatorForm(actuator: Actuator) {
     if(this.modifyActuatorModal) {
-      this.modifyActuatorModal.actuatorName = actuator.actuator_name; // TODO: not saved in database!
-      this.modifyActuatorModal.actuatorType = actuator.actuator_type;
       this.modifyActuatorModal.modifyActuatorMethod = (actuator: Actuator) => this.modifyActuator(actuator);
     }
     this.modifyActuatorModal?.showModal(actuator);
