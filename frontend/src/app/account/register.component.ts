@@ -2,17 +2,18 @@ import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { first } from 'rxjs';
 
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-register',
   standalone: true,
   imports: [ReactiveFormsModule, CommonModule, RouterLink],
-  templateUrl: 'login.component.html',
-  styleUrl: 'login.component.scss',
+  templateUrl: 'register.component.html',
+  styleUrl: 'register.component.scss',
    encapsulation: ViewEncapsulation.None
 })
-export class LoginComponent implements OnInit {
+export class RegisterComponent implements OnInit {
     form!: FormGroup;
     loading = false;
     submitted = false;
@@ -26,8 +27,12 @@ export class LoginComponent implements OnInit {
 
     ngOnInit() {
         this.form = this.formBuilder.group({
+            profileType: ['', Validators.required],
+            firstName: ['', Validators.required],
+            lastName: ['', Validators.required],
             username: ['', Validators.required],
             password: ['', Validators.required]
+
         });
     }
 
@@ -37,12 +42,5 @@ export class LoginComponent implements OnInit {
         this.submitted = true;
         if (this.form.invalid) return;
         this.loading = true;
-        console.log('Tentative de connexion:', this.form.value);
-    }
-
-    loginAsPublic() {
-        this.loading = true;
-        console.log('Navigation en mode public (lecture seule)');
-        this.router.navigate(['/dashboard-public']); 
     }
 }
