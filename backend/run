@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# --- Load .env ---
+if [[ ! -f .env ]]; then
+    echo "[Error] .env file not found"
+    echo "  Copy .env.example to .env and configure settings:"
+    echo "      cp .env.example .env"
+    exit 1
+fi
+
+set -a
+source .env
+set +a
+
+echo "[Info] Loaded configuration from .env"
+
+# --- Helpers ---
+
+start_cam_daemon() {
+    if [[ -z "${CAMERA_NAME:-}" || -z "${CAMERA_DEVICE:-}" ]]; then
+        echo "[Error] CAMERA_NAME and CAMERA_DEVICE must be set in .env"
+        exit 1
+    fi
+
+    if sudo systemctl is-active --quiet camera-daemon; then
+        echo "[Info] camera-daemon already running"
+    else
+        echo "[Info] Starting camera-daemon..."
+        sudo systemctl start camera-daemon
+
+        echo -n "[Info] Waiting for control socket"
+        for i in {1..30}; do
+            if sudo test -S /run/camera/control.sock; then
+                echo " ready"
+                break
+            fi
+            echo -n "."
+            sleep 1
+        done
+    fi
+
+    echo "[Info] Registering camera: ${CAMERA_NAME} on ${CAMERA_DEVICE}"
+    if sudo camera-ctl list | grep -q "$CAMERA_NAME"; then
+        echo "[Info] Camera ${CAMERA_NAME} already registered, skipping"
+    else
+        sudo camera-ctl create "$CAMERA_NAME" "$CAMERA_DEVICE"
+    fi
+}
+
+start_app() {
+    echo "[Info] Starting app stack (db + app)..."
+    docker compose up -d $BUILD_FLAG app
+}
+
+start_cam() {
+    echo "[Info] Starting camera block..."
+    start_cam_daemon
+
+    HOST_DEV_GID=$(sudo camera-ctl gid)
+    export HOST_DEV_GID
+
+    echo "[Info] Starting cam_client container..."
+    docker compose up -d $BUILD_FLAG cam_client
+}
+
+start_app_native() {
+    echo "[Info] Starting app natively..."
+    if [[ ! -d .venv ]]; then
+        echo "[Info] Creating virtual environment..."
+        python3 -m venv .venv
+        echo "[Info] Installing dependencies..."
+        .venv/bin/pip install -r requirements.txt --quiet
+    fi
+    .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+}
+
+start_cam_native() {
+    echo "[Info] Starting camera block natively..."
+    start_cam_daemon
+
+    cd "$SCRIPT_DIR/devices/camera/client"
+    if [[ ! -d .venv ]]; then
+        echo "[Info] Creating virtual environment..."
+        python3 -m venv .venv
+        echo "[Info] Installing dependencies..."
+        .venv/bin/pip install -r requirements.txt --quiet
+    fi
+    .venv/bin/uvicorn main:app --host 0.0.0.0 --port 9000
+}
+
+# --- Dispatch ---
+BUILD_FLAG=""
+NATIVE=false
+ARGS=()
+
+for arg in "$@"; do
+    case "$arg" in
+        --build)  BUILD_FLAG="--build" ;;
+        --native) NATIVE=true ;;
+        *)        ARGS+=("$arg") ;;
+    esac
+done
+
+MODE="${ARGS[0]:-all}"
+
+case "$MODE" in
+    app)
+        $NATIVE && start_app_native || start_app
+        ;;
+    cam)
+        $NATIVE && start_cam_native || start_cam
+        ;;
+    all)
+        if $NATIVE; then
+            start_app_native &
+            APP_PID=$!
+
+            start_cam_native &
+            CAM_PID=$!
+            wait
+
+            cleanup() {
+                kill "$APP_PID" "$CAM_PID" 2>/dev/null || true
+                "$SCRIPT_DIR/kill" --native
+            }
+
+            trap cleanup EXIT
+
+        else
+            start_app
+            start_cam
+        fi
+        ;;
+    *)
+        echo "[Error] Unknown mode: $MODE"
+        echo "Usage: $0 [app|cam|all] [--build] [--native]"
+        echo "  (no argument defaults to 'all')"
+        exit 1
+        ;;
+esac
+
+echo "[Info] Services started successfully"

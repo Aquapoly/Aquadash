@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
 from app.main import app
-from app.services import camera
+from backend.app.services import cam_client
 from app.database import engine, get_db  # Import your existing setup
 from random import randint, random
 from app import models
@@ -126,4 +126,5 @@ def dummy_user(db_session: Session):
 @pytest.fixture
 def set_last_image():
     """Set the last image of the camera"""
-    camera._last_image = (b'cute tomato', camera.time.time() + camera.IMAGE_EXPIRE_TIME)
+    import time
+    cam_client._last_image = (b'cute tomato', time.time() + cam_client.IMAGE_EXPIRE_TIME)

@@ -1,46 +1,97 @@
-version: '3.1'
+volumes:
+  # To persist timelapse data
+  timelapse_data:
+  postgres_data:
 
 services:
   db:
-    image: postgres
+    image: postgres:18
     container_name: db
+    restart: always
+
     environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: aquapoly
       POSTGRES_DB: aquapoly
-    restart: always
-    ports:
-      - "5432:5432"
-    expose:
-      - "5432"
-    networks:
-      - postgres
+
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
     volumes:
-      - ./initdb:/docker-entrypoint-initdb.d
+      - ./initdb:/docker-entrypoint-initdb.d:Z
+      - postgres_data:/var/lib/postgresql
+
+    networks:
+      - backend
 
   app:
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
     build:
       context: .
       dockerfile: app.Dockerfile
+
+    container_name: backend-app
+
+    stdin_open: true
+    tty: true
+    restart: always
+
     environment:
       DOCKER: 1
-      ENABLE_CAMERA: ${ENABLE_CAMERA:-false}
+      CAMERA_NAME: ${CAMERA_NAME:-}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: aquapoly
+      DB_NAME: aquapoly
+
     volumes:
-      - .:/usr/src/app
-    restart: always
+      - .:/usr/src/app:z
+
+    user: "1000:1000"
+
     depends_on:
-      - db
-    links:
-      - db:db
+      db:
+        condition: service_healthy
+
     ports:
       - "8000:8000"
-    expose:
-      - "8000"
+
     networks:
-      - postgres
+      - backend
+  
+  cam_client:
+    build:
+      context: ./devices/camera/client
+      dockerfile: cam_client.Dockerfile
+
+    container_name: cam-client
+
+    environment:
+      CAMERA_NAME: ${CAMERA_NAME:-camera0}
+
+    healthcheck:
+      test: ["CMD", "python", "healthcheck.py"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    restart: always
+
+    volumes:
+      - /run/camera:/run/camera:z
+      - timelapse_data:/timelapses
+
+    user: "1000:${HOST_DEV_GID:-0}"
+
+    networks:
+      - backend
+
 
 networks:
-  postgres:
+  backend:
     driver: bridge

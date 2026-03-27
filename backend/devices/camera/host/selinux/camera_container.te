@@ -1,0 +1,14 @@
+module camera_container 1.0;
+
+require {
+	type container_t;
+	type container_file_t;
+	type unconfined_service_t;
+	class file { ioctl read };
+	class lnk_file read;
+	class unix_stream_socket connectto;
+}
+
+#============= container_t ==============
+
+allow container_t unconfined_service_t:unix_stream_socket connectto;

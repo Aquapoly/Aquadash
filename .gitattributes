@@ -1,4 +1,4 @@
-# Default: Use CRLF for all files
+# Default: Use CRLF for all files except scripts
 * text eol=crlf
 
 # Exceptions: Use LF for script files
@@ -6,3 +6,11 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 
+# Exceptions: Scripts with no extension
+run text eol=lf
+kill text eol=lf
+camera-ctl text eol=lf
+
+# Exceptions: SELinux-related files
+*.te text eol=lf
+*.fc text eol=lf
