@@ -6,24 +6,15 @@
         <div class="grid gap-[10px]">
           <div class="flex-inline">
             <label for="input_actuator_name">Nom de l'actuateur: </label>
-            <input required type="text" [(ngModel)]="formInput.name" name="input_actuator_name" placeholder="{{ getNameFromType(actuatorType) }}" class="input h-[1.8em] input-primary"/>
+            <input required type="text" [(ngModel)]="formInput.name" name="input_actuator_name" class="input h-[1.8em] input-primary"/>
           </div>
           <div class="flex-inline">
             <label for="input_actuator_type">Type d'actuateur: </label>
             <select required [(ngModel)]="formInput.type" (ngModelChange)="onTypeChange($event)" name="input_actuator_type" class="select select-sm select-primary">
-              <option selected disabled value={{ actuatorType }}>{{ getNameFromType(actuatorType) }} (selected)</option>
-              @if (actuatorType != "acid_pump") {
                 <option value="acid_pump">{{ getNameFromType('acid_pump') }}</option>
-              }
-              @if (actuatorType != "base_pump") {
                 <option value="base_pump">{{ getNameFromType('base_pump') }}</option>
-              }
-              @if (actuatorType != "nutrients_A_pump") {
                 <option value="nutrients_A_pump">{{ getNameFromType('nutrients_A_pump') }}</option>
-              }
-              @if (actuatorType != "nutrients_B_pump") {
                 <option value="nutrients_B_pump">{{ getNameFromType('nutrients_B_pump') }}</option>
-              }
             </select>
           </div>
         </div>
@@ -32,7 +23,7 @@
 
     <div class="modal-action">
       <form method="dialog">
-        <button class="btn btn-primary text-base-100 mx-2" type="submit" id="submitBtn" (click)="onSubmit($event)" disabled>
+        <button class="btn btn-primary text-base-100 mx-2" type="submit" id="submitBtn" (click)="onSubmit($event)" [disabled]="!formInput.name || !formInput.type">
           Sauvegarder
         </button>
         <button class="btn" (click)="onCancel()">Annuler</button>

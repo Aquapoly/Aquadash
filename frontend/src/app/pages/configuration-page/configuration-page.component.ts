@@ -120,7 +120,11 @@ export class ConfigurationPageComponent implements OnInit {
   }
 
   modifyActuator(actuatorToModify: Actuator) {
-    // TODO:
+    this.api.patchActuators([actuatorToModify]).subscribe((res)=>{
+      if(res.status === HttpStatusCode.Ok) {
+        // TODO
+      }
+    })
   }
 
 }

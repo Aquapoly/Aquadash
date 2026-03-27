@@ -16,63 +16,51 @@ export class ModifyActuatorModalComponent {
     @Input() actuatorName: string;
     @Input() actuatorType: string;
     @Input() modifyActuatorMethod: Function | undefined;
+    
+    actuator: Actuator | undefined;
 
     formInput = {
-        name: '',
-        type: '',
+      name: '',
+      type: '',
     };
 
     constructor() {
-      this.actuatorName = '';
       this.actuatorType = '';
+      this.actuatorName = '';
     }
 
     showModal(actuator: Actuator) {
+      this.actuator = actuator;
       this.actuatorName = actuator.actuator_name;
       this.actuatorType = actuator.actuator_type;
+      this.formInput.name = this.getNameFromType(this.actuatorType);
+      this.formInput.type = this.actuatorType;
       const modal = this.modifyActuatorModal?.nativeElement.showModal();
     }
 
-     getNameFromType(type: string) {
+    getNameFromType(type: string) {
       return ActuatorTypeToName[type];
     }
 
-    onTypeChange(event: any) {
-      this.formInput.type = event;
-      if(this.formInput.type !== '') {
-        this.modifyActuatorModal?.nativeElement.querySelector('#submitBtn')?.removeAttribute('disabled');
-      }
-      else {
-        this.modifyActuatorModal?.nativeElement.querySelector('#submitBtn')?.setAttribute('disabled', 'true');
-      }
+    onTypeChange(newType: string) {
+      this.formInput.type = newType;
     }
 
     onSubmit(event: Event) {
       // Validation
       if (!this.formInput['type']) {
-        console.error('Form validation failed: No type');
-        event.preventDefault();
-        return;
+        this.formInput['type'] = this.actuatorType;
       }
       if (!this.formInput['name']) {
         this.formInput['name'] = this.actuatorName;
       }
 
-      console.log(this.formInput)
+      if(this.actuator) {
+        this.actuator.actuator_name = this.formInput['name'];
+        this.actuator.actuator_type = this.formInput['type'];
+      }
 
-      const actuator = {
-      actuator_type: this.formInput['type'],
-      sensor_id: 1, // TODO: ajouter générateur de ID ?
-      condition_value: 0,
-      activation_condition: 'high',
-      activation_period: 0,
-      activation_duration: 0,
-      last_activated: new Date(),
-      enabled: false,
-      actuator_name: this.formInput['name']
-      };
-
-      if(this.modifyActuatorMethod) this.modifyActuatorMethod(actuator);
+      if(this.modifyActuatorMethod) this.modifyActuatorMethod(this.actuator);
 
       this.onCancel(); // Réinitialiser le formulaire
     }
