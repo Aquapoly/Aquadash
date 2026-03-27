@@ -77,3 +77,24 @@ Run this command to execute the migration in a new backend container that delete
 2. Downgrading
 
         docker compose run --rm app alembic downgrade -1
+
+## Common errors
+
+### Alembic not installed
+
+If you are trying to run the provided commands and there is an error saying Alembic isn't installed, then your container is probably outdated. To fix this, you have two options:
+
+#### 1. Install requirements
+
+In your backend/app container:
+
+    docker exec [container name/id] pip install -r requirements.txt
+
+#### 2. Rebuild your container
+
+    cd backend
+    docker compose build
+
+### Database is not up to date
+
+This just means there was a migration you have not applied yet. You can simply run the upgrading command.
