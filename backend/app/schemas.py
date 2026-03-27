@@ -47,6 +47,7 @@ class Measurement(MeasurementBase):
 
 
 class ActuatorBase(BaseModel):
+    actuator_name: str
     actuator_type: ActuatorType
     sensor_id: int
     condition_value: float

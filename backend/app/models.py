@@ -68,6 +68,7 @@ class Measurement(Base):
 
 class Actuator(Base):
     __tablename__ = "actuators"
+    actuator_name = Column(String, nullable=False)
     actuator_id = Column(Integer, primary_key=True)
     actuator_type = Column(Enum(ActuatorType), nullable=False)
     sensor_id = Column(Integer, ForeignKey("sensors.sensor_id"), nullable=False)
