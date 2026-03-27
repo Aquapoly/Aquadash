@@ -37,12 +37,9 @@ export class LoginComponent implements OnInit {
         this.submitted = true;
         if (this.form.invalid) return;
         this.loading = true;
-        console.log('Tentative de connexion:', this.form.value);
     }
 
     loginAsPublic() {
         this.loading = true;
-        console.log('Navigation en mode public (lecture seule)');
-        this.router.navigate(['/dashboard-public']); 
     }
 }
