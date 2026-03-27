@@ -4,7 +4,7 @@
             <img
                 class="camera-image"
                 [src]="displayedObjectUrl"
-                alt="Camera picture"
+                alt="Image capturée par la caméra"
             />
         } @else {
             <div class="camera-placeholder" aria-hidden="true"></div>
@@ -13,7 +13,7 @@
         @if (!isCameraAvailable) {
             <div class="camera-overlay">
                 <div class="overlay-center">
-                    <img src="/assets/camera_unavailable.png" alt="camera unavailable" />
+                    <img src="/assets/camera_unavailable.png" alt="Caméra indisponible" />
                 </div>
             </div>
         }
