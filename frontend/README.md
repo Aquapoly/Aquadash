@@ -1,21 +1,53 @@
 # Aquadash
 
-Normalement l'application est accessible dans http://localhost
+The app is normally accessible via http://localhost.
 
-## Serveur de developpement
+## Development
 
-Lancer `npm start` pour lancer le serveur de développement. Naviguer vers `http://localhost:4200/`. L'application se rechargera automatiquement si vous modifiez un fichier source. Pour un environement de production veuillez également modifier le fichier environment.ts, e.g. `export const SERVER_URL="http://123.456.789:8000";`. Cette adresse devrait alors correspondre à l'url exposée par votre instance du backend.
+- **Start dev server:** Run `npm start` (this runs `ng serve`).
+- **URL:** http://localhost:4200/
+- **API endpoint for development:** edit `src/app/environment.ts` and set `SERVER_URL` for backend (default: `http://localhost:8000`).
 
 ## Build
 
-Run `npm run build` to build the project. The build artifacts will be stored in the `dist/` directory.
-Then move build files to `/var/www/aquadash` with the following command:
-`sudo rm -rf /var/www/aquadash && sudo cp -r dist/aquadash /var/www/`
+- **Build:** `npm run build` (artifacts are produced under `dist/aquadash/`).
 
-In one command:
+## Deploy (static)
 
-`npm run build && sudo rm -rf /var/www/aquadash && sudo cp -r dist/aquadash /var/www/`
+- Use the repository helper `deploy.sh` to build and copy static files to the host webroot:
 
-## Déploiement Docker
+```bash
+sudo ./deploy.sh
+```
 
-Lancer `docker build -t aquadash .` pour construire l'image docker. Lancer `docker run -p 80:80 aquadash` pour démarrer le conteneur docker. Naviguer vers `http://localhost/` pour accéder à l'application.
+This runs `npm run build` and copies `dist/aquadash/browser/*` into `/var/www/aquadash`.
+
+## Deploy (Docker)
+
+- Use `launch-docker.sh` to build a production artifact and run the Docker image locally:
+
+```bash
+./launch-docker.sh
+```
+
+This script runs `npm ci`, `npm run build`, builds the Docker image and runs it (`docker run -p 80:80`). It is focused on container run and does not modify the host webroot.
+
+## Dependencies
+
+- **Node.js:** recommended LTS (use NodeSource or `nvm` to install per your OS).
+- **npm:** bundled with Node.js. Use the bundled or a managed upgrade (avoid global `npm -g npm` in scripts).
+- **Angular CLI:** only required to build locally or run `ng` commands.
+- **Docker (optional):** only required if you intend to build/run the Docker image.
+
+## Provisioning / installer scripts
+
+- There is an optional provisioning script in the repository (`install-dependencies.sh` / `install-softwares.sh`) that attempts to install system packages (apt, Docker, Node, Angular CLI, etc.). **This script is not required to develop or deploy the frontend** and may be unsafe or incompatible with some systems (e.g., non-apt package managers, managed servers). Treat it as an optional, host-specific helper and review it before running.
+
+- Recommended approach for new machines:
+  - Use `nvm` to install Node.js per-user instead of system `apt` packages.
+  - Use Docker only if you want containerized deployment; otherwise copy `dist/aquadash/browser/*` to your web host.
+
+## Summary
+
+- For development: `npm start`.
+- For production (static): `sudo ./deploy.sh`, or build the Docker image as shown above.
