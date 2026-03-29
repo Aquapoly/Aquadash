@@ -2,6 +2,22 @@
 
 The app is normally accessible via http://localhost.
 
+## Environment
+
+Copy `environment.example.ts` as `environment.ts`:
+
+```bash
+cp src/app/environment.example.ts src/app/environment.ts
+```
+
+Then fill in the values according to your environment. At the time being, that means setting the public URL of your AquaDash backend instance.
+
+For a development setup, use:
+
+```ts
+export const SERVER_URL = "http://localhost:8000";
+```
+
 ## Development
 
 - **Start dev server:** Run `npm start` (this runs `ng serve`).
