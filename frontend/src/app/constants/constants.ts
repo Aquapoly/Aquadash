@@ -193,14 +193,6 @@ export const TIME_RANGE_OPTIONS = [
     name: '1 mois',
     value: { days: 30, hours: 0, minutes: 0, seconds: 0 },
   },
-  {
-    name: '3 mois',
-    value: { days: 90, hours: 0, minutes: 0, seconds: 0 },
-  },
-  {
-    name: 'Année',
-    value: { days: 365, hours: 0, minutes: 0, seconds: 0 },
-  },
 ] as const;
 
 export const SENSOR_TYPE_TITLES = {
