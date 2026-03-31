@@ -1,13 +1,25 @@
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 max-w-[96rem]">
-  <select
-    [(ngModel)]="selectedThresholdsDisplay"
-    (change)="updateThresholdDisplay()"
-    class="col-span-12 select w-full max-w-xs selectDiv"
-  >
-    @for (choice of chartChoices; track choice) {
-      <option [ngValue]="chartChoices.indexOf(choice)">{{ choice }}</option>
-    }
-  </select>
+  <div class="flex flex-col lg:flex-row gap-5 col-span-12 justify-end">
+    <select
+      [(ngModel)]="selectedThresholdsDisplay"
+      (change)="updateThresholdDisplay()"
+      class="col-span-12 lg:col-span-6 select w-full max-w-xs selectDiv"
+    >
+      @for (choice of chartChoices; track choice) {
+        <option [ngValue]="chartChoices.indexOf(choice)">{{ choice }}</option>
+      }
+    </select>
+
+    <select
+      [ngModel]="selectedTimeRangeIndex"
+      (ngModelChange)="onTimeRangeChange($event)"
+      class="col-span-12 lg:col-span-6 select w-full max-w-xs selectDiv"
+    >
+      @for (option of timeRangeOptions; track option.name; let index = $index) {
+        <option [ngValue]="index">{{ option.name }}</option>
+      }
+    </select>
+  </div>
   @if (sensors.length == 0) {
     <div class="flex justify-center col-span-12">
       <span class="loading loading-infinity loading-lg text-success"></span>
@@ -20,13 +32,27 @@
   >
     @for (sensor of sensors; track sensor.sensor_id) {
       <div cdkDrag class="grid grid-cols-[auto_1fr] items-center">
-        <div cdkDragHandle class="cursor-grab flex items-center px-2 shrink-0 self-center">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm8-16a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+        <div
+          cdkDragHandle
+          class="cursor-grab flex items-center px-2 shrink-0 self-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M8 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm8-16a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"
+            />
           </svg>
         </div>
         <div class="grid grid-cols-12">
-          <div class="col-span-12 lg:col-span-3 m-4" (mousedown)="$event.stopPropagation()">
+          <div
+            class="col-span-12 lg:col-span-3 m-4"
+            (mousedown)="$event.stopPropagation()"
+          >
             <div class="stats shadow text-center bg-base-200 w-full h-full">
               <div class="stat">
                 <div class="stat-title">{{ this.getSensorTitle(sensor) }}</div>
@@ -89,12 +115,16 @@
               </div>
             </div>
           </div>
-              <div class="col-span-12 lg:col-span-9 m-4" (mousedown)="$event.stopPropagation()">
+          <div
+            class="col-span-12 lg:col-span-9 m-4"
+            (mousedown)="$event.stopPropagation()"
+          >
             <div class="grid-cols-subgrid card shadow h-72 bg-base-200">
               <app-line-chart
                 [chartTitle]="this.getSensorTitle(sensor)"
                 [sensor]="sensor"
                 [displayUnit]="getDisplayedUnit(sensor)"
+                [refreshToken]="timeRangeRefreshToken"
                 class="h-full"
               >
               </app-line-chart>
