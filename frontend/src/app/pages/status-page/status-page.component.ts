@@ -7,6 +7,7 @@ import { CameraPictureComponent } from '@app/components/camera-picture/camera-pi
 import {
   CHART_CHOICES,
   ChartThresholdDisplay,
+  SENSOR_SERVICE_DEFAULTS,
   STATUS_PAGE_DEFAULTS,
   SENSOR_VALIDITY_CLASSES,
 } from '@app/constants/constants';
@@ -22,7 +23,6 @@ import {
 import { SensorType } from '@app/interfaces/sensor-type';
 import { SensorDisplayUnit } from '@app/interfaces/sensor-unit';
 import { SensorUnitService } from '@app/services/sensor-unit.service';
-
 
 @Component({
   selector: 'app-status-page',
@@ -43,6 +43,10 @@ export class StatusPageComponent implements OnInit {
   public sensorLastMeasurements: [key: number, value: number][] = [];
   public columnCount = STATUS_PAGE_DEFAULTS.COLUMN_COUNT;
   public chartSize: number = STATUS_PAGE_DEFAULTS.CHART_SIZE_INITIAL;
+  public readonly timeRangeOptions = this.sensorService.rangeSelect;
+  public selectedTimeRangeIndex: number =
+    SENSOR_SERVICE_DEFAULTS.DEFAULT_RANGE_INDEX;
+  public timeRangeRefreshToken = 0;
   selectedThresholdsDisplay: ChartThresholdDisplay =
     ChartThresholdDisplay.ColoredBackgroundWithLine;
   public selectedUnits: Partial<Record<SensorType, SensorDisplayUnit>> = {};
@@ -105,6 +109,12 @@ export class StatusPageComponent implements OnInit {
     this.globalSettings.setThresholdDisplay(this.selectedThresholdsDisplay);
   }
 
+  onTimeRangeChange(index: number): void {
+    this.selectedTimeRangeIndex = index;
+    this.sensorService.time_delta.set(this.timeRangeOptions[index].value);
+    this.timeRangeRefreshToken++;
+  }
+
   protected drop(event: CdkDragDrop<any>) {
     moveItemInArray(this.sensors, event.previousIndex, event.currentIndex);
     this.globalSettings.saveSensorOrder(this.getSensorArray());
@@ -146,6 +156,8 @@ export class StatusPageComponent implements OnInit {
   }
 
   private async loadData() {
+    this.onTimeRangeChange(this.selectedTimeRangeIndex);
+
     this.sensors = await this.sensorService.getSensors();
     this.initializeSelectedUnits();
     this.orderSensors();

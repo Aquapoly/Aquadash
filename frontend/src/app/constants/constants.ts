@@ -170,19 +170,35 @@ export const SENSOR_SERVICE_DEFAULTS = {
 
 export const TIME_RANGE_OPTIONS = [
   {
-    name: 'Dernière heure',
-    value: { days: 0, hours: 1, minutes: 0, seconds: 0 },
+    name: '2 heures',
+    value: { days: 0, hours: 2, minutes: 0, seconds: 0 },
   },
   {
-    name: 'Dernières 24h',
+    name: '12h',
+    value: { days: 0, hours: 12, minutes: 0, seconds: 0 },
+  },
+  {
+    name: '24h',
     value: { days: 1, hours: 0, minutes: 0, seconds: 0 },
   },
   {
-    name: 'Dernière semaine',
+    name: '7 jours',
     value: { days: 7, hours: 0, minutes: 0, seconds: 0 },
   },
   {
-    name: 'Dernière année',
+    name: ' 14 jours',
+    value: { days: 14, hours: 0, minutes: 0, seconds: 0 },
+  },
+  {
+    name: '1 mois',
+    value: { days: 30, hours: 0, minutes: 0, seconds: 0 },
+  },
+  {
+    name: '3 mois',
+    value: { days: 90, hours: 0, minutes: 0, seconds: 0 },
+  },
+  {
+    name: 'Année',
     value: { days: 365, hours: 0, minutes: 0, seconds: 0 },
   },
 ] as const;

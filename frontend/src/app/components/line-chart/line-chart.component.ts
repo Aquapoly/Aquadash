@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { Sensor } from '@app/interfaces/sensor';
 import { GlobalSettingsService } from '@app/services/global-settings.service/global-settings.service';
 import { SensorService } from '@app/services/sensor.service';
@@ -14,7 +14,6 @@ import {
 import { Measurement } from '@app/interfaces/measurement';
 import { HighchartsChartModule } from 'highcharts-angular';
 import * as Highcharts from 'highcharts';
-import { OnChanges, SimpleChanges } from '@angular/core';
 import { SensorUnitService } from '@app/services/sensor-unit.service';
 import { SensorDisplayUnit } from '@app/interfaces/sensor-unit';
 
@@ -41,6 +40,7 @@ export class LineChartComponent implements OnChanges {
   @Input() sensor: Sensor = {} as Sensor;
   @Input() chartTitle: string = '';
   @Input() displayUnit: SensorDisplayUnit | string = '';
+  @Input() refreshToken: number = 0;
 
   constructor(
     private readonly sensorService: SensorService,
@@ -73,7 +73,12 @@ export class LineChartComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['displayUnit'] && !changes['displayUnit'].firstChange) {
+    const displayUnitChanged =
+      changes['displayUnit'] && !changes['displayUnit'].firstChange;
+    const refreshTokenChanged =
+      changes['refreshToken'] && !changes['refreshToken'].firstChange;
+
+    if (displayUnitChanged || refreshTokenChanged) {
       this.loadInitialData();
     }
   }
