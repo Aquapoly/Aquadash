@@ -1,18 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { SERVER_URL } from '@app/environment';
+import { Pipe, PipeTransform } from '@angular/core';
 
-interface Timelapse {
-  id: string;
-  date: string;
-  frames: number;
-  name: string;
+import { SERVER_URL } from '@app/environment';
+import { Timelapse } from '@app/interfaces/timelapse';
+
+@Pipe({
+  name: 'statusText',
+  standalone: true,
+})
+export class StatusTextPipe implements PipeTransform {
+  transform(timelapse: Timelapse): string {
+    if (timelapse.ready === undefined) return 'Inconnu';
+    return timelapse.ready ? 'Terminé' : 'Enregistrement';
+  }
 }
 
 @Component({
   selector: 'app-timelapse-library',
-  imports: [CommonModule],
+  standalone: true,
+  imports: [CommonModule, StatusTextPipe],
   templateUrl: './timelapse-library.component.html',
   styleUrl: './timelapse-library.component.css'
 })
@@ -30,7 +38,7 @@ export class TimelapseLibraryComponent implements OnInit{
         this.timelapses = response.timelapses;
       },
       error: (err) => {
-        this.error = 'Échec de l\'obtention de la liste des timelapses: ' + (err.error?.detail || err.message);
+        this.error = `Échec de l'obtention de la liste des timelapses: ${err.error?.detail || err.message}`;
       }
     });
   }

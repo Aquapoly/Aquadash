@@ -5,43 +5,59 @@
         <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {{ error }}
         </div>
-    } @else if (timelapses.length === 0) {
-        <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-            Aucun timelapse enregistré.
-        </div>
     } @else {
         <div class="overflow-x-auto">
             <table class="min-w-full bg-white border border-gray-300 rounded-lg">
             <thead class="bg-gray-50">
                 <tr>
-                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Nom</th>
-                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Date</th>
-                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Images</th>
-                <th class="py-3 px-4 border-b text-left font-semibold text-gray-700">Actions</th>
+                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Date</th>
+                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Images</th>
+                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Actions</th>
+                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Statut</th>
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let timelapse of timelapses" class="hover:bg-gray-50 transition-colors">
-                <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.name }}</td>
-                <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.date }}</td>
-                <td class="py-3 px-4 border-b text-gray-600">{{ timelapse.frames }}</td>
-                <td class="py-3 px-4 border-b">
-                    <div class="flex space-x-2">
-                        <button
-                        (click)="download(timelapse)"
-                        class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                        >
-                        Télécharger
-                        </button>
-                        <button
-                        (click)="delete(timelapse)"
-                        class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                        >
-                        Supprimer
-                        </button>
+                @for (timelapse of timelapses; track timelapse.id) {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.date }}</td>
+                    <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.frames }}</td>
+                    <td class="py-3 px-4 border-b">
+                        <div class="space-y-2 ">
+                            <button
+                            (click)="download(timelapse)"
+                            class="w-full px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors
+                                disabled:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            [disabled]="!timelapse.ready"
+                            >
+                            Télécharger
+                            </button>
+                            <button
+                            (click)="delete(timelapse)"
+                            class="w-full px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                            >
+                            Supprimer
+                            </button>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 border-b">
+                        <div class="flex flex-col items-center">
+                                <div
+                                    class="w-4 h-4 rounded-full mb-2"
+                                    [ngClass]="{
+                                        'bg-red-500 animate-pulse': timelapse.ready === false,
+                                        'bg-green-500': timelapse.ready === true,
+                                        'bg-gray-400': timelapse.ready === undefined,
+                                    }"
+                                ></div>
+                                <span class="text-sm text-gray-900">{{ timelapse | statusText }}</span>
+                        </div>
+                    </td>
+                    </tr>
+                } @empty {
+                    <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+                        Aucune image enregistrée.
                     </div>
-                </td>
-                </tr>
+                }
             </tbody>
             </table>
         </div>
