@@ -26,6 +26,14 @@
             (selectionChange)="onSettingChange('resolution', $event)"
           />
         </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Images par seconde pour la vidéo produite</label>
+          <app-dropdown
+            [options]="framerateOptions"
+            [selectedValue]="settings.framerate.value"
+            (selectionChange)="onSettingChange('framerate', $event)"
+          />
+        </div>
 
         @if (isFrequencyTooHigh) {
           <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -39,12 +47,24 @@
           </div>
         }
 
+        @if (expectedVidDurationSeconds !== null && !isFrequencyTooHigh) {
+          <div class="p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <strong>Durée vidéo estimée:</strong> {{ expectedVidDurationSeconds | simpleduration }}
+          </div>
+        }
+
+        @if (expectedVidSizeBytes !== null && !isFrequencyTooHigh) {
+          <div class="p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <strong>Taille vidéo estimée:</strong> {{ expectedVidSizeBytes | filesize }}
+          </div>
+        }
+
         <div class="flex justify-center">
           <button (click)="start()" [disabled]="isFrequencyTooHigh" [ngClass]="{'bg-gray-500': isFrequencyTooHigh, 'bg-green-500': !isFrequencyTooHigh}" [style.cursor]="isFrequencyTooHigh ? 'not-allowed' : 'pointer'" class="px-4 py-2 text-white rounded">Commencer</button>
         </div>
       }
 
-      @if (running) {
+      @else {
         <div class="p-3 bg-gray-50 border border-gray-200 rounded">
           <p><strong>Fréquence de capture:</strong> {{ settings.frequency.label }}</p>
           <p><strong>Durée totale:</strong> {{ settings.duration.label }} </p>
