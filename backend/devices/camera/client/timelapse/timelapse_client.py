@@ -6,17 +6,12 @@ import time
 import uuid
 
 import imageio.v3 as iio3
-from pydantic import BaseModel
+from config import TimelapseConfig
 
 from camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError
 
 TIMELAPSES_DIR = Path("/timelapses")
 VIDEO_TEMP_DIR = Path("/tmp/timelapses")
-
-
-class TimelapseConfig(BaseModel):
-    frequency: int  # seconds between captures
-    duration: int   # total duration in seconds
 
 
 class _TimelapseState:
