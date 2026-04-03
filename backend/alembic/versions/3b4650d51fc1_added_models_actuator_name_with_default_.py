@@ -1,8 +1,8 @@
-"""Added actuator name to database
+"""Added models actuator name with default value
 
-Revision ID: ff1715da2928
+Revision ID: 3b4650d51fc1
 Revises: 8975582390c7
-Create Date: 2026-03-27 18:58:43.270291
+Create Date: 2026-04-03 20:12:38.655846
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ff1715da2928'
+revision: str = '3b4650d51fc1'
 down_revision: Union[str, Sequence[str], None] = '8975582390c7'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_unique_constraint(None, 'users', ['username'])
     op.add_column('actuators', sa.Column('actuator_name', sa.String(), server_default='', nullable=False))
     # ### end Alembic commands ###
-    op.create_check_constraint("check_actuator_name_not_empty", "actuators", "actuator_name != ''")
+
 
 def downgrade() -> None:
     """Downgrade schema."""
@@ -32,4 +32,3 @@ def downgrade() -> None:
     op.drop_constraint(None, 'users', type_='unique')
     op.drop_column('actuators', 'actuator_name')
     # ### end Alembic commands ###
-    op.drop_constraint("check_actuator_name_not_empty", "actuators", type="check")

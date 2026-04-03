@@ -467,6 +467,8 @@ def default_populate_database(db: Session):
     # Check if the actuator already exists
     existing_actuator = get_actuators(db=db, prototype_id=prototype.prototype_id)
     if existing_actuator:
+        if(existing_actuator[0].actuator_name == '') :
+            existing_actuator[0].actuator_name = existing_actuator[0].actuator_type.name
         actuator = existing_actuator[0]
     else:
         # Create one actuator associated with the first sensor
