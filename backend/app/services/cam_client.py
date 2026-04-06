@@ -81,7 +81,7 @@ async def start_timelapse(config: TimelapseConfig) -> TimelapseStatus:
         raise HTTPException(status_code=400, detail="Invalid request")
     if not response.is_success:
         _unavailable()
-    return response.json()
+    return TimelapseStatus.model_validate(response.json())
 
 
 async def stop_timelapse() -> TimelapseStatus:
@@ -97,7 +97,7 @@ async def get_timelapse_status() -> TimelapseStatus:
     response = await _get(f"{TIMELAPSE}/status")
     if not response.is_success:
         _unavailable()
-    return response.json()
+    return TimelapseStatus.model_validate(response.json())
 
 
 async def get_latest_timelapse_frame() -> bytes:

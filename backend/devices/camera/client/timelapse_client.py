@@ -18,16 +18,19 @@ class _TimelapseState:
         self.id: str | None = None
         self.running: bool = False
         self.thread: threading.Thread | None = None
+        self.config: TimelapseConfig | None = None
 
     def reset(self) -> None:
         self.id = None
         self.running = False
         self.thread = None
+        self.config = None
 
 
 class TimelapseClient:
     LATEST_FRAME_NAME: str = "latest_frame.jpg"
     METADATA_NAME: str = "metadata.json"
+    CONFIG_NAME: str = "config.json"
     VIDEO_NAME: str = "video.mp4"
 
     def __init__(self, camera: CameraClient):
@@ -46,6 +49,7 @@ class TimelapseClient:
             self._state.id = str(uuid.uuid4())
             config.name = config.name or f"Timelapse {self._state.id[:8]}"
             self._state.running = True
+            self._state.config = config
             self._state.thread = threading.Thread(
                 target=self._run_worker,
                 args=(config, self._state.id),
@@ -76,9 +80,11 @@ class TimelapseClient:
     def status(self) -> TimelapseStatus:
         with self._lock:
             metadata: TimelapseMetadata | None = self._current_metadata() 
+            config: TimelapseConfig | None = self._current_config() or self._state.config
         return TimelapseStatus(
-            self._state.running,
-            metadata,
+            running=self._state.running,
+            metadata=metadata,
+            config=config,
         )
 
     def get_latest_frame(self) -> Path:
@@ -99,7 +105,7 @@ class TimelapseClient:
             metadata_path: Path = directory / self.METADATA_NAME
             if not metadata_path.exists():
                 continue
-            timelapses.append(TimelapseMetadata.model_validate_json(metadata_path.read_text()).model_dump())
+            timelapses.append(TimelapseMetadata.model_validate_json(metadata_path.read_text()))
 
         timelapses.sort(key=lambda x: x.start_date, reverse=True)
         return timelapses
@@ -135,106 +141,120 @@ class TimelapseClient:
             return False
 
     def _run_worker(self, config: TimelapseConfig, timelapse_id: str) -> None:
-        timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
-        timelapse_folder.mkdir(parents=True, exist_ok=True)
-
-        latest_frame_path: Path = timelapse_folder / self.LATEST_FRAME_NAME
-
-        metadata_path: Path = timelapse_folder / self.METADATA_NAME
-        metadata: TimelapseMetadata | None = self._metadata(timelapse_id)
-        if (not metadata) or (metadata.id != timelapse_id):
-            start_date: datetime = datetime.now(timezone.utc)
-            end_date: datetime = start_date + timedelta(seconds=config.duration)
-            metadata = TimelapseMetadata(
-                id=timelapse_id,
-                name=config.name,
-                frames=0,
-                framerate=config.framerate,
-                start_date=start_date,
-                latest_frame_date=None,
-                end_date=end_date,
-                ready=False,
-            )
-        def dump_metadata():
-            # atomic write
-            tmp = metadata_path.with_suffix(".tmp")
-            try:
-                tmp.write_text(metadata.model_dump_json())
-                tmp.replace(metadata_path)
-            except (FileNotFoundError, PermissionError, OSError) as e:
-                print(f"[Timelapse] Metadata write failed: {e}")
-                with self._lock:
-                    self._state.running = False
-        
-        video_path: Path = self._video_path(timelapse_id)
-        video_writer = None
         try:
-            video_writer = iio3.imopen(str(video_path), "w", plugin="pyav")
-            video_writer.init_video_stream("libx264", fps=config.framerate)
-        except Exception as e:
-            print(f"[Timelapse] Video writer unavailable: {e}")
-        if video_writer is None:
-            print("[Timelapse] Error initializing video writer, terminating timelapse")
-            with self._lock:
-                self._state.running = False
-                metadata.ready = None
-                dump_metadata()
-                return
+            timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
+            timelapse_folder.mkdir(parents=True, exist_ok=True)
 
-        def pushback_frame(frame):
+            config_path: Path = timelapse_folder / self.CONFIG_NAME
+            tmp_cfg = config_path.with_suffix(".tmp")
             try:
-                video_writer.write_frame(frame)
-            except Exception as e:
-                print(f"[Timelapse] Failed to write frame to video: {e}")
-                with self._lock:
-                    self._state.running = False
+                tmp_cfg.write_text(config.model_dump_json())
+                tmp_cfg.replace(config_path)
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                print(f"[Timelapse] Config write failed: {e}")
 
-        now: datetime = metadata.start_date
-        end_time: datetime = metadata.end_date
-        next_capture: datetime = now
+            latest_frame_path: Path = timelapse_folder / self.LATEST_FRAME_NAME
 
-        frequency_delta: timedelta = timedelta(seconds=config.frequency)
+            metadata_path: Path = timelapse_folder / self.METADATA_NAME
+            metadata: TimelapseMetadata | None = self._metadata(timelapse_id)
+            if (not metadata) or (metadata.id != timelapse_id):
+                start_date: datetime = datetime.now(timezone.utc)
+                end_date: datetime = start_date + timedelta(seconds=config.duration)
+                metadata = TimelapseMetadata(
+                    id=timelapse_id,
+                    name=config.name,
+                    frames=0,
+                    framerate=config.framerate,
+                    start_date=start_date,
+                    latest_frame_date=None,
+                    end_date=end_date,
+                    ready=False,
+                )
 
-        while now <= end_time:
-            with self._lock:
-                if not self._state.running:
-                    break
-
-            now = datetime.now(timezone.utc)
-
-            if now >= next_capture:
+            def dump_metadata():
+                # atomic write
+                tmp = metadata_path.with_suffix(".tmp")
                 try:
-                    if self._capture_frame(latest_frame_path):
-                        try:
-                            frame = iio3.imread(latest_frame_path)
-                        except Exception as e:
-                            print(f"[Timelapse] Failed to read captured frame: {e}")
-                            with self._lock:
-                                self._state.running = False
-                            break
-
-                        metadata.frames += 1
-                        metadata.latest_frame_date = now
-                        dump_metadata()
-                        pushback_frame(frame)
-                except Exception as e:
-                    print(f"[Timelapse] Unexpected worker error: {e}")
+                    tmp.write_text(metadata.model_dump_json())
+                    tmp.replace(metadata_path)
+                except (FileNotFoundError, PermissionError, OSError) as e:
+                    print(f"[Timelapse] Metadata write failed: {e}")
                     with self._lock:
                         self._state.running = False
-                    break
-
-                next_capture += frequency_delta
-
-            time.sleep(0.1)
-
-        if video_writer:
+            
+            video_path: Path = self._video_path(timelapse_id)
+            video_writer = None
             try:
-                video_writer.close()
+                video_writer = iio3.imopen(str(video_path), "w", plugin="pyav")
+                video_writer.init_video_stream("libx264", fps=config.framerate)
             except Exception as e:
-                print(f"[Timelapse] Error closing video writer: {e}")
+                print(f"[Timelapse] Video writer unavailable: {e}")
+            if video_writer is None:
+                print("[Timelapse] Error initializing video writer, terminating timelapse")
+                with self._lock:
+                    self._state.running = False
+                    metadata.ready = None
+                    dump_metadata()
+                return
 
-        metadata.ready = True
-        dump_metadata()
+            def pushback_frame(frame):
+                try:
+                    video_writer.write_frame(frame)
+                except Exception as e:
+                    print(f"[Timelapse] Failed to write frame to video: {e}")
+                    with self._lock:
+                        self._state.running = False
+
+            now: datetime = metadata.start_date
+            end_time: datetime = metadata.end_date
+            next_capture: datetime = now
+
+            frequency_delta: timedelta = timedelta(seconds=config.frequency)
+
+            while now <= end_time:
+                with self._lock:
+                    if not self._state.running:
+                        break
+
+                now = datetime.now(timezone.utc)
+
+                if now >= next_capture:
+                    try:
+                        if self._capture_frame(latest_frame_path):
+                            try:
+                                frame = iio3.imread(latest_frame_path)
+                            except Exception as e:
+                                print(f"[Timelapse] Failed to read captured frame: {e}")
+                                with self._lock:
+                                    self._state.running = False
+                                break
+
+                            metadata.frames += 1
+                            metadata.latest_frame_date = now
+                            dump_metadata()
+                            pushback_frame(frame)
+                    except Exception as e:
+                        print(f"[Timelapse] Unexpected worker error: {e}")
+                        with self._lock:
+                            self._state.running = False
+                        break
+
+                    next_capture += frequency_delta
+
+                time.sleep(0.1)
+
+            if video_writer:
+                try:
+                    video_writer.close()
+                except Exception as e:
+                    print(f"[Timelapse] Error closing video writer: {e}")
+
+            metadata.ready = True
+            dump_metadata()
+        finally:
+            with self._lock:
+                if self._state.id == timelapse_id:
+                    self._state.reset()
 
     def _path(self, timelapse_id: str, name: str) -> Path:
         return TIMELAPSES_DIR / timelapse_id / name
@@ -243,13 +263,25 @@ class TimelapseClient:
         return self._path(timelapse_id, self.VIDEO_NAME)
 
     def _metadata(self, timelapse_id: str) -> TimelapseMetadata | None:
-        metadata_path: Path = self._path(timelapse_id, self.METADATA_PATH)
+        metadata_path: Path = self._path(timelapse_id, self.METADATA_NAME)
         if not metadata_path.exists():
             return None
         return TimelapseMetadata.model_validate_json(metadata_path.read_text())
 
+    def _config_path(self, timelapse_id: str) -> Path:
+        return self._path(timelapse_id, self.CONFIG_NAME)
+
+    def _config(self, timelapse_id: str) -> TimelapseConfig | None:
+        config_path: Path = self._config_path(timelapse_id)
+        if not config_path.exists():
+            return None
+        return TimelapseConfig.model_validate_json(config_path.read_text())
+
     def _current_metadata(self) -> TimelapseMetadata | None:
         return self._metadata(self._state.id) if self._state.id else None
+
+    def _current_config(self) -> TimelapseConfig | None:
+        return self._config(self._state.id) if self._state.id else None
 
     def _latest_frame_path(self) -> Path | None:
         return self._path(self._state.id, self.LATEST_FRAME_NAME) if self._state.id else None

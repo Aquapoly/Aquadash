@@ -20,3 +20,4 @@ class TimelapseMetadata(BaseModel):
 class TimelapseStatus(BaseModel):
     running: bool
     metadata: TimelapseMetadata | None
+    config: TimelapseConfig | None = None
