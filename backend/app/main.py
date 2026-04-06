@@ -1,3 +1,4 @@
+import httpx
 from fastapi import FastAPI, Depends, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -43,7 +44,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-origins = ["http://localhost", "http://localhost:4200", "http://127.0.0.1:4200", "*"]
+origins = ["http://localhost", "http://localhost:4200", "http://127.0.0.1:4200"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -374,17 +375,25 @@ async def timelapse_status() -> TimelapseStatus:
 async def timelapse_frame_info() -> TimelapseStatus:
     return await camera_service.get_timelapse_frame_info()
 
-@app.get("/timelapse/latest-frame")
-async def get_latest_frame():
+@app.get(
+    "/timelapse/latest-frame",
+    responses={httpx.codes.OK: {"mediaType": "image/jpeg"}},
+    response_class=Response
+)
+async def get_latest_frame() -> Response:
     image_bytes = await camera_service.get_latest_timelapse_frame()
     return Response(content=image_bytes, media_type="image/jpeg")
 
-@app.get("/timelapse")
-async def list_timelapses_endpoint() -> dict:
+@app.get("/timelapse", response_model=list[TimelapseMetadata])
+async def list_timelapses_endpoint() -> list[TimelapseMetadata]:
     return await camera_service.list_timelapses()
 
-@app.get("/timelapse/{timelapse_id}/download")
-async def download_timelapse(timelapse_id: str):
+@app.get(
+    "/timelapse/{timelapse_id}/download",
+    responses={httpx.codes.OK: {"mediaType": "video/mp4"}},
+    response_class=Response
+)
+async def download_timelapse(timelapse_id: str) -> Response:
     video_bytes = await camera_service.download_timelapse(timelapse_id)
     return Response(
         content=video_bytes,
@@ -392,6 +401,6 @@ async def download_timelapse(timelapse_id: str):
         headers={"Content-Disposition": f"attachment; filename=timelapse_{timelapse_id}.mp4"}
     )
 
-@app.delete("/timelapse/{timelapse_id}", response_model=None)
-async def delete_timelapse(timelapse_id: str) -> dict:
-    return await camera_service.delete_timelapse(timelapse_id)
+@app.delete("/timelapse/{timelapse_id}", status_code=httpx.codes.NO_CONTENT)
+async def delete_timelapse(timelapse_id: str) -> None:
+    await camera_service.delete_timelapse(timelapse_id)
