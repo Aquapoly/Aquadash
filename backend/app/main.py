@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import datetime, timedelta
 import io
+
+from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 # from jose import JWTError, jwt
 
 
@@ -250,7 +252,7 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
 @app.get("/picture")
 async def picture():
     pic: bytes = await camera_service.get_picture()
-    return Response(content=pic, media_type="image/png")
+    return Response(content=pic, media_type="image/jpeg")
 
 # auth stuff
 @app.post("/token", response_model=schemas.Token)
@@ -356,20 +358,20 @@ async def openapi_json():
 
 
 # TIMELAPSE
-@app.post("/timelapse/start")
-async def start_timelapse(config: dict) -> dict:
+@app.post("/timelapse/start", response_model=TimelapseStatus)
+async def start_timelapse(config: TimelapseConfig) -> TimelapseStatus:
     return await camera_service.start_timelapse(config)
 
-@app.post("/timelapse/stop")
-async def stop_timelapse() -> dict:
+@app.post("/timelapse/stop", response_model=TimelapseStatus)
+async def stop_timelapse() -> TimelapseStatus:
     return await camera_service.stop_timelapse()
 
-@app.get("/timelapse/status")
-async def timelapse_status() -> dict:
+@app.get("/timelapse/status", response_model=TimelapseStatus)
+async def timelapse_status() -> TimelapseStatus:
     return await camera_service.get_timelapse_status()
 
-@app.get("/timelapse/frame-info")
-async def timelapse_frame_info() -> dict:
+@app.get("/timelapse/frame-info", response_model=TimelapseStatus)
+async def timelapse_frame_info() -> TimelapseStatus:
     return await camera_service.get_timelapse_frame_info()
 
 @app.get("/timelapse/latest-frame")
@@ -390,6 +392,6 @@ async def download_timelapse(timelapse_id: str):
         headers={"Content-Disposition": f"attachment; filename=timelapse_{timelapse_id}.mp4"}
     )
 
-@app.delete("/timelapse/{timelapse_id}")
+@app.delete("/timelapse/{timelapse_id}", response_model=None)
 async def delete_timelapse(timelapse_id: str) -> dict:
     return await camera_service.delete_timelapse(timelapse_id)
