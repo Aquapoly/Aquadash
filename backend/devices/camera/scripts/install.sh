@@ -75,6 +75,13 @@ if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
     checkmodule -M -m -o "$SELINUX_DIR/camera_container.mod" "$SELINUX_DIR/camera_container.te"
     semodule_package -o "$SELINUX_DIR/camera_container.pp" -m "$SELINUX_DIR/camera_container.mod"
     semodule -i "$SELINUX_DIR/camera_container.pp"
+
+    if command -v semanage >/dev/null 2>&1; then
+        semanage fcontext -a -t container_var_run_t '/run/camera' 2>/dev/null || \
+        semanage fcontext -m -t container_var_run_t '/run/camera' 2>/dev/null || true
+        semanage fcontext -a -t container_var_run_t '/run/camera(/.*)?' 2>/dev/null || \
+        semanage fcontext -m -t container_var_run_t '/run/camera(/.*)?' 2>/dev/null || true
+    fi
     restorecon -Rv /run/camera 2>/dev/null || true
 
     echo "  SELinux policy installed"

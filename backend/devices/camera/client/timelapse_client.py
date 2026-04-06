@@ -6,7 +6,7 @@ import time
 import uuid
 
 import imageio.v3 as iio3
-from .models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
+from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 
 from camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError
 
@@ -28,6 +28,7 @@ class _TimelapseState:
 class TimelapseClient:
     LATEST_FRAME_NAME: str = "latest_frame.jpg"
     METADATA_NAME: str = "metadata.json"
+    VIDEO_NAME: str = "video.mp4"
 
     def __init__(self, camera: CameraClient):
         self._camera: CameraClient = camera
@@ -64,7 +65,7 @@ class TimelapseClient:
         if config.duration < config.frequency:
             raise ValueError("Duration must be greater than or equal to frequency")
 
-    def stop(self) -> dict:
+    def stop(self) -> TimelapseStatus:
         self._stop_worker()
 
         with self._lock:
@@ -103,14 +104,19 @@ class TimelapseClient:
         timelapses.sort(key=lambda x: x.start_date, reverse=True)
         return timelapses
 
-    def delete(self, timelapse_id: str) -> TimelapseStatus:
+    def delete(self, timelapse_id: str) -> None:
         if self._state.running and timelapse_id == self._state.id:
             self._stop_worker()
         timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
         if not timelapse_folder.exists() or not timelapse_folder.is_dir():
             raise FileNotFoundError(f"Timelapse {timelapse_id} not found")
         shutil.rmtree(timelapse_folder)
-        return self.status()
+
+    def download(self, timelapse_id: str) -> Path:
+        video_path: Path = self._video_path(timelapse_id)
+        if not video_path.exists():
+            raise FileNotFoundError(f"Timelapse {timelapse_id} not found or not ready for download")
+        return video_path
 
     def _capture_frame(self, output_path: Path) -> bool:
         try:
@@ -160,7 +166,7 @@ class TimelapseClient:
                 with self._lock:
                     self._state.running = False
         
-        video_path: Path = timelapse_folder / "video.mp4"
+        video_path: Path = self._video_path(timelapse_id)
         video_writer = None
         try:
             video_writer = iio3.imopen(str(video_path), "w", plugin="pyav")
@@ -230,8 +236,14 @@ class TimelapseClient:
         metadata.ready = True
         dump_metadata()
 
+    def _path(self, timelapse_id: str, name: str) -> Path:
+        return TIMELAPSES_DIR / timelapse_id / name
+    
+    def _video_path(self, timelapse_id: str) -> Path:
+        return self._path(timelapse_id, self.VIDEO_NAME)
+
     def _metadata(self, timelapse_id: str) -> TimelapseMetadata | None:
-        metadata_path: Path = TIMELAPSES_DIR / timelapse_id / self.METADATA_NAME
+        metadata_path: Path = self._path(timelapse_id, self.METADATA_PATH)
         if not metadata_path.exists():
             return None
         return TimelapseMetadata.model_validate_json(metadata_path.read_text())
@@ -240,9 +252,7 @@ class TimelapseClient:
         return self._metadata(self._state.id) if self._state.id else None
 
     def _latest_frame_path(self) -> Path | None:
-        if not self._state.id:
-            return None
-        return TIMELAPSES_DIR / self._state.id / self.LATEST_FRAME_NAME
+        return self._path(self._state.id, self.LATEST_FRAME_NAME) if self._state.id else None
 
     def _stop_worker(self) -> None:
         with self._lock:
