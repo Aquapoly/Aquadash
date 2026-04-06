@@ -1,0 +1,23 @@
+# Exclude virtual environments from Docker build context
+# These contain symlinks to system Python that Docker will follow and relabel
+.venv/
+**/.venv/
+
+# Exclude other development artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exclude git and IDE files
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Exclude environment files (should be passed via docker-compose)
+.env
+.env.*
