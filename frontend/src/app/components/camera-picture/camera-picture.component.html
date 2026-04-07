@@ -1,6 +1,21 @@
-<div class="relative">
-    <img class="w-full rounded-lg max-w-xl shadow-xl dark:shadow-gray-800" src="{{ url }}" alt="Camera picture">
-    <button (click)="onReloadClick()" class="absolute top-0 bg-blue-500 text-white p-2 rounded hover:bg-blue-800 m-2">
-        <fa-icon [icon]="faReload"></fa-icon>
-    </button>
+<div class="camera-wrapper">
+    <div class="camera-frame">
+        @if (displayedObjectUrl) {
+            <img
+                class="camera-image"
+                [src]="displayedObjectUrl"
+                alt="Image capturée par la caméra"
+            />
+        } @else {
+            <div class="camera-placeholder" aria-hidden="true"></div>
+        }
+
+        @if (!isCameraAvailable) {
+            <div class="camera-overlay">
+                <div class="overlay-center">
+                    <img src="/assets/camera_unavailable.png" alt="Caméra indisponible" />
+                </div>
+            </div>
+        }
+    </div>
 </div>

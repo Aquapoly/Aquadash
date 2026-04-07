@@ -1,3 +1,4 @@
+import httpx
 from fastapi import FastAPI, Depends, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -8,6 +9,8 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import datetime, timedelta
 import io
+
+from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 # from jose import JWTError, jwt
 
 
@@ -250,7 +253,7 @@ async def actuator(prototype_id: int, db: Session = Depends(get_db)):
 @app.get("/picture")
 async def picture():
     pic: bytes = await camera_service.get_picture()
-    return Response(content=pic, media_type="image/png")
+    return Response(content=pic, media_type="image/jpeg")
 
 # auth stuff
 @app.post("/token", response_model=schemas.Token)
@@ -356,33 +359,41 @@ async def openapi_json():
 
 
 # TIMELAPSE
-@app.post("/timelapse/start")
-async def start_timelapse(config: dict) -> dict:
+@app.post("/timelapse/start", response_model=TimelapseStatus)
+async def start_timelapse(config: TimelapseConfig) -> TimelapseStatus:
     return await camera_service.start_timelapse(config)
 
-@app.post("/timelapse/stop")
-async def stop_timelapse() -> dict:
+@app.post("/timelapse/stop", response_model=TimelapseStatus)
+async def stop_timelapse() -> TimelapseStatus:
     return await camera_service.stop_timelapse()
 
-@app.get("/timelapse/status")
-async def timelapse_status() -> dict:
+@app.get("/timelapse/status", response_model=TimelapseStatus)
+async def timelapse_status() -> TimelapseStatus:
     return await camera_service.get_timelapse_status()
 
-@app.get("/timelapse/frame-info")
-async def timelapse_frame_info() -> dict:
+@app.get("/timelapse/frame-info", response_model=TimelapseStatus)
+async def timelapse_frame_info() -> TimelapseStatus:
     return await camera_service.get_timelapse_frame_info()
 
-@app.get("/timelapse/latest-frame")
-async def get_latest_frame():
+@app.get(
+    "/timelapse/latest-frame",
+    responses={httpx.codes.OK: {"mediaType": "image/jpeg"}},
+    response_class=Response
+)
+async def get_latest_frame() -> Response:
     image_bytes = await camera_service.get_latest_timelapse_frame()
     return Response(content=image_bytes, media_type="image/jpeg")
 
-@app.get("/timelapse")
-async def list_timelapses_endpoint() -> dict:
+@app.get("/timelapse", response_model=list[TimelapseMetadata])
+async def list_timelapses_endpoint() -> list[TimelapseMetadata]:
     return await camera_service.list_timelapses()
 
-@app.get("/timelapse/{timelapse_id}/download")
-async def download_timelapse(timelapse_id: str):
+@app.get(
+    "/timelapse/{timelapse_id}/download",
+    responses={httpx.codes.OK: {"mediaType": "video/mp4"}},
+    response_class=Response
+)
+async def download_timelapse(timelapse_id: str) -> Response:
     video_bytes = await camera_service.download_timelapse(timelapse_id)
     return Response(
         content=video_bytes,
@@ -390,6 +401,6 @@ async def download_timelapse(timelapse_id: str):
         headers={"Content-Disposition": f"attachment; filename=timelapse_{timelapse_id}.mp4"}
     )
 
-@app.delete("/timelapse/{timelapse_id}")
-async def delete_timelapse(timelapse_id: str) -> dict:
-    return await camera_service.delete_timelapse(timelapse_id)
+@app.delete("/timelapse/{timelapse_id}", status_code=httpx.codes.NO_CONTENT)
+async def delete_timelapse(timelapse_id: str) -> None:
+    await camera_service.delete_timelapse(timelapse_id)
