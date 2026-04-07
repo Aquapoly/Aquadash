@@ -19,4 +19,6 @@ RUN apk del \
 
 COPY . .
 
+RUN ln -sfn /usr/src/app/shared /usr/src/shared
+
 CMD [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000" ]

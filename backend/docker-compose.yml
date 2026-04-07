@@ -22,7 +22,7 @@ services:
       start_period: 10s
 
     volumes:
-      - ./initdb:/docker-entrypoint-initdb.d:Z
+      - ./initdb:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql
 
     networks:
@@ -48,9 +48,6 @@ services:
       DB_PASSWORD: aquapoly
       DB_NAME: aquapoly
 
-    volumes:
-      - .:/usr/src/app:z
-
     user: "1000:1000"
 
     depends_on:
@@ -65,10 +62,13 @@ services:
   
   cam_client:
     build:
-      context: ./devices/camera/client
-      dockerfile: cam_client.Dockerfile
+      context: .
+      dockerfile: devices/camera/client/cam_client.Dockerfile
 
     container_name: cam-client
+
+    security_opt:
+      - label=level:s0
 
     environment:
       CAMERA_NAME: ${CAMERA_NAME:-camera0}
@@ -83,7 +83,7 @@ services:
     restart: always
 
     volumes:
-      - /run/camera:/run/camera:z
+      - /run/camera:/run/camera
       - timelapse_data:/timelapses
 
     user: "1000:${HOST_DEV_GID:-0}"

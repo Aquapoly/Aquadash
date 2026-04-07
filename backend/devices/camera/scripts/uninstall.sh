@@ -39,6 +39,11 @@ sleep 1  # allow processes to exit
 if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
     echo "  Removing SELinux policy..."
     semodule -r camera_container >/dev/null 2>&1 || true
+    if command -v semanage >/dev/null 2>&1; then
+        semanage fcontext -d '/run/camera' 2>/dev/null || true
+        semanage fcontext -d '/run/camera(/.*)?' 2>/dev/null || true
+    fi
+    restorecon -Rv /run/camera 2>/dev/null || true
     echo "  SELinux policy removed"
 fi
 
