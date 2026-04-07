@@ -1,0 +1,53 @@
+:host {
+	display: block;
+}
+
+.camera-wrapper {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.camera-frame {
+  position: relative;
+  width: 640px;
+  max-width: 100%;
+  height: 480px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  display: block;
+}
+
+.camera-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+}
+
+.camera-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  background: white;
+}
+
+.camera-overlay {
+	position: absolute;
+	inset: 0;
+	background: rgba(0,0,0,0.48);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.overlay-center img {
+	width: 96px;
+	height: auto;
+	opacity: 0.95;
+}
+
