@@ -45,11 +45,9 @@ export class NewActuatorModalComponent {
         this.formInput['name'] = 'Actuateur #'+this.actuatorNumber;
       }
 
-      console.log(this.formInput)
-
       const actuator = {
       actuator_type: this.formInput['type'],
-      sensor_id: 1, // TODO ajouter générateur de ID ?
+      sensor_id: 1, // TODO: ajouter générateur de ID ?
       condition_value: 0,
       activation_condition: 'high',
       activation_period: 0,
