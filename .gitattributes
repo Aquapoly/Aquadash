@@ -1,5 +1,10 @@
-# Default: Use CRLF for all files except scripts
-* text eol=crlf
+# Default: Use LF for all files except scripts
+* text eol=lf
+
+# Exceptions: Use CRLF for Windows batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
 
 # Images: Do not corrupt binary data
 *.png binary
@@ -7,17 +12,3 @@
 *.jpeg binary
 *.gif binary
 *.webp binary
-
-# Exceptions: Use LF for script files
-*.sh text eol=lf
-*.yaml text eol=lf
-*.yml text eol=lf
-
-# Exceptions: Scripts with no extension
-run text eol=lf
-kill text eol=lf
-camera-ctl text eol=lf
-
-# Exceptions: SELinux-related files
-*.te text eol=lf
-*.fc text eol=lf
