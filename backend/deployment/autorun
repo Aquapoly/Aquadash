@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+INSTALL_ROOT="/opt/aquadash"
+LINK_PATH="$INSTALL_ROOT/backend"
+
+SERVICE_NAME="aquadash-autorun.service"
+UNIT_SRC="$SCRIPT_DIR/aquadash-autorun.service"
+UNIT_DST="/etc/systemd/system/$SERVICE_NAME"
+
+die() {
+    echo "[Error] $*" >&2
+    exit 1
+}
+
+require_root() {
+    if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+        die "This command must be run as root"
+    fi
+}
+
+ensure_unit_src_exists() {
+    if [[ ! -f "$UNIT_SRC" ]]; then
+        die "Unit file not found: $UNIT_SRC"
+    fi
+}
+
+enable_cmd() {
+    require_root
+    ensure_unit_src_exists
+
+    mkdir -p "$INSTALL_ROOT"
+
+    if [[ -e "$LINK_PATH" && ! -L "$LINK_PATH" ]]; then
+        die "$LINK_PATH exists and is not a symlink"
+    fi
+
+    ln -sfn "$BACKEND_DIR" "$LINK_PATH"
+
+    install -m 0644 "$UNIT_SRC" "$UNIT_DST"
+    systemctl daemon-reload
+    systemctl enable --now "$SERVICE_NAME"
+}
+
+disable_cmd() {
+    require_root
+
+    if systemctl list-unit-files --type=service | grep -q "^$SERVICE_NAME"; then
+        systemctl disable --now "$SERVICE_NAME" >/dev/null 2>&1 || true
+    else
+        systemctl stop "$SERVICE_NAME" >/dev/null 2>&1 || true
+        systemctl disable "$SERVICE_NAME" >/dev/null 2>&1 || true
+    fi
+
+    rm -f "$UNIT_DST"
+    systemctl daemon-reload
+
+    rm -f "$LINK_PATH"
+}
+
+usage() {
+    echo "Usage: $0 enable|disable" >&2
+    exit 2
+}
+
+CMD="${1:-}"
+case "$CMD" in
+    enable)
+        enable_cmd
+        ;;
+    disable)
+        disable_cmd
+        ;;
+    *)
+        usage
+        ;;
+esac
