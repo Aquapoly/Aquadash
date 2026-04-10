@@ -4,3 +4,6 @@
 
 # Compiled python
 *.pyc
+
+# Environment variables
+.env
