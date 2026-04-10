@@ -120,7 +120,7 @@ The script automatically:
 
 ### Hot Reload (DEV mode)
 
-If you set `DEV=1` in `.env`, `./run` will include `docker-compose.dev.yml` and the backend will run with hot reload.
+If you set `DEV=1` in `.env`, `./run` will include `docker-compose.dev.yml` and the backend containers will run with hot reload.
 
 For the camera, it also:
 
