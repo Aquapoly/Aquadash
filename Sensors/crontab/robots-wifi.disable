@@ -1,2 +1,0 @@
-@reboot /home/aquapoly/robots-wifi-connection/reconnect-wifi-robots.sh >> /var/log/crontab/wifi.log 2>&1
-*/20 * * * * /home/aquapoly/robots-wifi-connection/reconnect-wifi-robots.sh >> /var/log/crontab/wifi.log 2>&1

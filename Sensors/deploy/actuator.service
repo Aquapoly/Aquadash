@@ -1,0 +1,13 @@
+[Unit]
+Description=Actuator Check Service
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/aquadash/sensors
+ExecStart=/usr/bin/python3 -m services.actuator
+Restart=always
+User=root
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
