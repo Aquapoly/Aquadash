@@ -17,6 +17,7 @@
 run text eol=lf
 kill text eol=lf
 camera-ctl text eol=lf
+autorun text eol=lf
 
 # Exceptions: SELinux-related files
 *.te text eol=lf
