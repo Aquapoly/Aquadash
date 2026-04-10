@@ -131,6 +131,22 @@ If you want finer control or if you want to run multiple instances of Aquadash a
 
 ---
 
+## Step 3.5: Enable Autorun (Optional)
+
+If you want to turn your machine into an AquaDash server, you will probably want to enable autorun for the backend. This will make it so that the backend starts automatically when the machine boots. You can enable it with this command:
+
+```bash
+./deployment/autorun enable
+```
+
+To disable it, use:
+
+```bash
+./deployment/autorun disable
+```
+
+---
+
 ## 🛑 Step 4: Stop
 
 You can use the `kill` script to take down your instance of the Aquadash backend:
