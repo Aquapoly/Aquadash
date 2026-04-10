@@ -18,6 +18,12 @@ set +a
 
 echo "[Info] Loaded configuration from .env"
 
+COMPOSE_FILES=("-f" "docker-compose.yml")
+if [[ "${DEV:-0}" == "1" ]]; then
+    COMPOSE_FILES+=("-f" "docker-compose.dev.yml")
+    echo "[Info] DEV=1: using docker-compose.dev.yml (hot reload)"
+fi
+
 # --- Helpers ---
 
 start_cam_daemon() {
@@ -53,7 +59,7 @@ start_cam_daemon() {
 
 start_app() {
     echo "[Info] Starting app stack (db + app)..."
-    docker compose up -d $BUILD_FLAG app
+    docker compose "${COMPOSE_FILES[@]}" up -d $BUILD_FLAG app
 }
 
 start_cam() {
@@ -64,7 +70,7 @@ start_cam() {
     export HOST_DEV_GID
 
     echo "[Info] Starting cam_client container..."
-    docker compose up -d $BUILD_FLAG cam_client
+    docker compose "${COMPOSE_FILES[@]}" up -d $BUILD_FLAG cam_client
 }
 
 start_app_native() {
