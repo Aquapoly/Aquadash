@@ -4,27 +4,22 @@ The app is normally accessible via http://localhost.
 
 ## Environment and Settings
 
-Copy `environment.example.ts` as `environment.ts`:
+Building the project once will create the necessary configuration files if they don't exist.
+
+You can also create them manually by copying the example files:
 
 ```bash
 cp src/app/environment.example.ts src/app/environment.ts
-```
-
-Then fill in the values according to your environment. At the time being, that means setting the public URL of your AquaDash backend instance.
-
-For a development setup, use:
-
-```ts
-export const SERVER_URL = "http://localhost:8000";
-```
-
-Also copy `app-settings.example.ts` as `app-settings.ts`:
-
-```bash
 cp src/app/app-settings.example.ts src/app/app-settings.ts
 ```
 
-You can then modify the values in `app-settings.ts` to fit your needs. Otherwise, you can leave the defaults int.
+If you want to deploy this app, you will need to modify the `SERVER_URL` in `src/app/environment.ts` to point to your backend server. For example:
+
+```ts
+export const SERVER_URL = "http://192.168.1.100:8000";
+```
+
+You can also modify the values in `app-settings.ts` to fit your needs. Otherwise, the defaults will give you a working setup.
 
 ## Development
 
