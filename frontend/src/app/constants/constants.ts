@@ -1,3 +1,4 @@
+import { MAX_SENSOR_HISTORY_LENGTH_S } from '@app/app-settings';
 import { SensorType } from '@app/interfaces/sensor-type';
 import {
   EcUnit,
@@ -161,14 +162,7 @@ export const GLOBAL_SETTINGS_DEFAULTS = {
   THRESHOLD_DISPLAY: ChartThresholdDisplay.ColoredBackgroundWithLine,
 } as const;
 
-export const SENSOR_SERVICE_DEFAULTS = {
-  PROTOTYPE_ID: 0,
-  DEFAULT_RANGE_INDEX: 3,
-  PADDING_LENGTH: 2,
-  PADDING_CHAR: '0',
-} as const;
-
-export const TIME_RANGE_OPTIONS = [
+export const TIME_RANGE_OPTIONS = [...[
   {
     name: '2 heures',
     value: { days: 0, hours: 2, minutes: 0, seconds: 0 },
@@ -201,7 +195,17 @@ export const TIME_RANGE_OPTIONS = [
     name: 'Année',
     value: { days: 365, hours: 0, minutes: 0, seconds: 0 },
   },
-] as const;
+].filter((option) => {
+  const { days, hours, minutes, seconds } = option.value;
+  return days * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60 + seconds <= MAX_SENSOR_HISTORY_LENGTH_S;
+})] as const;
+
+export const SENSOR_SERVICE_DEFAULTS = {
+  PROTOTYPE_ID: 0,
+  DEFAULT_RANGE_INDEX: Math.min(3, TIME_RANGE_OPTIONS.length - 1),
+  PADDING_LENGTH: 2,
+  PADDING_CHAR: '0',
+} as const;
 
 export const SENSOR_TYPE_TITLES = {
   [SensorType.ec]: 'EC',
