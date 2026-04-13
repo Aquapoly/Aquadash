@@ -38,7 +38,7 @@ def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (model
     #####
     # Verify elapsed time since last measurement
     #####
-    now = datetime.now().astimezone()
+    now = datetime.now(UTC)
     last_measure_time_elapsed = now - last_measurement.timestamp
 
     if(last_measure_time_elapsed > DISCONNECTED_DELTA):
