@@ -27,6 +27,15 @@ You can also modify the values in `app-settings.ts` to fit your needs. Otherwise
 - **URL:** http://localhost:4200/
 - **API endpoint for development:** edit `src/app/environment.ts` and set `SERVER_URL` for backend (default: `http://localhost:8000`).
 
+## Dependencies
+
+- **Node.js:** recommended LTS (use NodeSource or `nvm` to install per your OS).
+- **npm:** bundled with Node.js. Use the bundled or a managed upgrade (avoid global `npm -g npm` in scripts).
+- **Angular CLI:** only required to build locally or run `ng` commands.
+- **Docker (optional):** only required if you intend to build/run the Docker image.
+
+Once you have installed these, you can run `npm install` to install the project dependencies, or `npm ci` for a clean install (overwrites `node_modules` and `package-lock.json`).
+
 ## Build
 
 - **Build:** `npm run build` (artifacts are produced under `dist/aquadash/`).
@@ -50,21 +59,6 @@ This runs `npm run build` and copies `dist/aquadash/browser/*` into `/var/www/aq
 ```
 
 This script runs `npm ci`, `npm run build`, builds the Docker image and runs it (`docker run -p 80:80`). It is focused on container run and does not modify the host webroot.
-
-## Dependencies
-
-- **Node.js:** recommended LTS (use NodeSource or `nvm` to install per your OS).
-- **npm:** bundled with Node.js. Use the bundled or a managed upgrade (avoid global `npm -g npm` in scripts).
-- **Angular CLI:** only required to build locally or run `ng` commands.
-- **Docker (optional):** only required if you intend to build/run the Docker image.
-
-## Provisioning / installer scripts
-
-- There is an optional provisioning script in the repository (`install-dependencies.sh` / `install-softwares.sh`) that attempts to install system packages (apt, Docker, Node, Angular CLI, etc.). **This script is not required to develop or deploy the frontend** and may be unsafe or incompatible with some systems (e.g., non-apt package managers, managed servers). Treat it as an optional, host-specific helper and review it before running.
-
-- Recommended approach for new machines:
-  - Use `nvm` to install Node.js per-user instead of system `apt` packages.
-  - Use Docker only if you want containerized deployment; otherwise copy `dist/aquadash/browser/*` to your web host.
 
 ## Summary
 
