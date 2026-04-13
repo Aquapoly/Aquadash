@@ -2,9 +2,10 @@
   "name": "aquadash",
   "version": "0.0.0",
   "scripts": {
+    "postinstall": "bash ./scripts/ensure-local-config.sh",
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "bash ./scripts/ensure-local-config.sh && ng serve",
+    "build": "bash ./scripts/ensure-local-config.sh && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
