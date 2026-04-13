@@ -2,7 +2,7 @@
 
 The app is normally accessible via http://localhost.
 
-## Environment
+## Environment and Settings
 
 Copy `environment.example.ts` as `environment.ts`:
 
@@ -17,6 +17,14 @@ For a development setup, use:
 ```ts
 export const SERVER_URL = "http://localhost:8000";
 ```
+
+Also copy `app-settings.example.ts` as `app-settings.ts`:
+
+```bash
+cp src/app/app-settings.example.ts src/app/app-settings.ts
+```
+
+You can then modify the values in `app-settings.ts` to fit your needs. Otherwise, you can leave the defaults int.
 
 ## Development
 
