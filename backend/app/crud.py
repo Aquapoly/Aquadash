@@ -203,7 +203,7 @@ def get_measurements_delta(
     Raises:
         None
     """
-    end_time = datetime.now()
+    end_time = datetime.now(pytz.UTC)
     start_time = end_time - time_delta
     return get_measurements(db=db, sensor_id=sensor_id, start_time=start_time)
 
