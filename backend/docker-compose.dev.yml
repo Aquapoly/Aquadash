@@ -1,0 +1,11 @@
+services:
+  app:
+    command: ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+    volumes:
+      - ./:/usr/src/app
+
+  cam_client:
+    command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "9000"]
+    volumes:
+      - ./devices/camera/client:/usr/src/app
+      - ./shared:/usr/src/app/shared
