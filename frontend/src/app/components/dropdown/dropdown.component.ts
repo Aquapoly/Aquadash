@@ -55,4 +55,8 @@ export class DropdownComponent {
       this.isOpen = false;
     }
   }
+
+  isSelected(option: DropdownOption): boolean {
+    return this.selectedOption?.value === option.value;
+  }
 }
