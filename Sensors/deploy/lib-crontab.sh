@@ -4,6 +4,12 @@ AQUADASH_JOB_PREFIX="cd /opt/aquadash/sensors && python3 -m services."
 AQUADASH_CRONTAB_BEGIN="# AQUADASH_SENSORS_BEGIN"
 AQUADASH_CRONTAB_END="# AQUADASH_SENSORS_END"
 
+
+print_all_jobs() {
+  echo "[ACTIVE JOBS]"
+  crontab -l 
+}
+
 aquadash_crontab_strip_managed() {
   local existing_crontab
   existing_crontab="$(crontab -l 2>/dev/null || true)"
@@ -35,9 +41,11 @@ aquadash_crontab_install_jobs() {
     printf '%s\n' "$jobs"
     printf '%s\n' "$AQUADASH_CRONTAB_END"
   } | crontab
+  print_all_jobs
 }
 
 
 aquadash_crontab_remove_jobs() {
   aquadash_crontab_strip_managed | crontab
+  print_all_jobs
 }
