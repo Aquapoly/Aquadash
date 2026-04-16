@@ -1,4 +1,4 @@
-<h2 class="text-2xl font-bold text-base-800 mb-6">
+<h2 class="text-2xl font-bold text-base-900 mb-6">
   {{ running ? "Timelapse en cours..." : "Nouveau timelapse" }}
 </h2>
 
@@ -50,7 +50,7 @@
     }
 
     <div class="flex justify-center">
-      <button class="btn btn-success"
+      <button class="btn btn-success text-base-100"
         (click)="start()"
         [disabled]="isFrequencyTooHigh"
         [style.cursor]="isFrequencyTooHigh ? 'not-allowed' : 'pointer'"
@@ -66,7 +66,7 @@
 
     <div class="flex justify-between items-center">
       <strong>Image {{ status?.metadata?.frames ?? '?' }} sur {{ expectedFrames }}:</strong>
-      <button (click)="getStatus()" class="btn btn-success px-4 py-2 rounded">Refresh</button>
+      <button (click)="getStatus()" class="btn btn-success text-base-100">Refresh</button>
     </div>
     @if (thumbnailUrl) {
       <img [src]="thumbnailUrl" width="100%" class="border mt-2 rounded" />
@@ -76,12 +76,12 @@
     </div>
 
     <div class="flex justify-center">
-      <button (click)="stop()" class="btn btn-error px-4 py-2 rounded">Arrêter</button>
+      <button (click)="stop()" class="btn btn-error text-base-100">Arrêter</button>
     </div>
   }
 
   @if (error) {
-    <div class="p-4 bg-error bg-opacity-20 border border-error text-error rounded">
+    <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
       {{ error }}
     </div>
   }
