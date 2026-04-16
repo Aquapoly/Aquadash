@@ -2,7 +2,7 @@
   <button
     type="button"
     (click)="toggleDropdown()"
-    class="w-full px-4 py-2.5 text-left bg-base-100 border border-base-300 rounded-lg shadow-sm hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 flex items-center justify-between"
+    class="w-full px-4 py-2.5 text-left bg-base-100 border border-base-300 rounded-lg shadow-sm hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
     [class.ring-2]="isOpen"
     [class.ring-blue-500]="isOpen"
   >
@@ -10,7 +10,7 @@
       {{ selectedOption?.label }}
     </span>
     <svg
-      class="w-5 h-5 ml-2 transition-transform duration-200 text-base-400"
+      class="w-5 h-5 ml-2 transition-transform text-base-400"
       [class.rotate-180]="isOpen"
       fill="none"
       stroke="currentColor"
@@ -33,7 +33,7 @@
         @for (option of options; track option.value) {
           <li
             (click)="selectOption(option)"
-            class="px-4 py-2.5 cursor-pointer transition-colors duration-150"
+            class="px-4 py-2.5 cursor-pointer transition-colors"
             [ngClass]="{
               'bg-primary text-gray-100': isSelected(option),
               'hover:bg-base-200 hover:text-base-700': !isSelected(option)
