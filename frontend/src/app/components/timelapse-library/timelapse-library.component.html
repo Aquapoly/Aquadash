@@ -1,66 +1,66 @@
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">
-        Bibliothèque
-    </h2>
-    @if (error) {
-        <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {{ error }}
-        </div>
-    } @else {
-        <div class="overflow-x-auto">
-            @if (!(timelapsesEmpty$ | async)) {
-            <table class="min-w-full bg-white border border-gray-300 rounded-lg">
-            <thead class="bg-gray-50">
-                <tr>
-                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Début</th>
-                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Capturé pendant</th>
-                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Actions</th>
-                <th class="py-3 px-2 border-b text-left font-semibold text-gray-700">Statut</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (timelapse of (timelapses$ | async) ?? []; track timelapse.id) {
-                    <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="py-3 px-4 border-b text-gray-900">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm:ss' }}</td>
-                    <td class="py-3 px-4 border-b text-gray-900">{{ timelapse | timelapseSeconds | duration }}</td>
-                    <td class="py-3 px-4 border-b">
-                        <div class="space-y-2 ">
-                            <button
-                            (click)="download(timelapse)"
-                            class="w-full px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors
-                                disabled:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            [disabled]="!timelapse.ready"
-                            >
-                            Télécharger
-                            </button>
-                            <button
-                            (click)="delete(timelapse)"
-                            class="w-full px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                            >
-                            Supprimer
-                            </button>
-                        </div>
-                    </td>
-                    <td class="py-3 px-4 border-b">
-                        <div class="flex flex-col items-center">
-                                <div
-                                    class="w-4 h-4 rounded-full mb-2"
-                                    [ngClass]="{
-                                        'bg-red-500 animate-pulse': timelapse.ready === false,
-                                        'bg-green-500': timelapse.ready === true,
-                                        'bg-gray-400': timelapse.ready === undefined || timelapse.ready === null,
-                                    }"
-                                ></div>
-                                <span class="text-sm text-gray-900">{{ timelapse | statusText }}</span>
-                        </div>
-                    </td>
-                    </tr>
-                }
-            </tbody>
-            </table>
-            } @else {
-            <div class="p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                Aucun timelapse enregistré.
+<h2 class="text-2xl font-bold text-base-900 mb-6">
+    Bibliothèque
+</h2>
+
+@if (error) {
+<div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
+    {{ error }}
+</div>
+} @else {
+<div class="overflow-x-auto">
+    @if (!(timelapsesEmpty$ | async)) {
+    <table class="min-w-full bg-base-100 border rounded-lg">
+    <thead class="bg-base-50">
+        <tr>
+            <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Début</th>
+            <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Capturé pendant</th>
+            <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Actions</th>
+            <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Statut</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (timelapse of (timelapses$ | async) ?? []; track timelapse.id) {
+        <tr class="hover:bg-base-50">
+        <td class="py-3 px-4 border-b text-base-900">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+        <td class="py-3 px-4 border-b text-base-900">{{ timelapse | timelapseSeconds | duration }}</td>
+        <td class="py-3 px-4 border-b">
+            <div class="space-y-2 ">
+                <button
+                    class="btn btn-success btn-sm w-full text-base-100"
+                    (click)="download(timelapse)"
+                    [disabled]="!timelapse.ready"
+                >
+                Télécharger
+                </button>
+                <button
+                    (click)="delete(timelapse)"
+                    class="btn btn-error btn-sm w-full text-base-100"
+                >
+                Supprimer
+                </button>
             </div>
-            }
-        </div>
+        </td>
+        <td class="py-3 px-4 border-b">
+            <div class="flex flex-col items-center">
+                    <div
+                        class="w-4 h-4 rounded-full mb-2"
+                        [ngClass]="{
+                            'bg-error animate-pulse': timelapse.ready === false,
+                            'bg-success': timelapse.ready === true,
+                            'bg-base-500': timelapse.ready === undefined || timelapse.ready === null,
+                        }"
+                    ></div>
+                    <span class="text-sm text-base-900">{{ timelapse | statusText }}</span>
+            </div>
+        </td>
+        </tr>
+        }
+    </tbody>
+    </table>
+    } @else {
+    <div class="p-4 bg-warning bg-opacity-20 border border-warning rounded text-warning">
+        Aucun timelapse enregistré.
+    </div>
     }
+</div>
+}
