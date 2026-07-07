@@ -1,7 +1,7 @@
-# Aquadash 🌱
+# AquaDash 🌱
 
 **Système de contrôle hydroponique open-source**  
-Développé par des étudiants passionnés de l'OBNLn Aquapoly spécialisée en hydroponie.
+Développé par des étudiants passionnés de l'OBNL AquaPoly spécialisée en hydroponie.
 
 ## 📌 Mission
 Promouvoir l'autonomie alimentaire par une solution hydroponique accessible et open-source.
@@ -46,4 +46,4 @@ Nous accueillons les contributions via :
 - Suggestions d'amélioration
 - Développement de nouvelles fonctionnalités
 
-> *"Nourrir demain commence aujourd'hui"* - Équipe Aquapoly
+> *"Nourrir demain commence aujourd'hui"* - Équipe AquaPoly
