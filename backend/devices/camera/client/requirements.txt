@@ -1,10 +1,9 @@
-fastapi
-imageio
-imageio[pyav]
-uvicorn
+fastapi==0.141.1
+uvicorn==0.54.0
+imageio[pyav]==2.38.0
 
-httpx
-
-pytest # only for development, should not be in production
-pytest-asyncio # only for development, should not be in production
-pytest-cov # only for development, should not be in production
+# Development only
+httpx==0.28.1
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0

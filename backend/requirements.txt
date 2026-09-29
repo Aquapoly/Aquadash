@@ -1,17 +1,30 @@
-fastapi[all]
-sqlalchemy
-psycopg2-binary
-passlib
-cryptography
-python-multipart
-python-jose
-pytz
-gunicorn
-imageio
-imageio-ffmpeg
-pytest # only for development, should not be in production
-httpx
-pytest-asyncio # only for development, should not be in production
-pytest-cov # only for development, should not be in production
-alembic # for database migrations, development
-tzdata
+# Web framework / server
+fastapi[all]==0.141.1
+gunicorn==26.2.0
+
+# Database
+sqlalchemy==2.1.1
+# SQLAlchemy 2.1+ resolves a bare "postgresql://" URL to psycopg 3, not psycopg2.
+psycopg[binary]==3.3.6
+alembic==1.20.0
+
+# Security
+passlib==1.7.4  # unmaintained since 2020
+bcrypt==4.3.0  # do not move this to 5.x without replacing passlib first.
+python-jose==3.5.0
+cryptography==50.0.1
+python-multipart==0.0.32
+
+# Media / timelapse
+imageio==2.38.0
+imageio-ffmpeg==0.6.0
+
+# Misc
+pytz==2026.4
+tzdata==2026.4
+
+# Development only
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-cov==7.1.0
+httpx==0.28.1
