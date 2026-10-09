@@ -21,3 +21,6 @@ camera-ctl text eol=lf
 # Exceptions: SELinux-related files
 *.te text eol=lf
 *.fc text eol=lf
+
+# Exceptions: Environment files
+*.env text eol=lf
