@@ -5,6 +5,8 @@ Wants=docker.service
 Requires=docker.service
 
 [Service]
+Type=oneshot
+RemainAfterExit=yes
 WorkingDirectory=/opt/aquadash/backend
 ExecStart=/opt/aquadash/backend/run
 Restart=no
