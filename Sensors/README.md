@@ -4,6 +4,13 @@ enable the execution of all scripts
 chmod +x deploy/*
 ```
 
+## Dependencies
+
+The scripts are run by the system `python3` (as root for cron jobs and the actuator service), so dependencies must be installed system-wide:
+```sh
+sudo apt install python3-dotenv
+```
+
 ## Install
 
 Run this before enabling cron jobs or the actuator service:
