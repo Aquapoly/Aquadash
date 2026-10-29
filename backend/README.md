@@ -118,6 +118,10 @@ The script automatically:
 - Loads configuration from `.env`
 - Starts the appropriate backend containers
 
+### Hot Reload (DEV mode)
+
+If you set `DEV=1` in `.env`, `./run` will include `docker-compose.dev.yml` and the backend containers will run with hot reload.
+
 For the camera, it also:
 
 - Determnines host-dev GID for camera access
@@ -128,6 +132,22 @@ Note that for the `cam` command, you will be required to enter credentials in or
 ### Advanced
 
 If you want finer control or if you want to run multiple instances of Aquadash at once, you will need to [launch and control the camera daemon](devices/camera/README.md), and you will need to provide the relevant environment variables to `docker compose` yourself.
+
+---
+
+## Step 3.5: Enable Autorun (Optional)
+
+If you want to turn your machine into an AquaDash server, you will probably want to enable autorun for the backend. This will make it so that the backend starts automatically when the machine boots. You can enable it with this command:
+
+```bash
+./deployment/autorun enable
+```
+
+To disable it, use:
+
+```bash
+./deployment/autorun disable
+```
 
 ---
 

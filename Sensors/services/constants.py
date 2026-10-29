@@ -1,7 +1,18 @@
 import os
+import dotenv
 
-# SERVER_URL = os.environ.get('TABLE2_URL')
-SERVER_URL = "http://localhost:8000"
+try:
+    ENV_PATH: str = dotenv.find_dotenv(raise_error_if_not_found=True)
+except IOError as e:
+    print(f"Error: {e}")
+    exit(1)
+dotenv.load_dotenv(ENV_PATH)
+
+try:
+    SERVER_URL = os.environ["SERVER_URL"]
+except KeyError:
+    print("Error: SERVER_URL not found in environment variables")
+    exit(1)
 
 # Capteur niveau d'eau ultrason
 DISTANCE_RESERVOIR_VIDE = 236

@@ -1,0 +1,16 @@
+[Unit]
+Description=AquaDash launcher
+After=network.target docker.service
+Wants=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/aquadash/backend
+ExecStart=/opt/aquadash/backend/run
+Restart=no
+User=root
+
+[Install]
+WantedBy=multi-user.target

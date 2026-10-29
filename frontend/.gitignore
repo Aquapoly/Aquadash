@@ -58,6 +58,9 @@ baseline.json
 .husky/_
 aio/content/examples/.DS_Store
 
-
 # Ignore cache created with the Angular CLI.
 .angular/
+
+# Ignore environment and settings files
+environment.ts
+app-settings.ts

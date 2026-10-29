@@ -4,6 +4,24 @@ enable the execution of all scripts
 chmod +x deploy/*
 ```
 
+## Dependencies
+
+The scripts are run by the system `python3` (as root for cron jobs and the actuator service), so dependencies must be installed system-wide:
+```sh
+sudo apt install python3-dotenv
+```
+
+## Install
+
+Run this before enabling cron jobs or the actuator service:
+```sh
+sudo ./deploy/install.sh
+```
+
+## Environment variables
+
+Copy the `.env.example` file to `.env` and fill in the values.
+
 ## Sensor list
 
 In `services/constants.py`, you must add a line to the SENSOR_ID_TO_I2C_ADDR variable, linking the sensor id from the aquadash web app to the i2c address of the sensor (can be found by running `i2cdetect -y 1`). 

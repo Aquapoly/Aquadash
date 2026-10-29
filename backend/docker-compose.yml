@@ -1,5 +1,4 @@
 volumes:
-  # To persist timelapse data
   timelapse_data:
   postgres_data:
 

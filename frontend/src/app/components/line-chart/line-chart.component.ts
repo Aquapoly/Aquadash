@@ -104,6 +104,9 @@ export class LineChartComponent implements OnChanges {
     const displayedUnit = this.displayUnit || this.sensor.sensor_unit;
 
     this.chartOptions = {
+      time: {
+        timezone: undefined,
+      },
       chart: {
         type: 'spline',
         zooming: {
