@@ -10,7 +10,6 @@ SYSTEMD_DIR="/etc/systemd/system"
 GROUP_NAME="host-dev"
 USER_NAME="camera"
 
-POLICY_NAME="aquadash_camera"
 SELINUX_DIR="$HOST_DIR/selinux"
 
 echo "==> Installing Aquadash camera service"
