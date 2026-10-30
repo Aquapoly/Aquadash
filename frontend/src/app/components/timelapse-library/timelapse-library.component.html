@@ -1,21 +1,134 @@
-<div class="space-y-4">
-    <app-timelapse-tabs />
+<div class="w-full min-w-[min(100%,320px)] max-w-[1000px]">
+    <div class="flex-col space-y-5">
+        <app-timelapse-tabs />
+
+        <div class="flex items-center justify-between items-center mb-2">
+            <h1 class="text-2xl font-bold">
+              Bibliothèque
+            </h1>
+        </div>
+        
+        <app-timelapse-record-panel/>
+        
+        <div>
+      @if (error) {
+        <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
+          {{ error }}
+        </div>
+      } @else if (timelapsesEmpty$ | async) {
+        <div class="p-4 bg-warning bg-opacity-20 border border-warning rounded text-warning">
+          Aucun timelapse enregistré.
+        </div>
+      } @else {
     
-    <section class="mx-auto w-full max-w-xl">
-        <div class="bg-base-100 rounded-xl shadow-md p-6 border">
-            @if (error) {
-            <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
-                {{ error }}
-            </div>
-            } @else {
-            <div class="overflow-x-auto">
-                @if (!(timelapsesEmpty$ | async)) {
+        <!-- View toggle -->
+        <div class="mb-4 flex justify-end">
+          <div class="join" role="group" aria-label="Mode d'affichage">
+            <button
+              type="button"
+              class="btn join-item h-11 min-h-0 w-11 border-base-300 px-0"
+              [class.btn-active]="viewMode === 'gallery'"
+              [attr.aria-pressed]="viewMode === 'gallery'"
+              aria-label="Vue galerie"
+              title="Vue galerie"
+              (click)="viewMode = 'gallery'"
+            >
+              <svg class="h-5 w-5" aria-hidden="true">
+                <use href="/assets/svg/gallery.svg#icon" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="btn join-item h-11 min-h-0 w-11 border-base-300 px-0"
+              [class.btn-active]="viewMode === 'list'"
+              [attr.aria-pressed]="viewMode === 'list'"
+              aria-label="Vue liste"
+              title="Vue liste"
+              (click)="viewMode = 'list'"
+            >
+              <svg class="h-5 w-5" aria-hidden="true">
+                <use href="/assets/svg/list.svg#icon" />
+              </svg>
+            </button>
+          </div>
+        </div>
+    
+        <!-- Shared actions -->
+        <ng-template #actions let-timelapse>
+          <div class="flex gap-1">
+            <button
+              type="button"
+              class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success"
+              aria-label="Télécharger"
+              title="Télécharger"
+              (click)="download(timelapse)"
+            >
+              <svg class="h-[22px] w-[22px]" aria-hidden="true">
+                <use href="/assets/svg/download.svg#icon" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-base-content/60 hover:bg-error/10 hover:text-error"
+              aria-label="Supprimer"
+              title="Supprimer"
+              (click)="delete(timelapse)"
+            >
+              <svg class="h-[22px] w-[22px]" aria-hidden="true">
+                <use href="/assets/svg/delete.svg#icon" />
+              </svg>
+            </button>
+          </div>
+        </ng-template>
+    
+        @if (viewMode === 'gallery') {
+          <!-- Gallery -->
+          <div class="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-6">
+            @for (timelapse of (timelapses$ | async) ?? []; track timelapse.id) {
+              <article class="overflow-hidden rounded-2xl border border-base-300 bg-base-100">
+                <div class="relative aspect-[4/3] bg-base-200">
+                  @if (timelapse.latest_frame_date) {
+                    <img
+                      [src]="previewUrl(timelapse)"
+                      [alt]="'Aperçu de ' + timelapse.name"
+                      class="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  } @else {
+                    <div class="absolute inset-0 grid place-items-center text-xs text-base-content/50">
+                      Aucun aperçu
+                    </div>
+                  }
+                  <span class="badge badge-m absolute bottom-2 right-2 border-0 bg-black/70 text-white">
+                    {{ timelapse.frames / timelapse.framerate | duration }}
+                  </span>
+                </div>
+    
+                <div class="flex items-center justify-between gap-2 py-3 pl-4 pr-3">
+                  <div class="min-w-0">
+                    <div class="truncate font-semibold">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm' }}</div>
+                    <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-base-content/60">
+                      <span>Capturé pendant {{ timelapse | timelapseSeconds | duration }}</span>
+                      @if (timelapse.file_size_bytes != null) {
+                        <span>{{ timelapse.file_size_bytes | fileSize }}</span>
+                      }
+                    </div>
+                  </div>
+                  <ng-container *ngTemplateOutlet="actions; context: { $implicit: timelapse }" />
+                </div>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
                 <table class="min-w-full bg-base-100 border rounded-lg">
                 <thead class="bg-base-50">
                     <tr>
-                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Statut</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Aperçu</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Début</th>
-                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Capturé pendant</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Durée capturée</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Durée vidéo</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Taille</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Actions</th>
                     </tr>
                 </thead>
@@ -23,35 +136,43 @@
                     @for (timelapse of (timelapses$ | async) ?? []; track timelapse.id) {
                     <tr class="hover:bg-base-50">
                     <td class="py-3 px-4 border-b">
-                        <div class="flex flex-col items-center">
-                                <div
-                                    class="w-4 h-4 rounded-full mb-2"
-                                    [ngClass]="{
-                                        'bg-error animate-pulse': timelapse.ready === false,
-                                        'bg-success': timelapse.ready === true,
-                                        'bg-base-500': timelapse.ready === undefined || timelapse.ready === null,
-                                    }"
-                                ></div>
-                                <span class="text-sm text-base-900">{{ timelapse | statusText }}</span>
+                        @if (timelapse.latest_frame_date) {
+                        <img
+                            [src]="previewUrl(timelapse)"
+                            [alt]="'Aperçu de ' + timelapse.name"
+                            class="h-16 w-24 rounded-md bg-base-200 object-cover"
+                            loading="lazy"
+                        />
+                        } @else {
+                        <div class="flex h-16 w-24 items-center justify-center rounded-md bg-base-200 text-xs text-base-content/50">
+                            Aucun aperçu
                         </div>
+                        }
                     </td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse | timelapseSeconds | duration }}</td>
+                    <td class="py-3 px-4 border-b text-base-900">{{ timelapse.frames / timelapse.framerate | duration }}</td>
+                    <td class="py-3 px-4 border-b text-base-900">
+                        @if (timelapse.file_size_bytes != null) {
+                          {{ timelapse.file_size_bytes | fileSize }}
+                        } @else {
+                          —
+                        }
+                    </td>
                     <td class="py-3 px-4 border-b">
                         <div class="flex gap-1">
                             <button
                             type="button"
-                            class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success disabled:text-base-content/30"
+                            class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success"
                             aria-label="Télécharger"
                             title="Télécharger"
                             (click)="download(timelapse)"
-                            [disabled]="!timelapse.ready"
                             >
                             <svg class="h-[22px] w-[22px]" aria-hidden="true">
                                 <use href="/assets/svg/download.svg#icon" />
                             </svg>
                             </button>
-
+        
                             <button
                             type="button"
                             class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-base-content/60 hover:bg-error/10 hover:text-error"
@@ -69,13 +190,8 @@
                     }
                 </tbody>
                 </table>
-                } @else {
-                <div class="p-4 bg-warning bg-opacity-20 border border-warning rounded text-warning">
-                    Aucun timelapse enregistré.
-                </div>
-                }
-            </div>
-            }
-        </div>
-    </section>
+          </div>
+        }
+      }
+    </div>
 </div>

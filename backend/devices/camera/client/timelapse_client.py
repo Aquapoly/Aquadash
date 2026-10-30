@@ -96,6 +96,13 @@ class TimelapseClient:
                 raise FileNotFoundError("No frame available")
             return latest_frame_path
 
+    def get_preview(self, timelapse_id: str) -> Path:
+        root = TIMELAPSES_DIR.resolve()
+        preview_path = self._path(timelapse_id, self.LATEST_FRAME_NAME).resolve()
+        if not preview_path.is_relative_to(root) or not preview_path.is_file():
+            raise FileNotFoundError(f"No preview available for timelapse {timelapse_id}")
+        return preview_path
+
     def list(self) -> list[TimelapseMetadata]:
         if not TIMELAPSES_DIR.exists():
             return []
@@ -107,7 +114,10 @@ class TimelapseClient:
             metadata_path: Path = directory / self.METADATA_NAME
             if not metadata_path.exists():
                 continue
-            timelapses.append(TimelapseMetadata.model_validate_json(metadata_path.read_text()))
+            metadata = TimelapseMetadata.model_validate_json(metadata_path.read_text())
+            video_path = directory / self.VIDEO_NAME
+            file_size_bytes = video_path.stat().st_size if video_path.is_file() else None
+            timelapses.append(metadata.model_copy(update={"file_size_bytes": file_size_bytes}))
 
         timelapses.sort(key=lambda x: x.start_date, reverse=True)
         return timelapses
@@ -277,6 +287,7 @@ class TimelapseClient:
                     print(f"[Timelapse] Error closing video writer: {e}")
 
             metadata.ready = True
+            metadata.file_size_bytes = video_path.stat().st_size
             dump_metadata()
         finally:
             if metadata is not None:
