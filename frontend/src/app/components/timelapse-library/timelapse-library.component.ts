@@ -10,6 +10,7 @@ import { DurationPipe } from '@app/classes/duration';
 import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseMetadataDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseMetadataDto } from '@app/interfaces/timelapse.mapper';
+import { TimelapseRecordPanelComponent } from '../timelapse-record-panel/timelapse-record-panel.component';
 
 @Pipe({
   name: 'statusText',
@@ -43,14 +44,16 @@ export class TimelapseSecondsPipe implements PipeTransform {
 @Component({
   selector: 'app-timelapse-library',
   standalone: true,
-  imports: [CommonModule, StatusTextPipe, TimelapseSecondsPipe, DurationPipe],
+  imports: [CommonModule, StatusTextPipe, TimelapseSecondsPipe, DurationPipe, TimelapseRecordPanelComponent],
   templateUrl: './timelapse-library.component.html',
   styleUrl: './timelapse-library.component.css'
 })
 export class TimelapseLibraryComponent implements OnInit{
+  readonly SERVER_URL = SERVER_URL;
   readonly timelapses$: Observable<TimelapseMetadata[]>;
   readonly timelapsesEmpty$: Observable<boolean>;
   error: string | null = null;
+  viewMode: 'gallery' | 'list' = 'gallery';
 
   constructor(private http: HttpClient, private store: TimelapseStoreService) {
     this.timelapses$ = this.store.timelapses$;
@@ -66,6 +69,11 @@ export class TimelapseLibraryComponent implements OnInit{
         this.error = `Échec de l'obtention de la liste des timelapses: ${err.error?.detail || err.message}`;
       }
     });
+  }
+
+  previewUrl(timelapse: TimelapseMetadata): string {
+    const updatedAt = timelapse.latest_frame_date?.getTime() ?? 0;
+    return `${SERVER_URL}/timelapse/${timelapse.id}/preview?t=${updatedAt}`;
   }
 
   download(timelapse: TimelapseMetadata) {

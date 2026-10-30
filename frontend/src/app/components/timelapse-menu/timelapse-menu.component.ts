@@ -1,15 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { DropdownComponent, DropdownOption } from '@app/components/dropdown/dropdown.component';
 import { DurationPipe } from '@app/classes/duration';
 import { TimelapseConfig, TimelapseStatus } from '@app/interfaces/timelapse';
-import { TimelapseStoreService } from '@app/services/timelapse-store.service';
-import { TimelapseStatusDto } from '@app/interfaces/timelapse.dto';
-import { mapTimelapseStatusDto } from '@app/interfaces/timelapse.mapper';
-import { TimelapseWebSocketService } from '@app/services/timelapse-websocket.service';
-import { SERVER_URL } from '@app/environment';
+import { TimelapseRecordPanelComponent } from '@app/components/timelapse-record-panel/timelapse-record-panel.component';
+import { TimelapseSessionService } from '@app/services/timelapse-session.service';
 
 interface TimeUnit {
   label: string;
@@ -24,12 +20,12 @@ interface TimePreset {
 
 @Component({
   selector: 'app-timelapse-menu',
-  imports: [CommonModule, DropdownComponent, DurationPipe],
+  imports: [CommonModule, DropdownComponent, DurationPipe, TimelapseRecordPanelComponent],
   templateUrl: './timelapse-menu.component.html',
   styleUrl: './timelapse-menu.component.css'
 })
 export class TimelapseMenuComponent implements OnInit, OnDestroy {
-  private wsSub: Subscription | null = null;
+  private statusSub: Subscription | null = null;
 
   readonly timeUnits: TimeUnit[] = [
     { label: 's', value: 1 },
@@ -60,15 +56,8 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
   durationUnit = this.timeUnits[0];
   framerate: DropdownOption = this.framerateOptions[2];
 
-  private status_: TimelapseStatus | null = null;
-  error: string | null = null;
-
   get status(): TimelapseStatus | null {
-    return this.status_;
-  }
-
-  private set status(value: TimelapseStatus | null) {
-    this.status_ = value;
+    return this.session.statusSnapshot;
   }
 
   get isRecording(): boolean {
@@ -112,28 +101,16 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     return Math.round((this.expectedFrames * bytesPerFrame) / (1024 * 1024));
   }
 
-  get thumbnailUrl(): string | null {
-    const latestFrameDate = this.status?.metadata?.latest_frame_date;
-    return latestFrameDate
-      ? `${SERVER_URL}/timelapse/latest-frame?t=${latestFrameDate.getTime()}`
-      : null;
-  }
-
-  constructor(
-    private http: HttpClient,
-    private store: TimelapseStoreService,
-    private wsService: TimelapseWebSocketService,
-  ) {}
+  constructor(readonly session: TimelapseSessionService) {}
 
   ngOnInit(): void {
-    this.getStatus();
-    this.wsSub = this.wsService.status$.subscribe((dto: TimelapseStatusDto) => {
-      this.updateStatus(dto);
+    this.statusSub = this.session.status$.subscribe(status => {
+      if (status?.isRecording) this.restoreSettingsFromStatus(status);
     });
   }
 
   ngOnDestroy(): void {
-    this.wsSub?.unsubscribe();
+    this.statusSub?.unsubscribe();
   }
 
   setDurationValue(event: Event): void {
@@ -208,21 +185,7 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     }
   }
 
-  private getStatus(): void {
-    this.http.get<TimelapseStatusDto>(`${SERVER_URL}/timelapse/status`).subscribe({
-      next: (response: TimelapseStatusDto) => {
-        this.updateStatus(response);
-        if (this.status?.isRecording) this.restoreSettingsFromStatus(this.status);
-      },
-      error: (err) => {
-        this.error =
-          `Échec de l'obtention du statut du timelapse: ${err.error?.detail || err.message}`;
-      },
-    });
-  }
-
   start(): void {
-    this.error = null;
     if (!this.hasValidSettings) return;
 
     const payload: TimelapseConfig = {
@@ -232,33 +195,6 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
       name: undefined,
     };
 
-    this.http.post<TimelapseStatusDto>(`${SERVER_URL}/timelapse/start`, payload).subscribe({
-      next: (status: TimelapseStatusDto) => {
-        this.updateStatus(status);
-        if (this.status?.isRecording) this.restoreSettingsFromStatus(this.status);
-      },
-      error: (err) => {
-        this.error = `Échec du démarrage du timelapse: ${err.error?.detail || err.message}`;
-      }
-    });
-  }
-
-  stop(): void {
-    this.error = null;
-    this.http.post<TimelapseStatusDto>(`${SERVER_URL}/timelapse/stop`, {}).subscribe({
-      next: (status: TimelapseStatusDto) => {
-        if (this.status?.metadata) this.store.upsert({ ...this.status.metadata, ready: true });
-        this.updateStatus(status);
-      },
-      error: (err) => {
-        this.error = `Échec de l'arrêt du timelapse: ${err.error?.detail || err.message}`;
-      }
-    });
-  }
-
-  private updateStatus(status: TimelapseStatusDto): void {
-    this.status = mapTimelapseStatusDto(status);
-    const metadata = this.status?.metadata;
-    if (metadata) this.store.upsert(metadata);
+    this.session.start(payload);
   }
 }

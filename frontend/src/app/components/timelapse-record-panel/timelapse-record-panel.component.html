@@ -1,0 +1,76 @@
+@if (status$ | async; as status) {
+  @if (status.isRecording) {
+    <div class="flex flex-wrap gap-5 rounded-xl border bg-base-100 p-6 shadow-md">
+
+      <!-- Thumbnail: height follows the progress column -->
+      <div class="relative aspect-[4/3] min-w-[200px] flex-1 basis-[220px] overflow-hidden rounded-xl bg-base-300">
+        @if (thumbnailUrl(status); as thumbnail) {
+          <img [src]="thumbnail" alt="Dernière image capturée" class="absolute inset-0 h-full w-full object-cover" />
+        }
+        <span class="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-error px-2.5 py-1 text-xs font-semibold text-error-content">
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-error-content"></span>
+          Enregistrement
+        </span>
+      </div>
+
+      <!-- Progress -->
+      <div class="flex min-w-0 flex-[1.3] basis-[260px] flex-col justify-between gap-3">
+        <div class="flex items-baseline justify-between gap-2">
+          <span class="text-2xl font-bold">{{ progress(status) }} %</span>
+          <span class="text-sm text-base-content/60">
+            Image {{ status.metadata?.frames ?? '?' }} sur {{ expectedFrames(status) }}
+          </span>
+        </div>
+
+        <progress
+          class="progress progress-success h-2.5 w-full"
+          [value]="progress(status)"
+          max="100"
+          aria-label="Progression de l'enregistrement"
+        ></progress>
+
+        <div class="flex justify-between gap-2 text-sm text-base-content/60">
+          <span>Il reste {{ remainingSeconds(status) | duration }}</span>
+          <span>Fin prévue à {{ status.metadata?.end_date | date:'HH:mm' }}</span>
+        </div>
+
+        <div class="border-t border-base-300 pt-3 text-[13px] text-base-content/60">
+          1 photo toutes les {{ (status.config?.frequency ?? 0) | duration }}
+          · durée totale {{ (status.config?.duration ?? 0) | duration }}
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="btn btn-sm btn-outline btn-error gap-1.5 rounded-lg bg-base-100 font-semibold"
+            (click)="stop()"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+            Arrêter
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-ghost gap-1.5 rounded-lg text-base-content/60 hover:bg-error/10 hover:text-error"
+            aria-label="Supprimer"
+            title="Supprimer"
+            [disabled]="!status.metadata"
+            (click)="delete(status)"
+          >
+            <svg class="h-4 w-4" aria-hidden="true">
+              <use href="/assets/svg/delete.svg#icon" />
+            </svg>
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}
+
+@if (error$ | async; as error) {
+  <div class="mt-4 rounded border border-error bg-error/20 p-4 text-error">
+    {{ error }}
+  </div>
+}

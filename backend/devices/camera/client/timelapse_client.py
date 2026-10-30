@@ -100,6 +100,13 @@ class TimelapseClient:
                 raise FileNotFoundError("No frame available")
             return latest_frame_path
 
+    def get_preview(self, timelapse_id: str) -> Path:
+        root = TIMELAPSES_DIR.resolve()
+        preview_path = self._path(timelapse_id, self.LATEST_FRAME_NAME).resolve()
+        if not preview_path.is_relative_to(root) or not preview_path.is_file():
+            raise FileNotFoundError(f"No preview available for timelapse {timelapse_id}")
+        return preview_path
+
     def list(self) -> list[TimelapseMetadata]:
         if not TIMELAPSES_DIR.exists():
             return []

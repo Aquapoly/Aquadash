@@ -9,6 +9,7 @@ export interface TimelapseMetadataDto {
   latest_frame_date: string | null;
   end_date: string;
   ready: boolean | null;
+  preview_url?: string | null;
 }
 
 export interface TimelapseStatusDto {

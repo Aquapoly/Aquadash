@@ -109,6 +109,15 @@ async def get_latest_timelapse_frame() -> bytes:
     return response.content
 
 
+async def get_timelapse_preview(timelapse_id: str) -> bytes:
+    response = await _get(f"{TIMELAPSE}/{timelapse_id}/preview")
+    if response.status_code == status.HTTP_404_NOT_FOUND:
+        _not_found(f"No preview available for timelapse {timelapse_id}.")
+    if not response.is_success:
+        _unavailable()
+    return response.content
+
+
 async def list_timelapses() -> list[TimelapseMetadata]:
     response = await _get(TIMELAPSE)
     if not response.is_success:

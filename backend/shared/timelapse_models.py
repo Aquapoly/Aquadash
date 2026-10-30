@@ -16,6 +16,7 @@ class TimelapseMetadata(BaseModel):
     latest_frame_date: datetime | None
     end_date: datetime
     ready: bool
+    preview_url: str | None = None
 
 class TimelapseStatus(BaseModel):
     isRecording: bool

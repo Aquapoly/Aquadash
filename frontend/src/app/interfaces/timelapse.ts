@@ -15,6 +15,7 @@ export interface TimelapseMetadata {
     latest_frame_date: Date | null;
     end_date: Date;
     ready: boolean | null;
+    preview_url?: string | null;
 }
 
 export interface TimelapseStatus {

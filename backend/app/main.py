@@ -391,7 +391,22 @@ async def get_latest_frame() -> Response:
 
 @app.get("/timelapse", response_model=list[TimelapseMetadata])
 async def list_timelapses_endpoint() -> list[TimelapseMetadata]:
-    return await camera_service.list_timelapses()
+    timelapses = await camera_service.list_timelapses()
+    return [
+        timelapse.model_copy(
+            update={"preview_url": f"/timelapse/{timelapse.id}/preview"}
+        )
+        for timelapse in timelapses
+    ]
+
+@app.get(
+    "/timelapse/{timelapse_id}/preview",
+    responses={httpx.codes.OK: {"mediaType": "image/jpeg"}},
+    response_class=Response,
+)
+async def get_timelapse_preview(timelapse_id: str) -> Response:
+    image_bytes = await camera_service.get_timelapse_preview(timelapse_id)
+    return Response(content=image_bytes, media_type="image/jpeg")
 
 @app.get(
     "/timelapse/{timelapse_id}/download",

@@ -15,90 +15,90 @@
     </a>
   </div>
 
-  <div class="space-y-5 bg-base-100 rounded-xl shadow-md p-6 border">
-    @if (!isRecording) {
-      <div class="space-x-12 flex">
-        <div>
-          <label for="timelapse-frequency" class="block text-sm font-medium text-base-700 mb-2">
-            Une image toutes les
-          </label>
-          <div class="flex w-fit gap-2">
-            <input
-              id="timelapse-frequency"
-              class="input input-bordered w-full"
-              type="number"
-              min="1"
-              step="1"
-              [value]="frequencyValue"
-              (input)="setFrequencyValue($event)"
-            />
-            <select
-              class="select select-bordered"
-              aria-label="Unité de fréquence"
-              [value]="frequencyUnit.value"
-              (change)="setFrequencyUnit($event)"
-            >
-              @for (unit of timeUnits; track unit.value) {
-                <option [value]="unit.value">{{ unit.label }}</option>
+  @if (!isRecording) {
+      <div class="space-y-5 bg-base-100 rounded-xl shadow-md p-6 border">
+        <div class="space-x-12 flex">
+          <div>
+            <label for="timelapse-frequency" class="block text-sm font-medium text-base-700 mb-2">
+              Une image toutes les
+            </label>
+            <div class="flex w-fit gap-2">
+              <input
+                id="timelapse-frequency"
+                class="input input-bordered w-full"
+                type="number"
+                min="1"
+                step="1"
+                [value]="frequencyValue"
+                (input)="setFrequencyValue($event)"
+              />
+              <select
+                class="select select-bordered"
+                aria-label="Unité de fréquence"
+                [value]="frequencyUnit.value"
+                (change)="setFrequencyUnit($event)"
+              >
+                @for (unit of timeUnits; track unit.value) {
+                  <option [value]="unit.value">{{ unit.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="mt-2 flex flex-wrap gap-2">
+              @for (preset of frequencyPresets; track preset.label) {
+                <button
+                  type="button"
+                  class="btn h-10 min-h-0 rounded-full border px-3.5 text-sm"
+                  [class]="isFrequencyPresetSelected(preset)
+                    ? 'border-success bg-success/10 font-semibold text-success hover:bg-success/20'
+                    : 'border-base-300 bg-base-100 font-medium text-base-content hover:bg-base-200'"
+                  [attr.aria-pressed]="isFrequencyPresetSelected(preset)"
+                  (click)="setFrequencyPreset(preset)"
+                >{{ preset.label }}</button>
               }
-            </select>
+            </div>
           </div>
-          <div class="mt-2 flex flex-wrap gap-2">
-            @for (preset of frequencyPresets; track preset.label) {
-              <button
-                type="button"
-                class="btn h-10 min-h-0 rounded-full border px-3.5 text-sm"
-                [class]="isFrequencyPresetSelected(preset)
-                  ? 'border-success bg-success/10 font-semibold text-success hover:bg-success/20'
-                  : 'border-base-300 bg-base-100 font-medium text-base-content hover:bg-base-200'"
-                [attr.aria-pressed]="isFrequencyPresetSelected(preset)"
-                (click)="setFrequencyPreset(preset)"
-              >{{ preset.label }}</button>
-            }
-          </div>
-        </div>
 
-        <div>
-          <label for="timelapse-duration" class="block text-sm font-medium text-base-700 mb-2">
-            Pendant
-          </label>
-          <div class="flex w-fit gap-2">
-            <input
-              id="timelapse-duration"
-              class="input input-bordered w-full"
-              type="number"
-              min="1"
-              step="1"
-              [value]="durationValue"
-              (input)="setDurationValue($event)"
-            />
-            <select
-              class="select select-bordered"
-              aria-label="Unité de durée"
-              (change)="setDurationUnit($event)"
-            >
-              @for (unit of timeUnits; track unit.value) {
-                <option [value]="unit.value" [selected]="unit.value === durationUnit.value">
-                  {{ unit.label }}
-                </option>
+          <div>
+            <label for="timelapse-duration" class="block text-sm font-medium text-base-700 mb-2">
+              Pendant
+            </label>
+            <div class="flex w-fit gap-2">
+              <input
+                id="timelapse-duration"
+                class="input input-bordered w-full"
+                type="number"
+                min="1"
+                step="1"
+                [value]="durationValue"
+                (input)="setDurationValue($event)"
+              />
+              <select
+                class="select select-bordered"
+                aria-label="Unité de durée"
+                (change)="setDurationUnit($event)"
+              >
+                @for (unit of timeUnits; track unit.value) {
+                  <option [value]="unit.value" [selected]="unit.value === durationUnit.value">
+                    {{ unit.label }}
+                  </option>
+                }
+              </select>
+            </div>
+            <div class="mt-2 flex flex-wrap gap-2">
+              @for (preset of durationPresets; track preset.label) {
+                <button
+                  type="button"
+                  class="btn h-10 min-h-0 rounded-full border px-3.5 text-sm"
+                  [class]="isDurationPresetSelected(preset)
+                    ? 'border-success bg-success/10 font-semibold text-success hover:bg-success/20'
+                    : 'border-base-300 bg-base-100 font-medium text-base-content hover:bg-base-200'"
+                  [attr.aria-pressed]="isDurationPresetSelected(preset)"
+                  (click)="setDurationPreset(preset)"
+                >{{ preset.label }}</button>
               }
-            </select>
-          </div>
-          <div class="mt-2 flex flex-wrap gap-2">
-            @for (preset of durationPresets; track preset.label) {
-              <button
-                type="button"
-                class="btn h-10 min-h-0 rounded-full border px-3.5 text-sm"
-                [class]="isDurationPresetSelected(preset)
-                  ? 'border-success bg-success/10 font-semibold text-success hover:bg-success/20'
-                  : 'border-base-300 bg-base-100 font-medium text-base-content hover:bg-base-200'"
-                [attr.aria-pressed]="isDurationPresetSelected(preset)"
-                (click)="setDurationPreset(preset)"
-              >{{ preset.label }}</button>
-            }
+            </div>
           </div>
         </div>
-      </div>
 
       @if (isFrequencyTooHigh) {
         <div class="p-3 bg-error bg-opacity-20 border border-error text-error rounded">
@@ -141,29 +141,13 @@
         </svg>
         Commencer
       </button>
-    } @else {
-      <div class="p-4 flex flex-col space-y-2 bg-info bg-opacity-20 border border-info text-info rounded">
-        <span><strong>Fréquence de capture:</strong> {{ frequencySeconds | duration }}</span>
-        <span><strong>Durée totale:</strong> {{ durationSeconds | duration }}</span>
-        <span><strong>Images:</strong> {{ status?.metadata?.frames ?? '?' }} sur {{ expectedFrames }}</span>
-      </div>
-
-      @if (thumbnailUrl) {
-        <img [src]="thumbnailUrl" width="100%" class="border mt-2 rounded" />
+      @if (session.error$ | async; as error) {
+        <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
+          {{ error }}
+        </div>
       }
-      <div class="pt-3 flex justify-center">
-        <p><strong>Date de fin attendue:</strong> {{ (status?.metadata?.end_date | date:'dd/MM/yyyy HH:mm:ss') ?? '?' }}</p>
-      </div>
-
-      <div class="flex justify-center">
-        <button (click)="stop()" class="btn btn-error text-base-100">Arrêter</button>
-      </div>
-    }
-
-    @if (error) {
-      <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
-        {{ error }}
-      </div>
-    }
-  </div>
+    </div>
+  } @else {
+    <app-timelapse-record-panel/>
+  }
 </section>
