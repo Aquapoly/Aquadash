@@ -1,88 +1,186 @@
-<h2 class="text-2xl font-bold text-base-900 mb-6">
-  {{ running ? "Timelapse en cours..." : "Nouveau timelapse" }}
-</h2>
+<section class="mx-auto w-full max-w-xl">
+  <div class="flex items-center justify-between items-center mb-2">
+    <h1 class="text-2xl font-bold">
+      {{ isRecording ? "Timelapse en cours..." : "Nouveau timelapse" }}
+    </h1>
 
-<div class="space-y-4">
-  @if (!running) {
-    <div>
-      <label class="block text-sm font-medium text-base-700 mb-2">Fréquence de capture</label>
-      <app-dropdown
-        [options]="frequencyOptions"
-        [selectedValue]="frequency.value"
-        (selectionChange)="onSettingChange('frequency', $event)"
-      />
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-base-700 mb-2">Durée totale</label>
-      <app-dropdown
-        [options]="durationOptions"
-        [selectedValue]="duration.value"
-        (selectionChange)="onSettingChange('duration', $event)"
-      />
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-base-700 mb-2">Résolution</label>
-      <app-dropdown
-        [options]="resolutionOptions"
-        [selectedValue]="resolution.value"
-        (selectionChange)="onSettingChange('resolution', $event)"
-      />
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-base-700 mb-2">Images par seconde pour la vidéo produite</label>
-      <app-dropdown
-        [options]="framerateOptions"
-        [selectedValue]="framerate.value"
-        (selectionChange)="onSettingChange('framerate', $event)"
-      />
-    </div>
+    <a
+      href="/timelapse-library"
+      class="btn btn-outline relative h-11 min-h-0 gap-2 rounded-xl border-base-300 px-4 font-medium"
+    >
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
+        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
+        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
+      </svg>
+      Bibliothèque
+      <!-- @if (isRecording) {
+        <span class="absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full border-2 border-base-100 bg-error"></span>
+      } -->
+    </a>
+  </div>
 
-    @if (isFrequencyTooHigh) {
-      <div class="p-4 bg-error bg-opacity-20 border border-error text-error rounded">
-        <strong>Erreur:</strong> Fréquence de capture doit être inférieure à la durée totale
+  <div class="space-y-5 bg-base-100 rounded-xl shadow-md p-6 border">
+    @if (!isRecording) {
+      <div class="space-x-12 flex">
+        <div>
+          <label for="timelapse-frequency" class="block text-sm font-medium text-base-700 mb-2">
+            Une image toutes les
+          </label>
+          <div class="flex w-fit gap-2">
+            <input
+              id="timelapse-frequency"
+              class="input input-bordered w-full"
+              type="number"
+              min="1"
+              step="1"
+              [value]="frequencyValue"
+              (input)="setFrequencyValue($event)"
+            />
+            <select
+              class="select select-bordered"
+              aria-label="Unité de fréquence"
+              [value]="frequencyUnit.value"
+              (change)="setFrequencyUnit($event)"
+            >
+              @for (unit of timeUnits; track unit.value) {
+                <option [value]="unit.value">{{ unit.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            @for (preset of frequencyPresets; track preset.label) {
+              <button
+                type="button"
+                class="btn h-10 min-h-0 rounded-full border px-3.5 text-sm"
+                [class]="isFrequencyPresetSelected(preset)
+                  ? 'border-success bg-success/10 font-semibold text-success hover:bg-success/20'
+                  : 'border-base-300 bg-base-100 font-medium text-base-content hover:bg-base-200'"
+                [attr.aria-pressed]="isFrequencyPresetSelected(preset)"
+                (click)="setFrequencyPreset(preset)"
+              >{{ preset.label }}</button>
+            }
+          </div>
+        </div>
+
+        <div>
+          <label for="timelapse-duration" class="block text-sm font-medium text-base-700 mb-2">
+            Pendant
+          </label>
+          <div class="flex w-fit gap-2">
+            <input
+              id="timelapse-duration"
+              class="input input-bordered w-full"
+              type="number"
+              min="1"
+              step="1"
+              [value]="durationValue"
+              (input)="setDurationValue($event)"
+            />
+            <select
+              class="select select-bordered"
+              aria-label="Unité de durée"
+              [value]="durationUnit.value"
+              (change)="setDurationUnit($event)"
+            >
+              @for (unit of timeUnits; track unit.value) {
+                <option [value]="unit.value">{{ unit.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            @for (preset of durationPresets; track preset.label) {
+              <button
+                type="button"
+                class="btn h-10 min-h-0 rounded-full border px-3.5 text-sm"
+                [class]="isDurationPresetSelected(preset)
+                  ? 'border-success bg-success/10 font-semibold text-success hover:bg-success/20'
+                  : 'border-base-300 bg-base-100 font-medium text-base-content hover:bg-base-200'"
+                [attr.aria-pressed]="isDurationPresetSelected(preset)"
+                (click)="setDurationPreset(preset)"
+              >{{ preset.label }}</button>
+            }
+          </div>
+        </div>
       </div>
+
+      @if (isFrequencyTooHigh) {
+        <div class="p-3 bg-error bg-opacity-20 border border-error text-error rounded">
+          La fréquence de capture doit être inférieure ou égale à la durée.
+        </div>
+      } @else if (hasValidSettings) {
+        <div class="rounded-xl bg-base-200 px-4 py-3.5 text-sm font-medium text-base-content text-center">
+          {{ expectedFrames }} images · Vidéo de {{ expectedVidDurationSeconds | duration }} · Taille de {{ expectedVidSizeMegabytes }} Mo
+        </div>
+      }
+
+
+      <details class="group">
+        <summary
+          class="flex w-fit cursor-pointer list-none items-center gap-1 text-[15px] font-medium text-base-400 [&::-webkit-details-marker]:hidden"
+        >
+          <svg
+            class="h-[18px] w-[18px] transition-transform group-open:rotate-90"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+          Options avancées
+        </summary>
+
+        <div class="pt-2 pb-1">
+          <label class="block text-sm font-medium text-base-700 my-2">Images par seconde (FPS)</label>
+          <app-dropdown
+            [options]="framerateOptions"
+            [selectedValue]="framerate.value"
+            (selectionChange)="onFramerateChange($event)"
+          />
+        </div>
+      </details>
+
+      <button
+        class="btn btn-success w-full gap-2.5 rounded-[14px] text-base font-semibold text-base-100"
+        (click)="start()"
+        [disabled]="!hasValidSettings"
+      >
+        <svg
+          class="h-[22px] w-[22px]"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="3.5" fill="currentColor" />
+        </svg>
+        Commencer
+      </button>
     } @else {
       <div class="p-4 flex flex-col space-y-2 bg-info bg-opacity-20 border border-info text-info rounded">
-        <span><strong>Images attendues:</strong> {{ expectedFrames }}</span>
-        <span><strong>Durée vidéo estimée:</strong> {{ expectedVidDurationSeconds | duration }}</span>
-        <span><strong>Taille vidéo estimée:</strong> {{ expectedVidSizeBytes | filesize }}</span>
+        <span><strong>Fréquence de capture:</strong> {{ frequencySeconds | duration }}</span>
+        <span><strong>Durée totale:</strong> {{ durationSeconds | duration }}</span>
+        <span><strong>Images:</strong> {{ status?.metadata?.frames ?? '?' }} sur {{ expectedFrames }}</span>
+      </div>
+
+      @if (thumbnailUrl) {
+        <img [src]="thumbnailUrl" width="100%" class="border mt-2 rounded" />
+      }
+      <div class="pt-3 flex justify-center">
+        <p><strong>Date de fin attendue:</strong> {{ (status?.metadata?.end_date | date:'dd/MM/yyyy HH:mm:ss') ?? '?' }}</p>
+      </div>
+
+      <div class="flex justify-center">
+        <button (click)="stop()" class="btn btn-error text-base-100">Arrêter</button>
       </div>
     }
 
-    <div class="flex justify-center">
-      <button class="btn btn-success text-base-100"
-        (click)="start()"
-        [disabled]="isFrequencyTooHigh"
-        [style.cursor]="isFrequencyTooHigh ? 'not-allowed' : 'pointer'"
-      >Commencer</button>
-    </div>
-
-  } @else {
-    <div class="p-4 flex flex-col space-y-2 bg-info bg-opacity-20 border border-info text-info rounded">
-      <span><strong>Fréquence de capture:</strong> {{ frequency.label }}</span>
-      <span><strong>Durée totale:</strong> {{ duration.label }} </span>
-      <span><strong>Résolution:</strong> {{ resolution.label }}</span>
-    </div>
-
-    <div class="flex justify-between items-center">
-      <strong>Image {{ status?.metadata?.frames ?? '?' }} sur {{ expectedFrames }}:</strong>
-      <button (click)="getStatus()" class="btn btn-success text-base-100">Refresh</button>
-    </div>
-    @if (thumbnailUrl) {
-      <img [src]="thumbnailUrl" width="100%" class="border mt-2 rounded" />
+    @if (error) {
+      <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
+        {{ error }}
+      </div>
     }
-    <div class="pt-3 flex justify-center">
-      <p><strong>Date de fin attendue:</strong> {{ (status?.metadata?.end_date | date:'dd/MM/yyyy HH:mm:ss') ?? '?' }}</p>
-    </div>
-
-    <div class="flex justify-center">
-      <button (click)="stop()" class="btn btn-error text-base-100">Arrêter</button>
-    </div>
-  }
-
-  @if (error) {
-    <div class="p-4 bg-error bg-opacity-20 border border-error rounded text-error">
-      {{ error }}
-    </div>
-  }
-</div>
+  </div>
+</section>

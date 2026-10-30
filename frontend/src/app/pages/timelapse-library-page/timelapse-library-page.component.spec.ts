@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TimelapseComponent } from './timelapse.component';
+import { TimelapseLibraryComponent } from './timelapse-library.component';
 
-describe('TimelapseComponent', () => {
+describe('TimelapseLibraryPageComponent', () => {
   let component: TimelapseComponent;
   let fixture: ComponentFixture<TimelapseComponent>;
 
