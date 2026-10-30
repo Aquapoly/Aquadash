@@ -14,11 +14,14 @@ class WebSocketManager:
             self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
-        msg_str = json.dumps(message)
+        msg_str = json.dumps(message, default=str)
+        dead: list[WebSocket] = []
         for connection in self.active_connections:
             try:
                 await connection.send_text(msg_str)
             except Exception:
-                pass
+                dead.append(connection)
+        for connection in dead:
+            self.disconnect(connection)
 
 manager = WebSocketManager()
