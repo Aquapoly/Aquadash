@@ -38,15 +38,15 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     { label: 'jr', value: 86400 },
     { label: 'sem', value: 604800 },
   ];
-  readonly durationPresets: TimePreset[] = [
-    { label: '10 min', value: 10, unitValue: 60 },
-    { label: '1 h', value: 1, unitValue: 3600 },
-    { label: '1 jr', value: 1, unitValue: 86400 },
-  ];
   readonly frequencyPresets: TimePreset[] = [
-    { label: '10 s', value: 10, unitValue: 1 },
+    { label: '5 s', value: 5, unitValue: 1 },
     { label: '30 s', value: 30, unitValue: 1 },
     { label: '1 min', value: 1, unitValue: 60 },
+  ];
+  readonly durationPresets: TimePreset[] = [
+    { label: '10 s', value: 10, unitValue: 1 },
+    { label: '5 min', value: 5, unitValue: 60 },
+    { label: '1 jr', value: 1, unitValue: 86400 },
   ];
   readonly framerateOptions: DropdownOption[] = [
     { label: '10 par seconde', value: 10 },
@@ -54,10 +54,10 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     { label: '30 par seconde', value: 30 },
   ];
 
-  durationValue = 10;
-  durationUnit = this.timeUnits[1];
-  frequencyValue = 10;
+  frequencyValue = 5;
   frequencyUnit = this.timeUnits[0];
+  durationValue = 10;
+  durationUnit = this.timeUnits[0];
   framerate: DropdownOption = this.framerateOptions[2];
 
   private status_: TimelapseStatus | null = null;
