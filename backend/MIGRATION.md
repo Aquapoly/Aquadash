@@ -4,12 +4,16 @@ The system uses SQLAlchemy for the database, therefore we use Alembic for migrat
 
 ## Commands
 
-| Action              | Command                                                                    |
-|---------------------|----------------------------------------------------------------------------|
-| Create migration    | docker compose run --rm app alembic revision --autogenerate -m "[message]" |
-| Apply migration     | docker compose run --rm app alembic upgrade head                           |
-| Downgrade migration | docker compose run --rm app alembic downgrade -1                           |
-| Check status        | docker compose run --rm app alembic current                                |
+| Action              | Command                                                |
+|---------------------|--------------------------------------------------------|
+| Create migration    | ./run alembic revision --autogenerate -m "[message]"   |
+| Apply migration     | ./run alembic upgrade head                             |
+| Downgrade migration | ./run alembic downgrade -1                             |
+| Check status        | ./run alembic current                                  |
+
+Creating a migration requires `DEV=1` in `.env`, so that the container can write to your local `alembic/versions`.
+
+With `DEV=0`, Alembic uses the migrations baked into the image. Add `--build` to include newer ones: `./run alembic --build upgrade head`.
 
 ## Creating a migration file
 
@@ -30,6 +34,10 @@ After modifying the models, you can follow these steps:
         If it is not running, start the container with `docker-compose up` in the `backend` directory.
 
     2. run: `docker exec [container name/id] alembic revision --autogenerate -m "[your changes]"` (detects changes in the schemas to generate the migration file).
+
+- Option 3 (`./run`, with `DEV=1` in `.env`):
+
+    1. run: `./run alembic revision --autogenerate -m "[your changes]"`
 
 ### 2. Verify the migration file
 
@@ -72,11 +80,11 @@ Run this command to execute the migration in a new backend container that delete
 
 1. Upgrading
 
-        docker compose run --rm app alembic upgrade head
+        ./run alembic upgrade head
 
 2. Downgrading
 
-        docker compose run --rm app alembic downgrade -1
+        ./run alembic downgrade -1
 
 ## Common errors
 
@@ -86,6 +94,10 @@ If you are trying to run the provided commands and there is an error saying Alem
 
     cd backend
     docker compose build
+
+### Permission denied when creating a migration
+
+This means the container is using the code baked into the image, which it cannot write to. Set `DEV=1` in `.env` and use `./run alembic`, because a plain `docker compose run` ignores `DEV`.
 
 ### Database is not up to date
 
