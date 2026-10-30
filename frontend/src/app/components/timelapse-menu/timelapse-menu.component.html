@@ -82,11 +82,12 @@
             <select
               class="select select-bordered"
               aria-label="Unité de durée"
-              [value]="durationUnit.value"
               (change)="setDurationUnit($event)"
             >
               @for (unit of timeUnits; track unit.value) {
-                <option [value]="unit.value">{{ unit.label }}</option>
+                <option [value]="unit.value" [selected]="unit.value === durationUnit.value">
+                  {{ unit.label }}
+                </option>
               }
             </select>
           </div>
@@ -117,7 +118,7 @@
       }
 
 
-      <details class="group">
+      <details class="group py-2">
         <summary
           class="flex w-fit cursor-pointer list-none items-center gap-1 text-[15px] font-medium text-base-400 [&::-webkit-details-marker]:hidden"
         >
