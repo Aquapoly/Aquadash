@@ -7,10 +7,8 @@
       href="/timelapse"
       class="btn btn-outline h-11 min-h-0 gap-2 rounded-xl border-base-300 px-4 font-medium"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <circle cx="12" cy="12" r="3.5" fill="currentColor" />
+      <svg class="h-5 w-5" aria-hidden="true">
+        <use href="/assets/svg/record.svg#icon" />
       </svg>
       Timelapse
     </a>
@@ -61,9 +59,8 @@
                     (click)="download(timelapse)"
                     [disabled]="!timelapse.ready"
                     >
-                    <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
+                    <svg class="h-[22px] w-[22px]" aria-hidden="true">
+                        <use href="/assets/svg/download.svg#icon" />
                     </svg>
                     </button>
 
@@ -74,9 +71,8 @@
                     title="Supprimer"
                     (click)="delete(timelapse)"
                     >
-                    <svg class="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
+                    <svg class="h-[22px] w-[22px]" aria-hidden="true">
+                        <use href="/assets/svg/delete.svg#icon" />
                     </svg>
                     </button>
                 </div>
