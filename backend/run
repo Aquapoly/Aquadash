@@ -114,6 +114,9 @@ done
 MODE="${ARGS[0]:-all}"
 
 case "$MODE" in
+    alembic)
+        exec docker compose "${COMPOSE_FILES[@]}" run $BUILD_FLAG --rm app "${ARGS[@]}"
+        ;;
     app)
         $NATIVE && start_app_native || start_app
         ;;
@@ -144,6 +147,7 @@ case "$MODE" in
     *)
         echo "[Error] Unknown mode: $MODE"
         echo "Usage: $0 [app|cam|all] [--build] [--native]"
+        echo "       $0 alembic [--build] <alembic arguments>"
         echo "  (no argument defaults to 'all')"
         exit 1
         ;;

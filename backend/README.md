@@ -107,6 +107,7 @@ You can run a single instance of the Aquadash backend via the `run` script:
 ./run app [--build] [--native] # Spin up the app only
 ./run cam [--build] [--native] # Spin up the camera block
 ./run [--build]     [--native] # Spin up the app & camera block
+./run alembic [--build] <args> # Run an Alembic command (see MIGRATION.md)
 ```
 
 If you pass the `--build` flag, all involved containers will be rebuilt.
@@ -120,7 +121,9 @@ The script automatically:
 
 ### Hot Reload (DEV mode)
 
-If you set `DEV=1` in `.env`, `./run` will include `docker-compose.dev.yml` and the backend containers will run with hot reload.
+If you set `DEV=1` in `.env`, `./run` will include `docker-compose.dev.yml` and the backend containers will run with hot reload. `./run alembic` also uses it, which lets migrations see and write to your local `alembic/versions`.
+
+`DEV` is only read by `./run`. A plain `docker compose` command does not load `docker-compose.dev.yml`.
 
 For the camera, it also:
 
