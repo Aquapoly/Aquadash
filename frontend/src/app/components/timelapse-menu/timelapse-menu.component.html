@@ -8,12 +8,8 @@
       href="/timelapse-library"
       class="btn btn-outline relative h-11 min-h-0 gap-2 rounded-xl border-base-300 px-4 font-medium"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
-        <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
-        <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
-        <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
+      <svg class="h-5 w-5" aria-hidden="true">
+        <use href="/assets/svg/library.svg#icon" />
       </svg>
       Bibliothèque
     </a>
@@ -119,13 +115,8 @@
         <summary
           class="flex w-fit cursor-pointer list-none items-center gap-1 text-[15px] font-medium text-base-400 [&::-webkit-details-marker]:hidden"
         >
-          <svg
-            class="h-[18px] w-[18px] transition-transform group-open:rotate-90"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M9 6l6 6-6 6" />
+          <svg class="h-[18px] w-[18px] transition-transform group-open:rotate-90" aria-hidden="true">
+            <use href="/assets/svg/chevron-right.svg#icon" />
           </svg>
           Options avancées
         </summary>
@@ -145,14 +136,8 @@
         (click)="start()"
         [disabled]="!hasValidSettings"
       >
-        <svg
-          class="h-[22px] w-[22px]"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="9" />
-          <circle cx="12" cy="12" r="3.5" fill="currentColor" />
+        <svg class="h-[22px] w-[22px]" aria-hidden="true">
+          <use href="/assets/svg/record.svg#icon" />
         </svg>
         Commencer
       </button>
