@@ -41,12 +41,8 @@
               title="Vue galerie"
               (click)="viewMode = 'gallery'"
             >
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="3" width="7.5" height="7.5" rx="1.8" />
-                <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8" />
-                <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8" />
-                <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8" />
+              <svg class="h-5 w-5" aria-hidden="true">
+                <use href="/assets/svg/gallery.svg#icon" />
               </svg>
             </button>
             <button
@@ -58,9 +54,8 @@
               title="Vue liste"
               (click)="viewMode = 'list'"
             >
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+              <svg class="h-5 w-5" aria-hidden="true">
+                <use href="/assets/svg/list.svg#icon" />
               </svg>
             </button>
           </div>
