@@ -66,11 +66,10 @@
           <div class="flex gap-1">
             <button
               type="button"
-              class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success disabled:text-base-content/30"
+              class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success"
               aria-label="Télécharger"
               title="Télécharger"
               (click)="download(timelapse)"
-              [disabled]="!timelapse.ready"
             >
               <svg class="h-[22px] w-[22px]" aria-hidden="true">
                 <use href="/assets/svg/download.svg#icon" />
@@ -108,17 +107,6 @@
                       Aucun aperçu
                     </div>
                   }
-                  <span class="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-base-100 px-2.5 py-1 text-[13px] font-semibold">
-                    <span
-                      class="h-2 w-2 rounded-full"
-                      [ngClass]="{
-                        'bg-error animate-pulse': timelapse.ready === false,
-                        'bg-success': timelapse.ready === true,
-                        'bg-base-content/40': timelapse.ready === undefined || timelapse.ready === null
-                      }"
-                    ></span>
-                    {{ timelapse | statusText }}
-                  </span>
                 </div>
     
                 <div class="flex items-center justify-between gap-2 py-3 pl-4 pr-3">
@@ -140,7 +128,6 @@
                 <thead class="bg-base-50">
                     <tr>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Aperçu</th>
-                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Statut</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Début</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Capturé pendant</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Actions</th>
@@ -163,30 +150,16 @@
                         </div>
                         }
                     </td>
-                    <td class="py-3 px-4 border-b">
-                        <div class="flex flex-col items-center">
-                                <div
-                                    class="w-4 h-4 rounded-full mb-2"
-                                    [ngClass]="{
-                                        'bg-error animate-pulse': timelapse.ready === false,
-                                        'bg-success': timelapse.ready === true,
-                                        'bg-base-500': timelapse.ready === undefined || timelapse.ready === null,
-                                    }"
-                                ></div>
-                                <span class="text-sm text-base-900">{{ timelapse | statusText }}</span>
-                        </div>
-                    </td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse | timelapseSeconds | duration }}</td>
                     <td class="py-3 px-4 border-b">
                         <div class="flex gap-1">
                             <button
                             type="button"
-                            class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success disabled:text-base-content/30"
+                            class="btn btn-ghost btn-square h-10 w-10 min-h-0 rounded-[10px] text-success"
                             aria-label="Télécharger"
                             title="Télécharger"
                             (click)="download(timelapse)"
-                            [disabled]="!timelapse.ready"
                             >
                             <svg class="h-[22px] w-[22px]" aria-hidden="true">
                                 <use href="/assets/svg/download.svg#icon" />

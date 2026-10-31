@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Pipe, PipeTransform } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { SERVER_URL } from '@app/environment';
 import { TimelapseMetadata } from '@app/interfaces/timelapse';
@@ -11,17 +11,6 @@ import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseMetadataDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseMetadataDto } from '@app/interfaces/timelapse.mapper';
 import { TimelapseRecordPanelComponent } from '../timelapse-record-panel/timelapse-record-panel.component';
-
-@Pipe({
-  name: 'statusText',
-  standalone: true,
-})
-export class StatusTextPipe implements PipeTransform {
-  transform(timelapse: TimelapseMetadata): string {
-    if (timelapse.ready === undefined || timelapse.ready === null) return 'Inconnu';
-    return timelapse.ready ? 'Terminé' : 'Enregistrement';
-  }
-}
 
 @Pipe({
   name: 'timelapseSeconds',
@@ -44,7 +33,7 @@ export class TimelapseSecondsPipe implements PipeTransform {
 @Component({
   selector: 'app-timelapse-library',
   standalone: true,
-  imports: [CommonModule, StatusTextPipe, TimelapseSecondsPipe, DurationPipe, TimelapseRecordPanelComponent],
+  imports: [CommonModule, TimelapseSecondsPipe, DurationPipe, TimelapseRecordPanelComponent],
   templateUrl: './timelapse-library.component.html',
   styleUrl: './timelapse-library.component.css'
 })
@@ -56,8 +45,12 @@ export class TimelapseLibraryComponent implements OnInit{
   viewMode: 'gallery' | 'list' = 'gallery';
 
   constructor(private http: HttpClient, private store: TimelapseStoreService) {
-    this.timelapses$ = this.store.timelapses$;
-    this.timelapsesEmpty$ = this.store.empty$;
+    this.timelapses$ = this.store.timelapses$.pipe(
+      map(timelapses => timelapses.filter(timelapse => timelapse.ready === true)),
+    );
+    this.timelapsesEmpty$ = this.timelapses$.pipe(
+      map(timelapses => timelapses.length === 0),
+    );
   }
 
   ngOnInit(): void {
