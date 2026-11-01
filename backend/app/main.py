@@ -1,9 +1,8 @@
 import httpx
 from fastapi import FastAPI, Depends, HTTPException, status, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import FileResponse, StreamingResponse
-# from fastapi_utils.openapi import simplify_operation_ids
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -11,19 +10,15 @@ from datetime import datetime, timedelta
 import io
 from uuid import UUID
 
-from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
-from .ws_manager import manager as ws_manager
-# from jose import JWTError, jwt
-
-
 from . import crud, models, schemas
 from .database import engine, get_db
-from .classes.sensor_type import SensorType
 from .services.actuator import get_actuator_activation
 from .services import cam_client as camera_service
 from .services.export_data import export_all_measures_to_csv
 from .security import authentification
 from .security import permissions
+from .ws_manager import manager as ws_manager
+from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -411,16 +406,15 @@ async def download_timelapse(timelapse_id: UUID) -> Response:
 async def delete_timelapse(timelapse_id: UUID) -> None:
     await camera_service.delete_timelapse(str(timelapse_id))
 
-# --- WebSocket (timelapse live updates) ---
+# --- Timelapse WebSocket ---
 
 @app.websocket("/ws/timelapse")
 async def timelapse_ws(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
-        # Send current status immediately on connect
         current = await camera_service.get_timelapse_status()
         await websocket.send_text(current.model_dump_json())
-        # Keep alive: just consume any incoming messages
+        
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
