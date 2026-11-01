@@ -106,7 +106,7 @@
         </div>
       } @else if (hasValidSettings) {
         <div class="rounded-xl bg-base-200 px-4 py-3.5 text-sm font-medium text-base-content text-center">
-          {{ expectedFrames }} images · Vidéo de {{ expectedVidDurationSeconds | duration }} · Taille de {{ expectedVidSizeMegabytes }} Mo
+          {{ expectedFrames }} images · Vidéo de {{ expectedVidDurationSeconds | duration }} · Taille estimée {{ expectedVidSizeBytes | filesize }}
         </div>
       }
 

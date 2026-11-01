@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { DropdownComponent, DropdownOption } from '@app/components/dropdown/dropdown.component';
 import { DurationPipe } from '@app/classes/duration';
+import { FileSizePipe } from '@app/classes/filesize';
 import { TimelapseConfig, TimelapseStatus } from '@app/interfaces/timelapse';
 import { TimelapseRecordPanelComponent } from '@app/components/timelapse-record-panel/timelapse-record-panel.component';
 import { TimelapseSessionService } from '@app/services/timelapse-session.service';
@@ -20,7 +21,7 @@ interface TimePreset {
 
 @Component({
   selector: 'app-timelapse-menu',
-  imports: [CommonModule, DropdownComponent, DurationPipe, TimelapseRecordPanelComponent],
+  imports: [CommonModule, DropdownComponent, DurationPipe, FileSizePipe, TimelapseRecordPanelComponent],
   templateUrl: './timelapse-menu.component.html',
   styleUrl: './timelapse-menu.component.css'
 })
@@ -96,9 +97,9 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     return this.expectedFrames / Number(this.framerate.value);
   }
 
-  get expectedVidSizeMegabytes(): number {
+  get expectedVidSizeBytes(): number {
     const bytesPerFrame = 20 * 1024;
-    return Math.round((this.expectedFrames * bytesPerFrame) / (1024 * 1024));
+    return this.expectedFrames * bytesPerFrame;
   }
 
   constructor(readonly session: TimelapseSessionService) {}

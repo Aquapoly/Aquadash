@@ -7,6 +7,7 @@ import { map, Observable } from 'rxjs';
 import { SERVER_URL } from '@app/environment';
 import { TimelapseMetadata } from '@app/interfaces/timelapse';
 import { DurationPipe } from '@app/classes/duration';
+import { FileSizePipe } from '@app/classes/filesize';
 import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseMetadataDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseMetadataDto } from '@app/interfaces/timelapse.mapper';
@@ -33,7 +34,7 @@ export class TimelapseSecondsPipe implements PipeTransform {
 @Component({
   selector: 'app-timelapse-library',
   standalone: true,
-  imports: [CommonModule, TimelapseSecondsPipe, DurationPipe, TimelapseRecordPanelComponent],
+  imports: [CommonModule, TimelapseSecondsPipe, DurationPipe, FileSizePipe, TimelapseRecordPanelComponent],
   templateUrl: './timelapse-library.component.html',
   styleUrl: './timelapse-library.component.css'
 })

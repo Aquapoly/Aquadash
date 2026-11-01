@@ -118,7 +118,10 @@ class TimelapseClient:
             metadata_path: Path = directory / self.METADATA_NAME
             if not metadata_path.exists():
                 continue
-            timelapses.append(TimelapseMetadata.model_validate_json(metadata_path.read_text()))
+            metadata = TimelapseMetadata.model_validate_json(metadata_path.read_text())
+            video_path = directory / self.VIDEO_NAME
+            file_size_bytes = video_path.stat().st_size if video_path.is_file() else None
+            timelapses.append(metadata.model_copy(update={"file_size_bytes": file_size_bytes}))
 
         timelapses.sort(key=lambda x: x.start_date, reverse=True)
         return timelapses

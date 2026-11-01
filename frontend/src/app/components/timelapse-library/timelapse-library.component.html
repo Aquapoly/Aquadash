@@ -107,13 +107,19 @@
                       Aucun aperçu
                     </div>
                   }
+                  <span class="badge badge-m absolute bottom-2 right-2 border-0 bg-black/70 text-white">
+                    {{ timelapse.frames / timelapse.framerate | duration }}
+                  </span>
                 </div>
     
                 <div class="flex items-center justify-between gap-2 py-3 pl-4 pr-3">
                   <div class="min-w-0">
                     <div class="truncate font-semibold">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm' }}</div>
-                    <div class="text-sm text-base-content/60">
-                      Capturé pendant {{ timelapse | timelapseSeconds | duration }}
+                    <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-base-content/60">
+                      <span>Capturé pendant {{ timelapse | timelapseSeconds | duration }}</span>
+                      @if (timelapse.file_size_bytes != null) {
+                        <span>{{ timelapse.file_size_bytes | filesize }}</span>
+                      }
                     </div>
                   </div>
                   <ng-container *ngTemplateOutlet="actions; context: { $implicit: timelapse }" />
@@ -129,7 +135,9 @@
                     <tr>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Aperçu</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Début</th>
-                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Capturé pendant</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Durée capturée</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Durée vidéo</th>
+                        <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Taille</th>
                         <th class="py-3 px-4 border-b text-left font-semibold text-base-700">Actions</th>
                     </tr>
                 </thead>
@@ -152,6 +160,14 @@
                     </td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse | timelapseSeconds | duration }}</td>
+                    <td class="py-3 px-4 border-b text-base-900">{{ timelapse.frames / timelapse.framerate | duration }}</td>
+                    <td class="py-3 px-4 border-b text-base-900">
+                        @if (timelapse.file_size_bytes != null) {
+                          {{ timelapse.file_size_bytes | filesize }}
+                        } @else {
+                          —
+                        }
+                    </td>
                     <td class="py-3 px-4 border-b">
                         <div class="flex gap-1">
                             <button

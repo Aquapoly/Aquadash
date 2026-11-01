@@ -9,6 +9,7 @@ export interface TimelapseMetadataDto {
   latest_frame_date: string | null;
   end_date: string;
   ready: boolean | null;
+  file_size_bytes?: number | null;
   preview_url?: string | null;
 }
 
