@@ -1,2 +1,1 @@
-imageio>=2.37,<3
 opencv-python-headless>=4.11,<5

@@ -1,27 +1,23 @@
 import httpx
-from fastapi import FastAPI, Depends, HTTPException, status, Response
+from fastapi import FastAPI, Depends, HTTPException, status, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import FileResponse, StreamingResponse
-# from fastapi_utils.openapi import simplify_operation_ids
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import datetime, timedelta
 import io
 
-from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
-# from jose import JWTError, jwt
-
-
 from . import crud, models, schemas
 from .database import engine, get_db
-from .classes.sensor_type import SensorType
 from .services.actuator import get_actuator_activation
 from .services import cam_client as camera_service
 from .services.export_data import export_all_measures_to_csv
 from .security import authentification
 from .security import permissions
+from .ws_manager import manager as ws_manager
+from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -361,11 +357,15 @@ async def openapi_json():
 # TIMELAPSE
 @app.post("/timelapse/start", response_model=TimelapseStatus)
 async def start_timelapse(config: TimelapseConfig) -> TimelapseStatus:
-    return await camera_service.start_timelapse(config)
+    result = await camera_service.start_timelapse(config)
+    await ws_manager.broadcast(result.model_dump())
+    return result
 
 @app.post("/timelapse/stop", response_model=TimelapseStatus)
 async def stop_timelapse() -> TimelapseStatus:
-    return await camera_service.stop_timelapse()
+    result = await camera_service.stop_timelapse()
+    await ws_manager.broadcast(result.model_dump())
+    return result
 
 @app.get("/timelapse/status", response_model=TimelapseStatus)
 async def timelapse_status() -> TimelapseStatus:
@@ -404,3 +404,26 @@ async def download_timelapse(timelapse_id: str) -> Response:
 @app.delete("/timelapse/{timelapse_id}", status_code=httpx.codes.NO_CONTENT)
 async def delete_timelapse(timelapse_id: str) -> None:
     await camera_service.delete_timelapse(timelapse_id)
+
+# --- Timelapse WebSocket ---
+
+@app.websocket("/ws/timelapse")
+async def timelapse_ws(websocket: WebSocket):
+    await ws_manager.connect(websocket)
+    try:
+        current = await camera_service.get_timelapse_status()
+        await websocket.send_text(current.model_dump_json())
+        
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        ws_manager.disconnect(websocket)
+
+
+@app.post("/internal/timelapse/event", include_in_schema=False)
+async def timelapse_event(event: TimelapseStatus) -> None:
+    """Internal endpoint: cam-client POSTs here on each frame/status change.
+    We broadcast it to all connected WebSocket clients."""
+    await ws_manager.broadcast(event.model_dump())

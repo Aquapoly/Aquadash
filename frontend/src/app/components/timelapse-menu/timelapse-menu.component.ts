@@ -1,166 +1,218 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import { DropdownComponent, DropdownOption } from '@app/components/dropdown/dropdown.component';
-import { SERVER_URL } from '@app/environment';
-
-import { FileSizePipe } from '@app/classes/filesize';
 import { DurationPipe } from '@app/classes/duration';
 import { TimelapseConfig, TimelapseStatus } from '@app/interfaces/timelapse';
 import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseStatusDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseStatusDto } from '@app/interfaces/timelapse.mapper';
+import { TimelapseWebSocketService } from '@app/services/timelapse-websocket.service';
+import { SERVER_URL } from '@app/environment';
 
-interface TimelapseSettings {
-  frequency: DropdownOption;
-  duration: DropdownOption;
-  resolution: DropdownOption;
-  framerate: DropdownOption;
-  // name: string | null;
+interface TimeUnit {
+  label: string;
+  value: number;
+}
+
+interface TimePreset {
+  label: string;
+  value: number;
+  unitValue: number;
 }
 
 @Component({
   selector: 'app-timelapse-menu',
-  imports: [CommonModule, DropdownComponent, FileSizePipe, DurationPipe],
+  imports: [CommonModule, DropdownComponent, DurationPipe],
   templateUrl: './timelapse-menu.component.html',
   styleUrl: './timelapse-menu.component.css'
 })
-export class TimelapseMenuComponent implements OnInit{
-  timestamp: Date | null = null;
+export class TimelapseMenuComponent implements OnInit, OnDestroy {
+  private wsSub: Subscription | null = null;
 
-  readonly frequencyOptions: DropdownOption[] = [
-    { label: '5 secondes', value: 5 },
-    { label: '30 secondes', value: 30 },
-    { label: '1 minute', value: 60 },
-    { label: '1 heure', value: 3600 },
-    { label: '1 jour', value: 86400 },
-    { label: '2 jours', value: 172800 },
-    { label: '1 semaine', value: 604800 }
+  readonly timeUnits: TimeUnit[] = [
+    { label: 's', value: 1 },
+    { label: 'min', value: 60 },
+    { label: 'h', value: 3600 },
+    { label: 'jr', value: 86400 },
+    { label: 'sem', value: 604800 },
   ];
-
-  private readonly durationOptions_: DropdownOption[] = [
-    { label: '5 secondes', value: 5 },
-    { label: '1 minute', value: 60 },
-    { label: '5 minutes', value: 300 },
-    { label: '15 minutes', value: 900 },
-    { label: '60 minutes', value: 3600 },
-    { label: '1 jour', value: 86400 },
-    { label: '1 semaine', value: 604800 },
-    { label: '1 mois', value: 2628000 },
+  readonly frequencyPresets: TimePreset[] = [
+    { label: '5 s', value: 5, unitValue: 1 },
+    { label: '30 s', value: 30, unitValue: 1 },
+    { label: '1 min', value: 1, unitValue: 60 },
   ];
-
-  get durationOptions(): DropdownOption[] {
-    return this.durationOptions_.filter((option: DropdownOption) => {
-      return option.value >= this.frequency.value;
-    });
-  }
-
-  readonly resolutionOptions: DropdownOption[] = [
-    // { label: '1920x1080', value: '1920x1080' },
-    // { label: '1280x720', value: '1280x720' }, Not working
-    { label: '640x480', value: '640x480' },
+  readonly durationPresets: TimePreset[] = [
+    { label: '10 s', value: 10, unitValue: 1 },
+    { label: '5 min', value: 5, unitValue: 60 },
+    { label: '1 jr', value: 1, unitValue: 86400 },
   ];
-
   readonly framerateOptions: DropdownOption[] = [
     { label: '10 par seconde', value: 10 },
     { label: '20 par seconde', value: 20 },
     { label: '30 par seconde', value: 30 },
   ];
 
-  private settings: TimelapseSettings = {
-    frequency: { label: '5 secondes', value: 5 },
-    duration: { label: '5 secondes', value: 5 },
-    resolution: { label: '640x480', value: '640x480' },
-    framerate: { label: '30 par seconde', value: 30 },
-  };
-
-  get frequency(): DropdownOption {
-    return this.settings.frequency;
-  }
-  private set frequency(value: DropdownOption) {
-    this.settings.frequency = value;
-  }
-  
-  get duration(): DropdownOption {
-    return this.settings.duration;
-  }
-  private set duration(value: DropdownOption) {
-    this.settings.duration = value;
-  }
-
-  get resolution(): DropdownOption {
-    return this.settings.resolution;
-  }
-  private set resolution(value: DropdownOption) {
-    this.settings.resolution = value;
-  }
-
-  get framerate(): DropdownOption {
-    return this.settings.framerate;
-  }
-  private set framerate(value: DropdownOption) {
-    this.settings.framerate = value;
-  }
+  frequencyValue = 5;
+  frequencyUnit = this.timeUnits[0];
+  durationValue = 10;
+  durationUnit = this.timeUnits[0];
+  framerate: DropdownOption = this.framerateOptions[2];
 
   private status_: TimelapseStatus | null = null;
   error: string | null = null;
+
   get status(): TimelapseStatus | null {
     return this.status_;
   }
+
   private set status(value: TimelapseStatus | null) {
     this.status_ = value;
   }
 
-  get running(): boolean {
-    return this.status?.running ?? false;
+  get isRecording(): boolean {
+    return this.status?.isRecording ?? false;
+  }
+
+  get durationSeconds(): number {
+    return this.durationValue * this.durationUnit.value;
+  }
+
+  get frequencySeconds(): number {
+    return this.frequencyValue * this.frequencyUnit.value;
+  }
+
+  get hasValidSettings(): boolean {
+    return Number.isInteger(this.durationValue) &&
+      Number.isInteger(this.frequencyValue) &&
+      this.durationValue > 0 &&
+      this.frequencyValue > 0 &&
+      this.frequencySeconds <= this.durationSeconds;
+  }
+
+  get isFrequencyTooHigh(): boolean {
+    return this.frequencyValue > 0 &&
+      this.durationValue > 0 &&
+      this.frequencySeconds > this.durationSeconds;
+  }
+
+  get expectedFrames(): number {
+    return this.hasValidSettings
+      ? Math.floor(this.durationSeconds / this.frequencySeconds) + 1
+      : 0;
+  }
+
+  get expectedVidDurationSeconds(): number {
+    return this.expectedFrames / Number(this.framerate.value);
+  }
+
+  get expectedVidSizeMegabytes(): number {
+    const bytesPerFrame = 20 * 1024;
+    return Math.round((this.expectedFrames * bytesPerFrame) / (1024 * 1024));
   }
 
   get thumbnailUrl(): string | null {
-    return this.timestamp ? `${SERVER_URL}/timelapse/latest-frame?t=${this.timestamp.getTime()}` : null;
+    const latestFrameDate = this.status?.metadata?.latest_frame_date;
+    return latestFrameDate
+      ? `${SERVER_URL}/timelapse/latest-frame?t=${latestFrameDate.getTime()}`
+      : null;
   }
 
-  constructor(private http: HttpClient, private store: TimelapseStoreService) {}
-
-  private restoreSettingsFromStatus(status: TimelapseStatus): void {
-    const cfg = status?.config;
-    if (!cfg) return;
-
-    const freqOpt = this.frequencyOptions.find(o => o.value === cfg.frequency);
-    if (freqOpt) this.frequency = freqOpt;
-
-    const durOpt = this.durationOptions_.find(o => o.value === cfg.duration);
-    if (durOpt) this.duration = durOpt;
-
-    const frOpt = this.framerateOptions.find(o => o.value === cfg.framerate);
-    if (frOpt) this.framerate = frOpt;
-
-    this.ensureDurationValid();
-  }
+  constructor(
+    private http: HttpClient,
+    private store: TimelapseStoreService,
+    private wsService: TimelapseWebSocketService,
+  ) {}
 
   ngOnInit(): void {
     this.getStatus();
+    this.wsSub = this.wsService.status$.subscribe((dto: TimelapseStatusDto) => {
+      this.updateStatus(dto);
+    });
   }
 
-  private ensureDurationValid(): void {
-    const eligible = this.durationOptions;
-    if (!eligible || eligible.length === 0) return;
-
-    const current: DropdownOption = this.duration;
-    if (current.value < this.frequency.value) this.duration = eligible[0];
+  ngOnDestroy(): void {
+    this.wsSub?.unsubscribe();
   }
 
-  getStatus() {
-    this.http
-    .get<TimelapseStatusDto>(`${SERVER_URL}/timelapse/status`).subscribe({
+  setDurationValue(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.durationValue = Number(event.target.value);
+    }
+  }
+
+  setFrequencyValue(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.frequencyValue = Number(event.target.value);
+    }
+  }
+
+  setDurationUnit(event: Event): void {
+    if (!(event.target instanceof HTMLSelectElement)) return;
+    const value = Number(event.target.value);
+    const unit = this.timeUnits.find(option => option.value === value);
+    if (unit) this.durationUnit = unit;
+  }
+
+  setFrequencyUnit(event: Event): void {
+    if (!(event.target instanceof HTMLSelectElement)) return;
+    const value = Number(event.target.value);
+    const unit = this.timeUnits.find(option => option.value === value);
+    if (unit) this.frequencyUnit = unit;
+  }
+
+  setDurationPreset(preset: TimePreset): void {
+    this.durationValue = preset.value;
+    this.durationUnit = this.timeUnits.find(unit => unit.value === preset.unitValue) ?? this.timeUnits[0];
+  }
+
+  setFrequencyPreset(preset: TimePreset): void {
+    this.frequencyValue = preset.value;
+    this.frequencyUnit = this.timeUnits.find(unit => unit.value === preset.unitValue) ?? this.timeUnits[0];
+  }
+
+  isDurationPresetSelected(preset: TimePreset): boolean {
+    return this.durationSeconds === preset.value * preset.unitValue;
+  }
+
+  isFrequencyPresetSelected(preset: TimePreset): boolean {
+    return this.frequencySeconds === preset.value * preset.unitValue;
+  }
+
+  onFramerateChange(option: DropdownOption): void {
+    this.framerate = option;
+  }
+
+  private restoreSettingsFromStatus(status: TimelapseStatus): void {
+    const config = status.config;
+    if (!config) return;
+
+    this.restoreTimeValue(config.duration, 'duration');
+    this.restoreTimeValue(config.frequency, 'frequency');
+    const framerate = this.framerateOptions.find(option => option.value === config.framerate);
+    if (framerate) this.framerate = framerate;
+  }
+
+  private restoreTimeValue(seconds: number, setting: 'frequency' | 'duration'): void {
+    const unit = [...this.timeUnits].reverse().find(option => seconds % option.value === 0)
+      ?? this.timeUnits[0];
+    const value = seconds / unit.value;
+
+    if (setting === 'duration') {
+      this.durationValue = value;
+      this.durationUnit = unit;
+    } else {
+      this.frequencyValue = value;
+      this.frequencyUnit = unit;
+    }
+  }
+
+  private getStatus(): void {
+    this.http.get<TimelapseStatusDto>(`${SERVER_URL}/timelapse/status`).subscribe({
       next: (response: TimelapseStatusDto) => {
         this.updateStatus(response);
-
-        if (this.status?.running) {
-          this.restoreSettingsFromStatus(this.status);
-          this.timestamp = new Date();
-        } else {
-          this.timestamp = null;
-        }
+        if (this.status?.isRecording) this.restoreSettingsFromStatus(this.status);
       },
       error: (err) => {
         this.error =
@@ -169,45 +221,21 @@ export class TimelapseMenuComponent implements OnInit{
     });
   }
 
-  onSettingChange(key: keyof TimelapseSettings, option: DropdownOption) {
-    this.settings[key] = option;
-    if (key === 'frequency') this.ensureDurationValid();
-  }
-
-  get expectedFrames(): number {
-    return Math.floor((this.duration.value as number) / (this.frequency.value as number)) + 1;
-  }
-
-  get expectedVidDurationSeconds(): number {
-    const framerate: number = this.framerate.value as number;
-    const duration: number = this.expectedFrames / framerate;
-    return duration;
-  }
-
-  get expectedVidSizeBytes(): number {
-    // Rough empirical estimate
-    const BYTES_PER_FRAME: number = 20 * 1024;
-    return this.expectedFrames * BYTES_PER_FRAME;
-  }
-
-  get isFrequencyTooHigh(): boolean {
-    return this.frequency.value > this.duration.value;
-  }
-
-  start() {
+  start(): void {
     this.error = null;
+    if (!this.hasValidSettings) return;
+
     const payload: TimelapseConfig = {
-      frequency: this.frequency.value as number,
-      duration: this.duration.value as number,
-      // resolution: this.resolution.value,
-      framerate: this.framerate.value as number,
+      frequency: this.frequencySeconds,
+      duration: this.durationSeconds,
+      framerate: Number(this.framerate.value),
       name: undefined,
     };
 
     this.http.post<TimelapseStatusDto>(`${SERVER_URL}/timelapse/start`, payload).subscribe({
       next: (status: TimelapseStatusDto) => {
         this.updateStatus(status);
-        if (this.status?.running) this.restoreSettingsFromStatus(this.status);
+        if (this.status?.isRecording) this.restoreSettingsFromStatus(this.status);
       },
       error: (err) => {
         this.error = `Échec du démarrage du timelapse: ${err.error?.detail || err.message}`;
@@ -215,12 +243,11 @@ export class TimelapseMenuComponent implements OnInit{
     });
   }
 
-  stop() {
+  stop(): void {
     this.error = null;
-
     this.http.post<TimelapseStatusDto>(`${SERVER_URL}/timelapse/stop`, {}).subscribe({
       next: (status: TimelapseStatusDto) => {
-        if (this.status?.metadata) this.store.upsert({...this.status.metadata, ready: true});
+        if (this.status?.metadata) this.store.upsert({ ...this.status.metadata, ready: true });
         this.updateStatus(status);
       },
       error: (err) => {
@@ -229,7 +256,7 @@ export class TimelapseMenuComponent implements OnInit{
     });
   }
 
-  private updateStatus(status: TimelapseStatusDto) {
+  private updateStatus(status: TimelapseStatusDto): void {
     this.status = mapTimelapseStatusDto(status);
     const metadata = this.status?.metadata;
     if (metadata) this.store.upsert(metadata);
