@@ -291,10 +291,7 @@ class TimelapseClient:
                     print(f"[Timelapse] Error closing video writer: {e}")
 
             metadata.ready = True
-            try:
-                metadata.file_size_bytes = video_path.stat().st_size
-            except OSError as e:
-                print(f"[Timelapse] Video size lookup failed: {e}")
+            metadata.file_size_bytes = video_path.stat().st_size
             dump_metadata()
         finally:
             if metadata is not None:
