@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <symbol id="icon" viewBox="5.5 5.5 13 13" fill="none" stroke="currentColor">
+    <path d="M12 9V15" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M9 12H15" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+  </symbol>
+</svg>
