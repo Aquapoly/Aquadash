@@ -10,6 +10,7 @@ import { DurationPipe } from '@app/classes/duration';
 import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseMetadataDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseMetadataDto } from '@app/interfaces/timelapse.mapper';
+import { TimelapseTabsComponent } from '../timelapse-tabs/timelapse-tabs.component';
 
 @Pipe({
   name: 'statusText',
@@ -43,7 +44,7 @@ export class TimelapseSecondsPipe implements PipeTransform {
 @Component({
   selector: 'app-timelapse-library',
   standalone: true,
-  imports: [CommonModule, StatusTextPipe, TimelapseSecondsPipe, DurationPipe],
+  imports: [CommonModule, StatusTextPipe, TimelapseSecondsPipe, DurationPipe, TimelapseTabsComponent],
   templateUrl: './timelapse-library.component.html',
   styleUrl: './timelapse-library.component.css'
 })
