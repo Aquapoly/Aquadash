@@ -1,7 +1,13 @@
 <div class="space-y-4">
   <app-timelapse-tabs />
+  <div class="relative mx-auto max-w-md">
+    <app-camera-picture />
+    <h2 class="pointer-events-none absolute left-3 top-3 rounded-md bg-black/60 px-3 py-1.5 text-sm font-medium text-white">
+      Aperçu de la caméra
+    </h2>
+  </div>
 
-  <section class="mx-auto w-full max-w-xl">
+  <section class="mx-auto max-w-xl">
     <div class="space-y-5 bg-base-100 rounded-xl shadow-md p-6 border">
       @if (!is_recording) {
         <div class="space-x-12 flex">
