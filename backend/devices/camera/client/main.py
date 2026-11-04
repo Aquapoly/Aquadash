@@ -1,6 +1,10 @@
+import asyncio
+import queue
+from contextlib import suppress
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Response
+from fastapi import WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 
 from shared.timelapse_models import TimelapseMetadata
@@ -32,6 +36,43 @@ def picture():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.websocket("/ws/timelapse-events")
+async def timelapse_events(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        await websocket.send_text(timelapse_client.status().model_dump_json())
+
+        async def send_events():
+            while True:
+                try:
+                    event = await asyncio.to_thread(timelapse_client.wait_for_status_event, 1.0)
+                except queue.Empty:
+                    continue
+                await websocket.send_text(event)
+
+        async def wait_for_disconnect():
+            try:
+                while True:
+                    await websocket.receive_text()
+            except WebSocketDisconnect:
+                return
+
+        sender = asyncio.create_task(send_events())
+        receiver = asyncio.create_task(wait_for_disconnect())
+        done, pending = await asyncio.wait(
+            {sender, receiver},
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+        for task in done:
+            with suppress(WebSocketDisconnect):
+                task.result()
+    except WebSocketDisconnect:
+        return
 
 
 # --- Timelapse ---

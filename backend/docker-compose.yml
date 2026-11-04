@@ -71,7 +71,6 @@ services:
 
     environment:
       CAMERA_NAME: ${CAMERA_NAME:-camera0}
-      APP_EVENT_URL: ${APP_EVENT_URL:-http://app:8000/internal/timelapse/event}
 
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
