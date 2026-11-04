@@ -1,16 +1,16 @@
-<div class="space-y-4">
+<div class="space-y-4 max-w-[480px]">
   <app-timelapse-tabs />
-  <div class="relative mx-auto max-w-md">
+  <div class="relative mx-auto">
     <app-camera-picture />
     <h2 class="pointer-events-none absolute left-3 top-3 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white">
       Aperçu de la caméra
     </h2>
   </div>
 
-  <section class="mx-auto max-w-xl">
+  <section class="mx-auto">
     <div class="space-y-5 bg-base-100 rounded-xl shadow-md p-6 border">
       @if (!is_recording) {
-        <div class="space-x-12 flex">
+        <div class="space-x-6 flex">
           <div>
             <label for="timelapse-frequency" class="block text-sm font-medium text-base-700 mb-2">
               Une image toutes les
