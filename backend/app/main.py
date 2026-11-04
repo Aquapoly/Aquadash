@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 from fastapi import FastAPI, Depends, HTTPException, status, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,7 @@ from . import crud, models, schemas
 from .database import engine, get_db
 from .services.actuator import get_actuator_activation
 from .services import cam_client as camera_service
+from .services.cam_event_listener import listen_for_timelapse_events
 from .services.export_data import export_all_measures_to_csv
 from .security import authentification
 from .security import permissions
@@ -29,9 +31,15 @@ sensors_data = dict()
 async def lifespan(app: FastAPI):
     db = next(get_db())
     crud.default_populate_database(db)
+    event_listener = asyncio.create_task(listen_for_timelapse_events())
     try:
         yield
     finally:
+        event_listener.cancel()
+        try:
+            await event_listener
+        except asyncio.CancelledError:
+            pass
         try:
             await camera_service.close_client()
         except Exception:
@@ -411,8 +419,12 @@ async def delete_timelapse(timelapse_id: str) -> None:
 async def timelapse_ws(websocket: WebSocket):
     await ws_manager.connect(websocket)
     try:
-        current = await camera_service.get_timelapse_status()
-        await websocket.send_text(current.model_dump_json())
+        try:
+            current = await camera_service.get_timelapse_status()
+        except HTTPException:
+            pass
+        else:
+            await websocket.send_text(current.model_dump_json())
         
         while True:
             await websocket.receive_text()
@@ -420,10 +432,3 @@ async def timelapse_ws(websocket: WebSocket):
         pass
     finally:
         ws_manager.disconnect(websocket)
-
-
-@app.post("/internal/timelapse/event", include_in_schema=False)
-async def timelapse_event(event: TimelapseStatus) -> None:
-    """Internal endpoint: cam-client POSTs here on each frame/status change.
-    We broadcast it to all connected WebSocket clients."""
-    await ws_manager.broadcast(event.model_dump())
