@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------- Stage: tests ----------
+  frontend-tests:
+    name: Frontend tests
+    uses: ./.github/workflows/frontend-tests.yml
+    # Test failures currently only emit warnings.
+    # Remove `allow-failure` once tests are fixed to make them fail the pipeline and block PRs.
+    with:
+      allow-failure: true
+
+  backend-tests:
+    name: Backend tests
+    uses: ./.github/workflows/backend-tests.yml
+    # Test failures currently only emit warnings.
+    # Remove `allow-failure` once tests are fixed to make them fail the pipeline and block PRs.
+    with:
+      allow-failure: true
+
+  # ---------- Next stages ----------
+  # Add later stages (build, deploy, ...) with:
+  #   needs: [frontend-tests, backend-tests]
+  # This indicates next steps will run as soon as these two are done (as they are dependencies)
