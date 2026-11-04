@@ -12,6 +12,7 @@ import { mapTimelapseStatusDto } from '@app/interfaces/timelapse.mapper';
 import { TimelapseWebSocketService } from '@app/services/timelapse-websocket.service';
 import { SERVER_URL } from '@app/environment';
 import { TimelapseTabsComponent } from '../timelapse-tabs/timelapse-tabs.component';
+import { CameraPictureComponent } from '../camera-picture/camera-picture.component';
 
 interface TimeUnit {
   label: string;
@@ -26,7 +27,7 @@ interface TimePreset {
 
 @Component({
   selector: 'app-timelapse-menu',
-  imports: [CommonModule, DropdownComponent, DurationPipe, FileSizePipe, TimelapseTabsComponent],
+  imports: [CommonModule, DropdownComponent, DurationPipe, FileSizePipe, TimelapseTabsComponent, CameraPictureComponent],
   templateUrl: './timelapse-menu.component.html',
   styleUrl: './timelapse-menu.component.scss'
 })
