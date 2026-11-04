@@ -1,0 +1,92 @@
+name: Backend tests
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: Python version used to install and test the backend
+        type: string
+        required: false
+        default: '3.11'
+      allow-failure:
+        description: If true, failing tests only emit a warning instead of failing the job
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    # Mirrors the db service in backend/docker-compose.yml.
+    # The app connects to localhost when DOCKER is unset (backend/app/database.py)
+    # and creates its tables on import (backend/app/main.py).
+    services:
+      db:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: aquapoly
+          POSTGRES_DB: aquapoly
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/devices/camera/client/requirements.txt
+
+      # --- API tests (backend/tests, requires Postgres) ---
+      - name: Install API dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Run API tests
+        id: api_tests
+        working-directory: backend
+        continue-on-error: ${{ inputs.allow-failure }}
+        env:
+          # backend/tests/conftest.py imports `backend.app...`, which needs the repo root on the path
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest tests
+
+      - name: Warn on API test failure
+        if: ${{ !cancelled() && inputs.allow-failure && steps.api_tests.outcome == 'failure' }}
+        run: |
+          echo "::warning title=Backend API tests failed::Backend API tests failed but allow-failure is enabled, so the pipeline was not blocked."
+          echo "## :warning: Backend API tests failed" >> $GITHUB_STEP_SUMMARY
+          echo "Failures are currently non-blocking (\`allow-failure: true\`)." >> $GITHUB_STEP_SUMMARY
+
+      # --- Camera client tests (backend/devices/camera/client/tests, no DB) ---
+      - name: Install camera client dependencies
+        if: ${{ !cancelled() }}
+        working-directory: backend/devices/camera/client
+        run: pip install -r requirements.txt
+
+      - name: Run camera client tests
+        id: camera_tests
+        if: ${{ !cancelled() }}
+        working-directory: backend/devices/camera/client
+        continue-on-error: ${{ inputs.allow-failure }}
+        run: python -m pytest tests
+
+      - name: Warn on camera client test failure
+        if: ${{ !cancelled() && inputs.allow-failure && steps.camera_tests.outcome == 'failure' }}
+        run: |
+          echo "::warning title=Camera client tests failed::Camera client tests failed but allow-failure is enabled, so the pipeline was not blocked."
+          echo "## :warning: Camera client tests failed" >> $GITHUB_STEP_SUMMARY
+          echo "Failures are currently non-blocking (\`allow-failure: true\`)." >> $GITHUB_STEP_SUMMARY
