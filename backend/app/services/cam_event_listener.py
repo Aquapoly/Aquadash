@@ -31,7 +31,7 @@ async def listen_for_timelapse_events() -> None:
                     except ValidationError as exc:
                         logger.warning("Ignoring invalid timelapse event from cam-client: %s", exc)
                         continue
-                    await ws_manager.broadcast(event.model_dump(mode="json"))
+                    await ws_manager.broadcast(event)
         except (OSError, websockets.exceptions.WebSocketException) as exc:
             logger.warning(
                 "cam-client timelapse event stream disconnected; retrying in %s seconds: %s",

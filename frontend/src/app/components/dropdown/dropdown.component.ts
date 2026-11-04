@@ -11,7 +11,7 @@ export interface DropdownOption {
   standalone: true,
   imports: [CommonModule],
   templateUrl: './dropdown.component.html',
-  styleUrls: ['./dropdown.component.css'],
+  styleUrls: ['./dropdown.component.scss'],
 })
 export class DropdownComponent {
   @Input() options: DropdownOption[] = [];

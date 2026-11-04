@@ -9,7 +9,7 @@ from ..main import app, timelapse_client
 
 
 def test_timelapse_events_websocket_sends_initial_state_and_updates():
-    initial_status = TimelapseStatus(isRecording=False, metadata=None)
+    initial_status = TimelapseStatus(is_recording=False, metadata=None)
     now = datetime.now(timezone.utc)
     metadata = TimelapseMetadata(
         id="timelapse-id",
@@ -22,7 +22,7 @@ def test_timelapse_events_websocket_sends_initial_state_and_updates():
         ready=False,
     )
     updated_status = TimelapseStatus(
-        isRecording=True,
+        is_recording=True,
         metadata=metadata,
         config=TimelapseConfig(frequency=1, duration=60, framerate=24),
     )

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { TimelapseTabsComponent } from './timelapse-tabs.component';
 
@@ -8,7 +9,8 @@ describe('TimelapseTabsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TimelapseTabsComponent]
+      imports: [TimelapseTabsComponent],
+      providers: [provideRouter([])],
     })
     .compileComponents();
 
