@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { DropdownComponent, DropdownOption } from '@app/components/dropdown/dropdown.component';
 import { DurationPipe } from '@app/classes/duration';
+import { FileSizePipe } from '@app/classes/filesize';
 import { TimelapseConfig, TimelapseStatus } from '@app/interfaces/timelapse';
 import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseStatusDto } from '@app/interfaces/timelapse.dto';
@@ -25,9 +26,9 @@ interface TimePreset {
 
 @Component({
   selector: 'app-timelapse-menu',
-  imports: [CommonModule, DropdownComponent, DurationPipe, TimelapseTabsComponent],
+  imports: [CommonModule, DropdownComponent, DurationPipe, FileSizePipe, TimelapseTabsComponent],
   templateUrl: './timelapse-menu.component.html',
-  styleUrl: './timelapse-menu.component.css'
+  styleUrl: './timelapse-menu.component.scss'
 })
 export class TimelapseMenuComponent implements OnInit, OnDestroy {
   private wsSub: Subscription | null = null;
@@ -72,8 +73,8 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     this.status_ = value;
   }
 
-  get isRecording(): boolean {
-    return this.status?.isRecording ?? false;
+  get is_recording(): boolean {
+    return this.status?.is_recording ?? false;
   }
 
   get durationSeconds(): number {
@@ -84,11 +85,15 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     return this.frequencyValue * this.frequencyUnit.value;
   }
 
+  get hasInvalidTimeValues(): boolean {
+    return !Number.isInteger(this.durationValue) ||
+      this.durationValue <= 0 ||
+      !Number.isInteger(this.frequencyValue) ||
+      this.frequencyValue <= 0;
+  }
+
   get hasValidSettings(): boolean {
-    return Number.isInteger(this.durationValue) &&
-      Number.isInteger(this.frequencyValue) &&
-      this.durationValue > 0 &&
-      this.frequencyValue > 0 &&
+    return !this.hasInvalidTimeValues &&
       this.frequencySeconds <= this.durationSeconds;
   }
 
@@ -108,9 +113,9 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     return this.expectedFrames / Number(this.framerate.value);
   }
 
-  get expectedVidSizeMegabytes(): number {
+  get expectedVidSizeBytes(): number {
     const bytesPerFrame = 20 * 1024;
-    return Math.round((this.expectedFrames * bytesPerFrame) / (1024 * 1024));
+    return this.expectedFrames * bytesPerFrame;
   }
 
   get thumbnailUrl(): string | null {
@@ -213,7 +218,7 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     this.http.get<TimelapseStatusDto>(`${SERVER_URL}/timelapse/status`).subscribe({
       next: (response: TimelapseStatusDto) => {
         this.updateStatus(response);
-        if (this.status?.isRecording) this.restoreSettingsFromStatus(this.status);
+        if (this.status?.is_recording) this.restoreSettingsFromStatus(this.status);
       },
       error: (err) => {
         this.error =
@@ -236,7 +241,7 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     this.http.post<TimelapseStatusDto>(`${SERVER_URL}/timelapse/start`, payload).subscribe({
       next: (status: TimelapseStatusDto) => {
         this.updateStatus(status);
-        if (this.status?.isRecording) this.restoreSettingsFromStatus(this.status);
+        if (this.status?.is_recording) this.restoreSettingsFromStatus(this.status);
       },
       error: (err) => {
         this.error = `Échec du démarrage du timelapse: ${err.error?.detail || err.message}`;

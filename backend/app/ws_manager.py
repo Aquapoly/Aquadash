@@ -1,5 +1,6 @@
 from fastapi import WebSocket
-import json
+
+from shared.timelapse_models import TimelapseStatus
 
 class WebSocketManager:
     def __init__(self):
@@ -13,10 +14,10 @@ class WebSocketManager:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
 
-    async def broadcast(self, message: dict):
-        msg_str = json.dumps(message, default=str)
+    async def broadcast(self, message: TimelapseStatus):
+        msg_str = message.model_dump_json()
         dead: list[WebSocket] = []
-        for connection in self.active_connections:
+        for connection in list(self.active_connections):
             try:
                 await connection.send_text(msg_str)
             except Exception:

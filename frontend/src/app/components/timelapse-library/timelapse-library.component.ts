@@ -46,7 +46,7 @@ export class TimelapseSecondsPipe implements PipeTransform {
   standalone: true,
   imports: [CommonModule, StatusTextPipe, TimelapseSecondsPipe, DurationPipe, TimelapseTabsComponent],
   templateUrl: './timelapse-library.component.html',
-  styleUrl: './timelapse-library.component.css'
+  styleUrl: './timelapse-library.component.scss'
 })
 export class TimelapseLibraryComponent implements OnInit{
   readonly timelapses$: Observable<TimelapseMetadata[]>;

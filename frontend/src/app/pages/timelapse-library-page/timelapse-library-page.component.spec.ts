@@ -1,18 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { TimelapseLibraryComponent } from './timelapse-library.component';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { TimelapseLibraryComponent } from '@app/components/timelapse-library/timelapse-library.component';
 
 describe('TimelapseLibraryPageComponent', () => {
-  let component: TimelapseComponent;
-  let fixture: ComponentFixture<TimelapseComponent>;
+  let component: TimelapseLibraryComponent;
+  let fixture: ComponentFixture<TimelapseLibraryComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TimelapseComponent]
+      imports: [TimelapseLibraryComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(TimelapseComponent);
+    fixture = TestBed.createComponent(TimelapseLibraryComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
