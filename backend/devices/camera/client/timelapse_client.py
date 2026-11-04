@@ -1,22 +1,17 @@
 from datetime import datetime, timedelta, timezone
-import os
 from pathlib import Path
+import queue
 import shutil
 import threading
 import time
 import uuid
 
-import httpx
 import imageio.v3 as iio3
 from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 
 from camera_client import CameraClient, CameraSocketNotFoundError, CameraNotAvailableError
 
 TIMELAPSES_DIR: Path = Path("/timelapses")
-TIMELAPSE_EVENT_URL = os.getenv(
-    "APP_EVENT_URL",
-    "http://localhost:8000/internal/timelapse/event",
-)
 
 
 class _TimelapseState:
@@ -43,6 +38,7 @@ class TimelapseClient:
         self._camera: CameraClient = camera
         self._state: _TimelapseState = _TimelapseState()
         self._lock: threading.Lock = threading.Lock()
+        self._status_events: queue.Queue[str] = queue.Queue(maxsize=1)
 
     def start(self, config: TimelapseConfig) -> TimelapseStatus:
         self._ensure_valid_config(config)
@@ -153,19 +149,19 @@ class TimelapseClient:
         config: TimelapseConfig,
     ) -> None:
         status = TimelapseStatus(isRecording=isRecording, metadata=metadata, config=config)
-        try:
-            response = httpx.post(
-                TIMELAPSE_EVENT_URL,
-                json=status.model_dump(mode="json"),
-                timeout=1.0,
-            )
-            response.raise_for_status()
-        except httpx.InvalidURL as e:
-            print(f"[Timelapse] Invalid status event URL: {e}")
-        except httpx.RequestError as e:
-            print(f"[Timelapse] Status event delivery failed: {e}")
-        except httpx.HTTPStatusError as e:
-            print(f"[Timelapse] Status event endpoint returned an error: {e}")
+        event = status.model_dump_json()
+        while True:
+            try:
+                self._status_events.put_nowait(event)
+                return
+            except queue.Full:
+                try:
+                    self._status_events.get_nowait()
+                except queue.Empty:
+                    continue
+
+    def wait_for_status_event(self, timeout: float) -> str:
+        return self._status_events.get(timeout=timeout)
 
     def _run_worker(self, config: TimelapseConfig, timelapse_id: str) -> None:
         metadata: TimelapseMetadata | None = None

@@ -88,8 +88,6 @@ start_cam_native() {
     echo "[Info] Starting camera block natively..."
     start_cam_daemon
 
-    export APP_EVENT_URL="${APP_EVENT_URL:-http://localhost:8000/internal/timelapse/event}"
-
     cd "$SCRIPT_DIR/devices/camera/client"
     if [[ ! -d .venv ]]; then
         echo "[Info] Creating virtual environment..."
