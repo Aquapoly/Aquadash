@@ -82,6 +82,9 @@ jobs:
         if: ${{ !cancelled() }}
         working-directory: backend/devices/camera/client
         continue-on-error: ${{ inputs.allow-failure }}
+        env:
+          # The client imports `shared.*` from backend/shared (copied next to it in cam_client.Dockerfile)
+          PYTHONPATH: ${{ github.workspace }}/backend
         run: python -m pytest tests
 
       - name: Warn on camera client test failure
