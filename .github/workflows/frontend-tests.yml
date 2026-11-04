@@ -43,7 +43,7 @@ jobs:
         run: npx ng test --watch=false --browsers=ChromeHeadless
 
       - name: Warn on test failure
-        if: always() && inputs.allow-failure && steps.tests.outcome == 'failure'
+        if: ${{ !cancelled() && inputs.allow-failure && steps.tests.outcome == 'failure' }}
         run: |
           echo "::warning title=Frontend tests failed::Frontend tests failed but allow-failure is enabled, so the pipeline was not blocked."
           echo "## :warning: Frontend tests failed" >> $GITHUB_STEP_SUMMARY
