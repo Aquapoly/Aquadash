@@ -1,0 +1,50 @@
+name: Frontend tests
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Node.js version used to install and test the frontend
+        type: string
+        required: false
+        default: '22'
+      allow-failure:
+        description: If true, failing tests only emit a warning instead of failing the job
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  frontend-tests:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        id: tests
+        continue-on-error: ${{ inputs.allow-failure }}
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
+      - name: Warn on test failure
+        if: always() && inputs.allow-failure && steps.tests.outcome == 'failure'
+        run: |
+          echo "::warning title=Frontend tests failed::Frontend tests failed but allow-failure is enabled, so the pipeline was not blocked."
+          echo "## :warning: Frontend tests failed" >> $GITHUB_STEP_SUMMARY
+          echo "Failures are currently non-blocking (\`allow-failure: true\`)." >> $GITHUB_STEP_SUMMARY
