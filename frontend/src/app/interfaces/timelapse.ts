@@ -18,7 +18,7 @@ export interface TimelapseMetadata {
 }
 
 export interface TimelapseStatus {
-    running: boolean;
+    is_recording: boolean;
     metadata: TimelapseMetadata | null;
     config?: TimelapseConfig | null;
 }

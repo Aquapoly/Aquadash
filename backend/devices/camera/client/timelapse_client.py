@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import queue
 import shutil
 import threading
 import time
@@ -16,13 +17,13 @@ TIMELAPSES_DIR: Path = Path("/timelapses")
 class _TimelapseState:
     def __init__(self):
         self.id: str | None = None
-        self.running: bool = False
+        self.is_recording: bool = False
         self.thread: threading.Thread | None = None
         self.config: TimelapseConfig | None = None
 
     def reset(self) -> None:
         self.id = None
-        self.running = False
+        self.is_recording = False
         self.thread = None
         self.config = None
 
@@ -37,18 +38,19 @@ class TimelapseClient:
         self._camera: CameraClient = camera
         self._state: _TimelapseState = _TimelapseState()
         self._lock: threading.Lock = threading.Lock()
+        self._status_events: queue.Queue[str] = queue.Queue(maxsize=1)
 
     def start(self, config: TimelapseConfig) -> TimelapseStatus:
         self._ensure_valid_config(config)
 
         with self._lock:
-            if self._state.running:
+            if self._state.is_recording:
                 raise ValueError("Timelapse already running")
 
             self._state.reset()
             self._state.id = str(uuid.uuid4())
             config.name = config.name or f"Timelapse {self._state.id[:8]}"
-            self._state.running = True
+            self._state.is_recording = True
             self._state.config = config
             self._state.thread = threading.Thread(
                 target=self._run_worker,
@@ -82,7 +84,7 @@ class TimelapseClient:
             metadata: TimelapseMetadata | None = self._current_metadata() 
             config: TimelapseConfig | None = self._current_config() or self._state.config
         return TimelapseStatus(
-            running=self._state.running,
+            is_recording=self._state.is_recording,
             metadata=metadata,
             config=config,
         )
@@ -111,7 +113,7 @@ class TimelapseClient:
         return timelapses
 
     def delete(self, timelapse_id: str) -> None:
-        if self._state.running and timelapse_id == self._state.id:
+        if self._state.is_recording and timelapse_id == self._state.id:
             self._stop_worker()
         timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
         if not timelapse_folder.exists() or not timelapse_folder.is_dir():
@@ -140,7 +142,29 @@ class TimelapseClient:
             print(f"[Timelapse] Frame capture failed: {e}")
             return False
 
+    def _notify_status(
+        self,
+        is_recording: bool,
+        metadata: TimelapseMetadata,
+        config: TimelapseConfig,
+    ) -> None:
+        status = TimelapseStatus(is_recording=is_recording, metadata=metadata, config=config)
+        event = status.model_dump_json()
+        while True:
+            try:
+                self._status_events.put_nowait(event)
+                return
+            except queue.Full:
+                try:
+                    self._status_events.get_nowait()
+                except queue.Empty:
+                    continue
+
+    def wait_for_status_event(self, timeout: float) -> str:
+        return self._status_events.get(timeout=timeout)
+
     def _run_worker(self, config: TimelapseConfig, timelapse_id: str) -> None:
+        metadata: TimelapseMetadata | None = None
         try:
             timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
             timelapse_folder.mkdir(parents=True, exist_ok=True)
@@ -180,7 +204,7 @@ class TimelapseClient:
                 except (FileNotFoundError, PermissionError, OSError) as e:
                     print(f"[Timelapse] Metadata write failed: {e}")
                     with self._lock:
-                        self._state.running = False
+                        self._state.is_recording = False
             
             video_path: Path = self._video_path(timelapse_id)
             video_writer = None
@@ -192,7 +216,7 @@ class TimelapseClient:
             if video_writer is None:
                 print("[Timelapse] Error initializing video writer, terminating timelapse")
                 with self._lock:
-                    self._state.running = False
+                    self._state.is_recording = False
                     metadata.ready = None
                     dump_metadata()
                 return
@@ -203,7 +227,7 @@ class TimelapseClient:
                 except Exception as e:
                     print(f"[Timelapse] Failed to write frame to video: {e}")
                     with self._lock:
-                        self._state.running = False
+                        self._state.is_recording = False
 
             now: datetime = metadata.start_date
             end_time: datetime = metadata.end_date
@@ -213,7 +237,7 @@ class TimelapseClient:
 
             while now <= end_time:
                 with self._lock:
-                    if not self._state.running:
+                    if not self._state.is_recording:
                         break
 
                 now = datetime.now(timezone.utc)
@@ -226,17 +250,20 @@ class TimelapseClient:
                             except Exception as e:
                                 print(f"[Timelapse] Failed to read captured frame: {e}")
                                 with self._lock:
-                                    self._state.running = False
+                                    self._state.is_recording = False
                                 break
 
                             metadata.frames += 1
                             metadata.latest_frame_date = now
                             dump_metadata()
                             pushback_frame(frame)
+                            with self._lock:
+                                is_recording = self._state.is_recording
+                            self._notify_status(is_recording, metadata, config)
                     except Exception as e:
                         print(f"[Timelapse] Unexpected worker error: {e}")
                         with self._lock:
-                            self._state.running = False
+                            self._state.is_recording = False
                         break
 
                     next_capture += frequency_delta
@@ -252,6 +279,8 @@ class TimelapseClient:
             metadata.ready = True
             dump_metadata()
         finally:
+            if metadata is not None:
+                self._notify_status(False, metadata, config)
             with self._lock:
                 if self._state.id == timelapse_id:
                     self._state.reset()
@@ -288,7 +317,7 @@ class TimelapseClient:
 
     def _stop_worker(self) -> None:
         with self._lock:
-            self._state.running = False
+            self._state.is_recording = False
             thread = self._state.thread
         if thread:
             thread.join(timeout=5.0)
