@@ -25,7 +25,7 @@ function parseTimelapseStatus(message: unknown): TimelapseStatusDto | null {
 }
 
 function isTimelapseStatusDto(message: unknown): message is TimelapseStatusDto {
-  if (!isRecord(message) || typeof message['isRecording'] !== 'boolean') return false;
+  if (!isRecord(message) || typeof message['is_recording'] !== 'boolean') return false;
 
   const metadata = message['metadata'];
   if (

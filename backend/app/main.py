@@ -367,13 +367,13 @@ async def openapi_json():
 @app.post("/timelapse/start", response_model=TimelapseStatus)
 async def start_timelapse(config: TimelapseConfig) -> TimelapseStatus:
     result = await camera_service.start_timelapse(config)
-    await ws_manager.broadcast(result.model_dump())
+    await ws_manager.broadcast(result)
     return result
 
 @app.post("/timelapse/stop", response_model=TimelapseStatus)
 async def stop_timelapse() -> TimelapseStatus:
     result = await camera_service.stop_timelapse()
-    await ws_manager.broadcast(result.model_dump())
+    await ws_manager.broadcast(result)
     return result
 
 @app.get("/timelapse/status", response_model=TimelapseStatus)

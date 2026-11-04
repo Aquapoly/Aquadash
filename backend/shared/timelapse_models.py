@@ -18,6 +18,6 @@ class TimelapseMetadata(BaseModel):
     ready: bool
 
 class TimelapseStatus(BaseModel):
-    isRecording: bool
+    is_recording: bool
     metadata: TimelapseMetadata | None
     config: TimelapseConfig | None = None
