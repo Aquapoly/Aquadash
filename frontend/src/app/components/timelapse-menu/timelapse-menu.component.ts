@@ -74,7 +74,7 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
     this.status_ = value;
   }
 
-  get is_recording(): boolean {
+  get isRecording(): boolean {
     return this.status?.is_recording ?? false;
   }
 
