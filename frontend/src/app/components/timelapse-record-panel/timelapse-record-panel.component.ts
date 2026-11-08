@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DurationPipe } from '@app/classes/duration';
 import { SERVER_URL } from '@app/environment';
@@ -13,6 +13,8 @@ import { TimelapseSessionService } from '@app/services/timelapse-session.service
   styleUrl: './timelapse-record-panel.component.scss'
 })
 export class TimelapseRecordPanelComponent {
+  @Input() compact = false;
+
   constructor(private readonly session: TimelapseSessionService) {}
 
   get status$() {

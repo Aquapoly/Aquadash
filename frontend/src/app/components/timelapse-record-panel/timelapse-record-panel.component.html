@@ -1,20 +1,23 @@
 @if (status$ | async; as status) {
   @if (status.is_recording) {
-    <div class="flex flex-wrap gap-5 rounded-xl border bg-base-100 p-6 shadow-md">
+    <div
+      class="record-panel flex flex-wrap gap-5 rounded-xl border bg-base-100 p-4 shadow-md"
+      [class.record-panel--compact]="compact"
+    >
 
       <!-- Thumbnail -->
-      <div class="relative aspect-[4/3] min-w-[200px] flex-1 basis-[220px] overflow-hidden rounded-xl bg-base-300">
+      <div class="record-panel__thumbnail relative aspect-[4/3] min-w-[200px] flex-1 basis-[220px] overflow-hidden rounded-xl bg-base-300">
         @if (thumbnailUrl(status); as thumbnail) {
           <img [src]="thumbnail" alt="Dernière image capturée" class="absolute inset-0 h-full w-full object-cover" />
         }
-        <span class="absolute left-2.5 top-2.5 flex items-center gap-1.5 rounded-full bg-error px-2.5 py-1 text-xs font-semibold text-error-content">
-          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-error-content"></span>
+        <span class="absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white">
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-error"></span>
           Enregistrement
         </span>
       </div>
 
       <!-- Progress -->
-      <div class="flex min-w-0 flex-[1.3] basis-[260px] flex-col justify-between gap-3">
+      <div class="record-panel__progress flex p-2 min-w-0 flex-[1.3] basis-[260px] flex-col justify-between gap-3">
         <div class="flex items-baseline justify-between gap-2">
           <span class="text-2xl font-bold">{{ progress(status) }} %</span>
           <span class="text-sm text-base-content/60">

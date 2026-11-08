@@ -2,13 +2,46 @@
     <div class="flex-col space-y-5">
         <app-timelapse-tabs />
 
-        <div class="flex items-center justify-between items-center mb-2">
+        <app-timelapse-record-panel [compact]="true" />
+
+        <div class="flex justify-between items-center">
             <h1 class="text-2xl font-bold">
               Bibliothèque
             </h1>
+
+            <!-- View toggle -->
+            <div class="flex justify-end">
+              <div class="join" role="group" aria-label="Mode d'affichage">
+                <button
+                  type="button"
+                  class="btn join-item h-11 min-h-0 w-11 border-base-300 px-0"
+                  [class.btn-active]="viewMode === 'gallery'"
+                  [attr.aria-pressed]="viewMode === 'gallery'"
+                  aria-label="Vue galerie"
+                  title="Vue galerie"
+                  (click)="viewMode = 'gallery'"
+                >
+                  <svg class="h-5 w-5" aria-hidden="true">
+                    <use href="/assets/svg/gallery.svg#icon" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="btn join-item h-11 min-h-0 w-11 border-base-300 px-0"
+                  [class.btn-active]="viewMode === 'list'"
+                  [attr.aria-pressed]="viewMode === 'list'"
+                  aria-label="Vue liste"
+                  title="Vue liste"
+                  (click)="viewMode = 'list'"
+                >
+                  <svg class="h-5 w-5" aria-hidden="true">
+                    <use href="/assets/svg/list.svg#icon" />
+                  </svg>
+                </button>
+              </div>
+            </div>
         </div>
-        
-        <app-timelapse-record-panel/>
+
         
         <div>
       @if (error) {
@@ -20,38 +53,6 @@
           Aucun timelapse enregistré.
         </div>
       } @else {
-    
-        <!-- View toggle -->
-        <div class="mb-4 flex justify-end">
-          <div class="join" role="group" aria-label="Mode d'affichage">
-            <button
-              type="button"
-              class="btn join-item h-11 min-h-0 w-11 border-base-300 px-0"
-              [class.btn-active]="viewMode === 'gallery'"
-              [attr.aria-pressed]="viewMode === 'gallery'"
-              aria-label="Vue galerie"
-              title="Vue galerie"
-              (click)="viewMode = 'gallery'"
-            >
-              <svg class="h-5 w-5" aria-hidden="true">
-                <use href="/assets/svg/gallery.svg#icon" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="btn join-item h-11 min-h-0 w-11 border-base-300 px-0"
-              [class.btn-active]="viewMode === 'list'"
-              [attr.aria-pressed]="viewMode === 'list'"
-              aria-label="Vue liste"
-              title="Vue liste"
-              (click)="viewMode = 'list'"
-            >
-              <svg class="h-5 w-5" aria-hidden="true">
-                <use href="/assets/svg/list.svg#icon" />
-              </svg>
-            </button>
-          </div>
-        </div>
     
         <!-- Shared actions -->
         <ng-template #actions let-timelapse>
