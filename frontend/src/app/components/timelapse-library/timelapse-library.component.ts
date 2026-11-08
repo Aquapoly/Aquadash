@@ -23,12 +23,8 @@ export class TimelapseSecondsPipe implements PipeTransform {
     if (!timelapse.start_date) return NaN;
     const start: Date = timelapse.start_date;
 
-    if (timelapse.latest_frame_date) {
-      const diffMilli = timelapse.latest_frame_date.getTime() - start.getTime();
-      return Math.max(0, diffMilli / 1000);
-    }
-
-    return 0;
+    const diffMilli = timelapse.end_date.getTime() - start.getTime();
+    return Math.max(0, diffMilli / 1000);
   }
 }
 

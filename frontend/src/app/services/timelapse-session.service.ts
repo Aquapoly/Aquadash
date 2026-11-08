@@ -56,12 +56,7 @@ export class TimelapseSessionService {
   stop(): void {
     this._error$.next(null);
     this.http.post<TimelapseStatusDto>(`${SERVER_URL}/timelapse/stop`, {}).subscribe({
-      next: status => {
-        if (this.statusSnapshot?.metadata) {
-          this.store.upsert({ ...this.statusSnapshot.metadata, ready: true });
-        }
-        this.updateStatus(status);
-      },
+      next: status => this.updateStatus(status),
       error: err => {
         this._error$.next(`Échec de l'arrêt du timelapse: ${err.error?.detail || err.message}`);
       },

@@ -72,12 +72,18 @@ class TimelapseClient:
             raise ValueError("Duration must be greater than or equal to frequency")
 
     def stop(self) -> TimelapseStatus:
+        with self._lock:
+            timelapse_id = self._state.id
+            config = self._state.config
+
         self._stop_worker()
 
-        with self._lock:
-            self._state.reset()
-
-        return self.status()
+        metadata = self._metadata(timelapse_id) if timelapse_id else None
+        return TimelapseStatus(
+            is_recording=False,
+            metadata=metadata,
+            config=config,
+        )
 
     def status(self) -> TimelapseStatus:
         with self._lock:
@@ -286,6 +292,7 @@ class TimelapseClient:
                 except Exception as e:
                     print(f"[Timelapse] Error closing video writer: {e}")
 
+            metadata.end_date = min(datetime.now(timezone.utc), end_time)
             metadata.ready = True
             metadata.file_size_bytes = video_path.stat().st_size
             dump_metadata()
