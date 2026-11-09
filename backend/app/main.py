@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from typing import Annotated
 from datetime import datetime, timedelta
 import io
+from uuid import UUID
 
 from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
 # from jose import JWTError, jwt
@@ -393,8 +394,8 @@ async def list_timelapses_endpoint() -> list[TimelapseMetadata]:
     responses={httpx.codes.OK: {"mediaType": "video/mp4"}},
     response_class=Response
 )
-async def download_timelapse(timelapse_id: str) -> Response:
-    video_bytes = await camera_service.download_timelapse(timelapse_id)
+async def download_timelapse(timelapse_id: UUID) -> Response:
+    video_bytes = await camera_service.download_timelapse(str(timelapse_id))
     return Response(
         content=video_bytes,
         media_type="video/mp4",
@@ -402,5 +403,5 @@ async def download_timelapse(timelapse_id: str) -> Response:
     )
 
 @app.delete("/timelapse/{timelapse_id}", status_code=httpx.codes.NO_CONTENT)
-async def delete_timelapse(timelapse_id: str) -> None:
-    await camera_service.delete_timelapse(timelapse_id)
+async def delete_timelapse(timelapse_id: UUID) -> None:
+    await camera_service.delete_timelapse(str(timelapse_id))

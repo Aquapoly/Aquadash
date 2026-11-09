@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 
@@ -56,8 +58,8 @@ def timelapse_status() -> TimelapseStatus:
 def get_latest_frame():
     try:
         latest_frame_path = timelapse_client.get_latest_frame()
-        return FileResponse(latest_frame_path, media_type="image/jpeg", filename="timelapse_{timelapse_id}_latest.jpeg")
-        return FileResponse(timelapse_client.get_latest_frame())
+        timelapse_id = latest_frame_path.parent.name
+        return FileResponse(latest_frame_path, media_type="image/jpeg", filename=f"timelapse_{timelapse_id}_latest.jpeg")
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -66,9 +68,9 @@ def list_timelapses() -> list[TimelapseMetadata]:
     return timelapse_client.list()
 
 @app.get("/timelapse/{timelapse_id}/download")
-def download_timelapse(timelapse_id: str):
+def download_timelapse(timelapse_id: UUID):
     try:
-        video_path = timelapse_client.download(timelapse_id)
+        video_path = timelapse_client.download(str(timelapse_id))
         return FileResponse(
             video_path,
             media_type="video/mp4",
@@ -80,9 +82,9 @@ def download_timelapse(timelapse_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/timelapse/{timelapse_id}")
-def delete_timelapse(timelapse_id: str) -> None:
+def delete_timelapse(timelapse_id: UUID) -> None:
     try:
-        return timelapse_client.delete(timelapse_id)
+        return timelapse_client.delete(str(timelapse_id))
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
