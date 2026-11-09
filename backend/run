@@ -116,7 +116,7 @@ MODE="${ARGS[0]:-all}"
 
 case "$MODE" in
     alembic)
-        exec docker compose "${COMPOSE_FILES[@]}" run $BUILD_FLAG --rm app "${ARGS[@]}"
+        exec docker compose "${COMPOSE_FILES[@]}" run $BUILD_FLAG --rm migrate "${ARGS[@]}"
         ;;
     app)
         $NATIVE && start_app_native || start_app
