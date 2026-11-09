@@ -115,8 +115,8 @@ export class TimelapseMenuComponent implements OnInit, OnDestroy {
   }
 
   get expectedVidSizeBytes(): number {
-    const bytesPerFrame = 20 * 1024;
-    return this.expectedFrames * bytesPerFrame;
+    const BYTES_PER_FRAME = 20 * 1024; // Rough empirical estimate
+    return this.expectedFrames * BYTES_PER_FRAME;
   }
 
   get thumbnailUrl(): string | null {
