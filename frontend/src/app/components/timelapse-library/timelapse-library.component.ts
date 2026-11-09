@@ -11,8 +11,8 @@ import { FileSizePipe } from '@app/classes/filesize';
 import { TimelapseStoreService } from '@app/services/timelapse-store.service';
 import { TimelapseMetadataDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseMetadataDto } from '@app/interfaces/timelapse.mapper';
-import { TimelapseTabsComponent } from '../timelapse-tabs/timelapse-tabs.component';
-import { TimelapseRecordPanelComponent } from '../timelapse-record-panel/timelapse-record-panel.component';
+import { TimelapseTabsComponent } from '@app/components/timelapse-tabs/timelapse-tabs.component';
+import { TimelapseRecordPanelComponent } from '@app/components/timelapse-record-panel/timelapse-record-panel.component';
 
 @Pipe({
   name: 'timelapseSeconds',

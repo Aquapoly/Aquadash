@@ -15,8 +15,7 @@ export interface TimelapseMetadata {
     latest_frame_date: Date | null;
     end_date: Date;
     ready: boolean | null;
-    file_size_bytes?: number | null;
-    preview_url?: string | null;
+    file_size_bytes: number | null;
 }
 
 export interface TimelapseStatus {

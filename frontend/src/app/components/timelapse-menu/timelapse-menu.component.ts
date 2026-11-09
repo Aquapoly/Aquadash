@@ -7,8 +7,8 @@ import { FileSizePipe } from '@app/classes/filesize';
 import { TimelapseConfig, TimelapseStatus } from '@app/interfaces/timelapse';
 import { TimelapseRecordPanelComponent } from '@app/components/timelapse-record-panel/timelapse-record-panel.component';
 import { TimelapseSessionService } from '@app/services/timelapse-session.service';
-import { TimelapseTabsComponent } from '../timelapse-tabs/timelapse-tabs.component';
-import { CameraPictureComponent } from '../camera-picture/camera-picture.component';
+import { TimelapseTabsComponent } from '@app/components/timelapse-tabs/timelapse-tabs.component';
+import { CameraPictureComponent } from '@app/components/camera-picture/camera-picture.component';
 
 interface TimeUnit {
   label: string;
