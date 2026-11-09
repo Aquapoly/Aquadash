@@ -97,6 +97,24 @@ For a quickstart, you do not have to interact further with the camera daemon.
 
 However, it is possible to have finer control over the daemon and to issue commands to it. You can consult [`devices/camera/README.md`](devices/camera/README.md) for more information on the camera daemon and camera-ctl utilities.
 
+### Mock Camera (No Camera Needed)
+
+To work on the camera features without a physical camera, pass `--mock` to `run`:
+
+```bash
+./run cam --mock   # or ./run --mock
+```
+
+Instead of the camera daemon, a `mock-camera` container serves generated frames to the cam client, on the same socket. You don't need to install the daemon for this, and `run` won't ask for `sudo`. `--mock` doesn't work with `--native`.
+
+To serve your own images instead (e.g. photos of a real setup), run the mock directly, from `devices/camera/client`:
+
+```bash
+python mock_camera.py --name camera0 --sock-dir <dir> --images <images dir>
+```
+
+In tests, the `camera_server` and `connected_camera` fixtures (in `devices/camera/client/tests/conftest.py`) give you a mock camera on a temporary socket, and a `CameraClient` connected to it.
+
 ---
 
 ## ▶️ Step 3: Run

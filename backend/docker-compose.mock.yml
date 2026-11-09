@@ -1,0 +1,29 @@
+# Mock camera, for development without a physical camera.
+# Used by `./run cam --mock` (or `./run --mock`). Replaces the host's camera-daemon
+# with a container that serves generated frames on the same socket.
+
+services:
+  mock_camera:
+    build:
+      context: .
+      dockerfile: devices/camera/client/cam_client.Dockerfile
+    container_name: mock-camera
+    # Root only so it can create the socket in the fresh volume; the socket is then opened up to cam_client
+    user: "0:0"
+    command: ["python", "mock_camera.py", "--name", "${CAMERA_NAME:-camera0}", "--mode", "666"]
+    environment:
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - mock_camera_socket:/run/camera
+    # Only talks through the socket
+    network_mode: none
+    restart: unless-stopped
+
+  cam_client:
+    volumes:
+      - mock_camera_socket:/run/camera
+    depends_on:
+      - mock_camera
+
+volumes:
+  mock_camera_socket:

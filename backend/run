@@ -64,10 +64,14 @@ start_app() {
 
 start_cam() {
     echo "[Info] Starting camera block..."
-    start_cam_daemon
+    if $MOCK; then
+        echo "[Info] --mock: using the mock camera instead of camera-daemon"
+    else
+        start_cam_daemon
 
-    HOST_DEV_GID=$(sudo camera-ctl gid)
-    export HOST_DEV_GID
+        HOST_DEV_GID=$(sudo camera-ctl gid)
+        export HOST_DEV_GID
+    fi
 
     echo "[Info] Starting cam_client container..."
     docker compose "${COMPOSE_FILES[@]}" up -d $BUILD_FLAG cam_client
@@ -101,17 +105,27 @@ start_cam_native() {
 # --- Dispatch ---
 BUILD_FLAG=""
 NATIVE=false
+MOCK=false
 ARGS=()
 
 for arg in "$@"; do
     case "$arg" in
         --build)  BUILD_FLAG="--build" ;;
         --native) NATIVE=true ;;
+        --mock)   MOCK=true ;;
         *)        ARGS+=("$arg") ;;
     esac
 done
 
 MODE="${ARGS[0]:-all}"
+
+if $MOCK; then
+    if $NATIVE; then
+        echo "[Error] --mock is not supported with --native"
+        exit 1
+    fi
+    COMPOSE_FILES+=("-f" "docker-compose.mock.yml")
+fi
 
 case "$MODE" in
     alembic)
@@ -146,7 +160,7 @@ case "$MODE" in
         ;;
     *)
         echo "[Error] Unknown mode: $MODE"
-        echo "Usage: $0 [app|cam|all] [--build] [--native]"
+        echo "Usage: $0 [app|cam|all] [--build] [--native] [--mock]"
         echo "       $0 alembic [--build] <alembic arguments>"
         echo "  (no argument defaults to 'all')"
         exit 1
