@@ -27,6 +27,21 @@ services:
     networks:
       - backend
 
+  migrate:
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DOCKER: 1
+    user: "1000:1000"
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+
   app:
     build:
       context: .
@@ -52,6 +67,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
     ports:
       - "8000:8000"

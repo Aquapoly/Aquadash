@@ -81,6 +81,7 @@ start_app_native() {
         echo "[Info] Installing dependencies..."
         .venv/bin/pip install -r requirements.txt --quiet
     fi
+    .venv/bin/alembic upgrade head
     .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 
