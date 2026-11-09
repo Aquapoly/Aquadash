@@ -1,7 +1,7 @@
 """Added models positive id constraint
 
 Revision ID: 8975582390c7
-Revises: 
+Revises: 606274ae89f0
 Create Date: 2026-02-13 23:31:34.650229
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '8975582390c7'
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = '606274ae89f0'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
