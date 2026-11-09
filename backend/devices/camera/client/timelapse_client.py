@@ -113,8 +113,8 @@ class TimelapseClient:
     def delete(self, timelapse_id: str) -> None:
         if self._state.running and timelapse_id == self._state.id:
             self._stop_worker()
-        timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
-        if not timelapse_folder.exists() or not timelapse_folder.is_dir():
+        timelapse_folder: Path = self._folder(timelapse_id)
+        if not timelapse_folder.is_dir():
             raise FileNotFoundError(f"Timelapse {timelapse_id} not found")
         shutil.rmtree(timelapse_folder)
 
@@ -142,7 +142,7 @@ class TimelapseClient:
 
     def _run_worker(self, config: TimelapseConfig, timelapse_id: str) -> None:
         try:
-            timelapse_folder: Path = TIMELAPSES_DIR / timelapse_id
+            timelapse_folder: Path = self._folder(timelapse_id)
             timelapse_folder.mkdir(parents=True, exist_ok=True)
 
             config_path: Path = timelapse_folder / self.CONFIG_NAME
@@ -256,8 +256,16 @@ class TimelapseClient:
                 if self._state.id == timelapse_id:
                     self._state.reset()
 
+    def _folder(self, timelapse_id: str) -> Path:
+        # Resolve both sides, since .resolve() follows symlinks (including TIMELAPSES_DIR itself)
+        root = TIMELAPSES_DIR.resolve()
+        folder = (root / timelapse_id).resolve()
+        if folder.parent != root:
+            raise FileNotFoundError(f"Timelapse {timelapse_id} not found")
+        return folder
+
     def _path(self, timelapse_id: str, name: str) -> Path:
-        return TIMELAPSES_DIR / timelapse_id / name
+        return self._folder(timelapse_id) / name
     
     def _video_path(self, timelapse_id: str) -> Path:
         return self._path(timelapse_id, self.VIDEO_NAME)
