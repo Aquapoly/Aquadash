@@ -1,0 +1,20 @@
+:host {
+  display: block;
+}
+
+.record-panel--compact .record-panel__thumbnail {
+  width: 100%;
+  max-width: 300px;
+}
+
+.record-panel--compact .record-panel__progress {
+  gap: 0.75rem;
+  padding: 0;
+}
+
+@media (min-width: 700px) {
+  .record-panel--compact {
+    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
+    align-items: center;
+  }
+}

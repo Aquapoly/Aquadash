@@ -104,6 +104,14 @@ def get_latest_frame():
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+@app.get("/timelapse/{timelapse_id}/preview")
+def get_timelapse_preview(timelapse_id: UUID):
+    try:
+        preview_path = timelapse_client.get_preview(str(timelapse_id))
+        return FileResponse(preview_path, media_type="image/jpeg")
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 @app.get("/timelapse")
 def list_timelapses() -> list[TimelapseMetadata]:
     return timelapse_client.list()

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import queue
 import shutil
+import stat
 import threading
 import time
 import uuid
@@ -72,19 +73,31 @@ class TimelapseClient:
             raise ValueError("Duration must be greater than or equal to frequency")
 
     def stop(self) -> TimelapseStatus:
+        with self._lock:
+            timelapse_id = self._state.id
+            config = self._state.config
+
         self._stop_worker()
 
-        with self._lock:
-            self._state.reset()
-
-        return self.status()
+        metadata = self._metadata(timelapse_id) if timelapse_id else None
+        if metadata is not None and timelapse_id is not None:
+            metadata = self._with_file_size(timelapse_id, metadata)
+        return TimelapseStatus(
+            is_recording=False,
+            metadata=metadata,
+            config=config,
+        )
 
     def status(self) -> TimelapseStatus:
         with self._lock:
-            metadata: TimelapseMetadata | None = self._current_metadata() 
+            timelapse_id = self._state.id
+            is_recording = self._state.is_recording
+            metadata: TimelapseMetadata | None = self._current_metadata()
             config: TimelapseConfig | None = self._current_config() or self._state.config
+        if metadata is not None and timelapse_id is not None:
+            metadata = self._with_file_size(timelapse_id, metadata)
         return TimelapseStatus(
-            is_recording=self._state.is_recording,
+            is_recording=is_recording,
             metadata=metadata,
             config=config,
         )
@@ -95,6 +108,12 @@ class TimelapseClient:
             if not latest_frame_path or not latest_frame_path.exists():
                 raise FileNotFoundError("No frame available")
             return latest_frame_path
+
+    def get_preview(self, timelapse_id: str) -> Path:
+        preview_path = self._path(timelapse_id, self.LATEST_FRAME_NAME)
+        if not preview_path.is_file():
+            raise FileNotFoundError(f"No preview available for timelapse {timelapse_id}")
+        return preview_path
 
     def list(self) -> list[TimelapseMetadata]:
         if not TIMELAPSES_DIR.exists():
@@ -107,7 +126,8 @@ class TimelapseClient:
             metadata_path: Path = directory / self.METADATA_NAME
             if not metadata_path.exists():
                 continue
-            timelapses.append(TimelapseMetadata.model_validate_json(metadata_path.read_text()))
+            metadata = TimelapseMetadata.model_validate_json(metadata_path.read_text())
+            timelapses.append(self._with_file_size(directory.name, metadata))
 
         timelapses.sort(key=lambda x: x.start_date, reverse=True)
         return timelapses
@@ -148,6 +168,7 @@ class TimelapseClient:
         metadata: TimelapseMetadata,
         config: TimelapseConfig,
     ) -> None:
+        metadata = self._with_file_size(metadata.id, metadata)
         status = TimelapseStatus(is_recording=is_recording, metadata=metadata, config=config)
         event = status.model_dump_json()
         while True:
@@ -199,7 +220,9 @@ class TimelapseClient:
                 # atomic write
                 tmp = metadata_path.with_suffix(".tmp")
                 try:
-                    tmp.write_text(metadata.model_dump_json())
+                    tmp.write_text(
+                        metadata.model_dump_json(exclude={"file_size_bytes"})
+                    )
                     tmp.replace(metadata_path)
                 except (FileNotFoundError, PermissionError, OSError) as e:
                     print(f"[Timelapse] Metadata write failed: {e}")
@@ -276,6 +299,7 @@ class TimelapseClient:
                 except Exception as e:
                     print(f"[Timelapse] Error closing video writer: {e}")
 
+            metadata.end_date = min(datetime.now(timezone.utc), end_time)
             metadata.ready = True
             dump_metadata()
         finally:
@@ -298,6 +322,21 @@ class TimelapseClient:
     
     def _video_path(self, timelapse_id: str) -> Path:
         return self._path(timelapse_id, self.VIDEO_NAME)
+
+    def _with_file_size(
+        self,
+        timelapse_id: str,
+        metadata: TimelapseMetadata,
+    ) -> TimelapseMetadata:
+        try:
+            video_stat = self._video_path(timelapse_id).stat()
+        except FileNotFoundError:
+            file_size_bytes = None
+        else:
+            file_size_bytes = (
+                video_stat.st_size if stat.S_ISREG(video_stat.st_mode) else None
+            )
+        return metadata.model_copy(update={"file_size_bytes": file_size_bytes})
 
     def _metadata(self, timelapse_id: str) -> TimelapseMetadata | None:
         metadata_path: Path = self._path(timelapse_id, self.METADATA_NAME)
