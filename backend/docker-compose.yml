@@ -73,7 +73,7 @@ services:
       CAMERA_NAME: ${CAMERA_NAME:-camera0}
 
     healthcheck:
-      test: ["CMD", "python", "-c", "healthcheck.py"]
+      test: ["CMD", "python", "healthcheck.py"]
       interval: 10s
       timeout: 3s
       retries: 3
