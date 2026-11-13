@@ -31,6 +31,7 @@ def picture():
         print(f"[Error] /picture camera socket not found: {e}")
         return Response(content="Camera service unavailable.", status_code=503)
     except CameraNotAvailableError as e:
+        print(f"[Error] /picture camera daemon sent no frame for '{CAMERA_NAME}' (see camera-daemon journal)")
         return Response(content=str(e), status_code=404)
 
 @app.get("/health")

@@ -50,10 +50,16 @@ start_cam_daemon() {
     fi
 
     echo "[Info] Registering camera: ${CAMERA_NAME} on ${CAMERA_DEVICE}"
-    if sudo camera-ctl list | grep -q "$CAMERA_NAME"; then
-        echo "[Info] Camera ${CAMERA_NAME} already registered, skipping"
-    else
+    # `camera-ctl list` prints one "<name> ---> <device>" line per camera
+    local current_device
+    current_device=$(sudo camera-ctl list | awk -v name="$CAMERA_NAME" '$1 == name { print $3 }')
+    if [[ -z "$current_device" ]]; then
         sudo camera-ctl create "$CAMERA_NAME" "$CAMERA_DEVICE"
+    elif [[ "$current_device" != "$CAMERA_DEVICE" ]]; then
+        echo "[Info] Camera ${CAMERA_NAME} is wired to ${current_device}, rewiring"
+        sudo camera-ctl rewire "$CAMERA_NAME" "$CAMERA_DEVICE"
+    else
+        echo "[Info] Camera ${CAMERA_NAME} already registered, skipping"
     fi
 }
 

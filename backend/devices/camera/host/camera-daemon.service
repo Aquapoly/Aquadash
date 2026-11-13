@@ -10,6 +10,9 @@ RuntimeDirectoryMode=0770
 User=root
 Group=host-dev
 
+# Without this, print() output only reaches the journal when the daemon stops
+Environment=PYTHONUNBUFFERED=1
+
 # Ensure SELinux (if exists) contexts are correct at every start
 ExecStartPre=-/usr/sbin/restorecon -Rv /run/camera
 
