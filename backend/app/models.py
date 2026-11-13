@@ -88,6 +88,10 @@ class Actuator(Base):
 
     __table_args__ = (
         CheckConstraint("actuator_id>=0", name="check_id_actuator_positive"),
+        CheckConstraint(
+            "activation_period >= 0 AND activation_duration >= 0",
+            name="check_actuator_time_values"
+        ),
     )
 
 
