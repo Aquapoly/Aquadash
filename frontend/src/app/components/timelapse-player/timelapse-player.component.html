@@ -1,0 +1,52 @@
+<dialog
+  #videoDialog
+  class="modal"
+  aria-labelledby="timelapse-player-title"
+  (close)="onDialogClose()"
+  (click)="onDialogClick($event)"
+>
+  <div class="modal-box w-fit max-w-[calc(100vw-2rem)] overflow-hidden p-0" (click)="$event.stopPropagation()">
+    <div class="flex items-center justify-between gap-6 border-b border-base-300 bg-base-100 px-4 py-3 sm:px-5">
+      <div class="min-w-0">
+        <h2 id="timelapse-player-title" class="truncate text-base font-semibold leading-tight sm:text-lg">
+          Timelapse
+        </h2>
+        @if (selectedTimelapse) {
+          <p class="mt-1 text-xs text-base-content/60 sm:text-sm">
+            {{ selectedTimelapse.start_date | date:'dd/MM/yyyy HH:mm' }}
+          </p>
+        }
+      </div>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm btn-circle shrink-0 hover:bg-base-200"
+        aria-label="Fermer le lecteur vidéo"
+        title="Fermer"
+        (click)="close()"
+      >
+        <svg class="h-5 w-5" aria-hidden="true">
+          <use href="/assets/svg/close.svg#icon" />
+        </svg>
+      </button>
+    </div>
+    @if (selectedTimelapse; as timelapse) {
+      @if (videoError) {
+        <div class="grid aspect-video place-items-center bg-base-200 p-6 text-center">
+            <p class="font-medium">La vidéo n’a pas pu être lue.</p>
+        </div>
+      } @else {
+        <video
+          class="w-auto h-auto max-w-[calc(100vw-2rem)] max-h-[75dvh] block"
+          [src]="videoUrl(timelapse)"
+          controls
+          autoplay
+          playsinline
+          [attr.aria-label]="'Lecture de ' + timelapse.name"
+          (error)="onVideoError()"
+        >
+          Votre navigateur ne prend pas en charge la lecture vidéo.
+        </video>
+      }
+    }
+  </div>
+</dialog>
