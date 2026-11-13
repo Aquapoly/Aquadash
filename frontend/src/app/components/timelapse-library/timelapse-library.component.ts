@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Pipe, PipeTransform } from '@angular/core';
@@ -13,6 +13,7 @@ import { TimelapseMetadataDto } from '@app/interfaces/timelapse.dto';
 import { mapTimelapseMetadataDto } from '@app/interfaces/timelapse.mapper';
 import { TimelapseTabsComponent } from '@app/components/timelapse-tabs/timelapse-tabs.component';
 import { TimelapseRecordPanelComponent } from '@app/components/timelapse-record-panel/timelapse-record-panel.component';
+import { TimelapsePlayerComponent } from '@app/components/timelapse-player/timelapse-player.component';
 
 @Pipe({
   name: 'timelapseSeconds',
@@ -31,11 +32,13 @@ export class TimelapseSecondsPipe implements PipeTransform {
 @Component({
   selector: 'app-timelapse-library',
   standalone: true,
-  imports: [CommonModule, TimelapseSecondsPipe, DurationPipe, TimelapseTabsComponent, FileSizePipe, TimelapseRecordPanelComponent],
+  imports: [CommonModule, TimelapseSecondsPipe, DurationPipe, TimelapseTabsComponent, FileSizePipe, TimelapseRecordPanelComponent, TimelapsePlayerComponent],
   templateUrl: './timelapse-library.component.html',
   styleUrl: './timelapse-library.component.scss'
 })
 export class TimelapseLibraryComponent implements OnInit{
+  @ViewChild(TimelapsePlayerComponent) private videoPlayer!: TimelapsePlayerComponent;
+
   readonly SERVER_URL = SERVER_URL;
   readonly timelapses$: Observable<TimelapseMetadata[]>;
   readonly timelapsesEmpty$: Observable<boolean>;
@@ -69,6 +72,10 @@ export class TimelapseLibraryComponent implements OnInit{
 
   download(timelapse: TimelapseMetadata) {
     window.open(`${SERVER_URL}/timelapse/${timelapse.id}/download`, '_blank');
+  }
+
+  playVideo(timelapse: TimelapseMetadata): void {
+    this.videoPlayer.open(timelapse);
   }
 
   delete(timelapse: TimelapseMetadata) {

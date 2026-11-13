@@ -419,6 +419,15 @@ async def download_timelapse(timelapse_id: UUID) -> Response:
         headers={"Content-Disposition": f"attachment; filename=timelapse_{timelapse_id}.mp4"}
     )
 
+@app.get(
+    "/timelapse/{timelapse_id}/video",
+    responses={httpx.codes.OK: {"mediaType": "video/mp4"}},
+    response_class=Response,
+)
+async def play_timelapse(timelapse_id: UUID) -> Response:
+    video_bytes = await camera_service.download_timelapse(str(timelapse_id))
+    return Response(content=video_bytes, media_type="video/mp4")
+
 @app.delete("/timelapse/{timelapse_id}", status_code=httpx.codes.NO_CONTENT)
 async def delete_timelapse(timelapse_id: UUID) -> None:
     await camera_service.delete_timelapse(str(timelapse_id))

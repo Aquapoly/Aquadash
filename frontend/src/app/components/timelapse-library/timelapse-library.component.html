@@ -100,7 +100,19 @@
                       Aucun aperçu
                     </div>
                   }
-                  <span class="badge badge-m absolute bottom-2 right-2 border-0 bg-black/70 text-white">
+                  <button
+                    type="button"
+                    class="absolute inset-0 z-10 grid place-items-center bg-black/0 transition-colors hover:bg-black/20 focus-visible:bg-black/20"
+                    [attr.aria-label]="'Lire le timelapse ' + timelapse.name"
+                    (click)="playVideo(timelapse)"
+                  >
+                    <span class="grid h-14 w-14 place-items-center rounded-full bg-black/65 text-white shadow-lg transition-transform hover:scale-105">
+                      <svg class="ml-1 h-7 w-7" aria-hidden="true">
+                        <use href="/assets/svg/play.svg#icon" />
+                      </svg>
+                    </span>
+                  </button>
+                  <span class="badge badge-m pointer-events-none absolute bottom-2 right-2 z-20 border-0 bg-black/70 text-white">
                     {{ timelapse.frames / timelapse.framerate | duration }}
                   </span>
                 </div>
@@ -137,18 +149,32 @@
                     @for (timelapse of (timelapses$ | async) ?? []; track timelapse.id) {
                     <tr class="hover:bg-base-50">
                     <td class="py-3 px-4 border-b">
+                        <div class="relative h-16 w-24 overflow-hidden rounded-md bg-base-200">
                         @if (timelapse.latest_frame_date) {
                         <img
                             [src]="previewUrl(timelapse)"
                             [alt]="'Aperçu de ' + timelapse.name"
-                            class="h-16 w-24 rounded-md bg-base-200 object-cover"
+                            class="absolute inset-0 h-full w-full object-cover"
                             loading="lazy"
                         />
                         } @else {
-                        <div class="flex h-16 w-24 items-center justify-center rounded-md bg-base-200 text-xs text-base-content/50">
+                        <div class="flex h-full w-full items-center justify-center text-xs text-base-content/50">
                             Aucun aperçu
                         </div>
                         }
+                        <button
+                            type="button"
+                            class="absolute inset-0 grid place-items-center bg-black/0 text-white transition-colors hover:bg-black/20 focus-visible:bg-black/20"
+                            [attr.aria-label]="'Lire le timelapse ' + timelapse.name"
+                            (click)="playVideo(timelapse)"
+                        >
+                            <span class="grid h-9 w-9 place-items-center rounded-full bg-black/65 shadow">
+                                <svg class="ml-0.5 h-5 w-5" aria-hidden="true">
+                                    <use href="/assets/svg/play.svg#icon" />
+                                </svg>
+                            </span>
+                        </button>
+                        </div>
                     </td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse.start_date | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td class="py-3 px-4 border-b text-base-900">{{ timelapse | timelapseSeconds | duration }}</td>
@@ -196,3 +222,5 @@
       }
     </div>
 </div>
+
+<app-timelapse-player />
