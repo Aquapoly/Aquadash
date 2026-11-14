@@ -12,7 +12,7 @@ import io
 from uuid import UUID
 
 from . import crud, models, schemas
-from .database import engine, get_db
+from .database import get_db
 from .services.actuator import get_actuator_activation
 from .services import cam_client as camera_service
 from .services.cam_event_listener import listen_for_timelapse_events
@@ -21,8 +21,6 @@ from .security import authentification
 from .security import permissions
 from .ws_manager import manager as ws_manager
 from shared.timelapse_models import TimelapseConfig, TimelapseMetadata, TimelapseStatus
-
-models.Base.metadata.create_all(bind=engine)
 
 
 sensors_data = dict()
