@@ -1,10 +1,17 @@
 from app import models, schemas
 from app.classes.activation_condition import activation_map
 
+import math
 from datetime import datetime, timedelta
 from pytz import UTC
 
 DISCONNECTED_DELTA = timedelta(days=1)
+
+
+def _is_valid_value(value) -> bool:
+    # bool is a subclass of int, but True/False are not measurements
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
 
 def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (models.Measurement | None)): 
     """
@@ -35,6 +42,16 @@ def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (model
 
     if (last_measurement is None):
         status = "Le capteur n'a enregistré aucune mesure."
+        return schemas.ActuatorActivation(
+            activate=False, status=status, duration=actuator.activation_duration, period=actuator.activation_period)
+
+    if (last_measurement.sensor_id != actuator.sensor_id):
+        status = "La mesure ne provient pas du capteur de l'actuateur."
+        return schemas.ActuatorActivation(
+            activate=False, status=status, duration=actuator.activation_duration, period=actuator.activation_period)
+
+    if (last_measurement.timestamp is None or not _is_valid_value(last_measurement.value)):
+        status = "La mesure est invalide."
         return schemas.ActuatorActivation(
             activate=False, status=status, duration=actuator.activation_duration, period=actuator.activation_period)
     
