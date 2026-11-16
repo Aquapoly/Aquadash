@@ -99,8 +99,6 @@ def test_get_actuator_activation_still_activated(dummy_actuators: list[models.Ac
     ([("activation_condition", models.ActivationCondition.always)], 1.0),
     ([("activation_condition", models.ActivationCondition.always)], 2.0),
     ([("activation_condition", models.ActivationCondition.always)], -1.0),
-    ([("activation_condition", models.ActivationCondition.low_or_high)], -1.0),
-    ([("activation_condition", models.ActivationCondition.low_or_high)], 2.0)
 ])
 def test_get_actuator_activation(dummy_actuators: list[models.Actuator], actuator_modifications, measurement_value):
     """Test result of get_actuator_activation when it should return active"""
@@ -120,6 +118,25 @@ def test_get_actuator_activation(dummy_actuators: list[models.Actuator], actuato
     result = get_actuator_activation(actuator, last_measurement)
     assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
     assert result.activate == True, "Actuator should be activated"
+
+
+@pytest.mark.parametrize("measurement_value", [-1.0, 1.0, 2.0])
+def test_get_actuator_activation_unsupported_condition(dummy_actuators: list[models.Actuator], measurement_value):
+    """Test result of get_actuator_activation with a condition missing from activation_map (low_or_high)"""
+    actuator = dummy_actuators[0]
+    actuator.activation_period = 0.01
+    actuator.activation_condition = models.ActivationCondition.low_or_high
+    time.sleep(0.02)
+
+    last_measurement = models.Measurement(
+        sensor_id=actuator.sensor_id,
+        timestamp=datetime.datetime.now().astimezone(),
+        value=measurement_value
+    )
+
+    result = get_actuator_activation(actuator, last_measurement)
+    assert isinstance(result, schemas.ActuatorActivation), f"Result should be of type schemas.ActuatorActivation, was {type(result)}"
+    assert result.activate == False, "Actuator should not activate with an unsupported condition"
 
 
 def test_get_actuator_activation_no_measurements(db_session: Session, dummy_actuators: list[models.Actuator]):
