@@ -20,10 +20,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    op.execute(
+        "UPDATE actuators SET activation_period = 1 WHERE activation_period <= 0"
+    )
+    op.execute(
+        "UPDATE actuators SET activation_duration = 1 WHERE activation_duration <=0"
+    )
     op.create_check_constraint(
         "check_actuator_time_values",
         "actuators",
-        "activation_period >= 0 AND activation_duration >= 0"
+        "activation_period > 0 AND activation_duration > 0"
     )
 
 
