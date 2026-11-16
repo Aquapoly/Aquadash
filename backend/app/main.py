@@ -62,6 +62,7 @@ app.add_middleware(
 @app.post(
     "/prototypes",
     tags=["Prototypes"],
+    status_code=status.HTTP_201_CREATED,
     # dependencies=[Depends(permissions.needs_prototype_modification_permission)],
     response_model=schemas.Prototype,
 )
@@ -73,7 +74,7 @@ async def post_prototype(
 
 
 
-@app.post("/sensors", tags=["Sensors"], response_model=schemas.Sensor)
+@app.post("/sensors", tags=["Sensors"], status_code=status.HTTP_201_CREATED, response_model=schemas.Sensor)
 async def post_sensor(
     sensor: schemas.SensorBase, 
     db: Session = Depends(get_db)
@@ -88,12 +89,17 @@ async def sensors(
     prototype_id: int,
     db: Session = Depends(get_db),
 ):
-    return crud.get_sensors(db=db, prototype_id=prototype_id)
+    sensors = crud.get_sensors(db=db, prototype_id=prototype_id)
+    if not sensors:
+        # An empty list is ambiguous: no sensors yet, or no such prototype
+        crud.ensure_exists(db, models.Prototype.prototype_id, prototype_id, "prototype")
+    return sensors
 
 
 @app.post(
     "/measurements",
     tags=["Measurements"],
+    status_code=status.HTTP_201_CREATED,
     # dependencies=[Depends(permissions.needs_measurements_post_permission)],
     response_model=schemas.Measurement,
 )
@@ -108,6 +114,7 @@ async def post_measurement(
 @app.post(
     "/actuators",
     tags=["Actuators"],
+    status_code=status.HTTP_201_CREATED,
     dependencies=[],
     response_model=schemas.Actuator,
 )
@@ -222,6 +229,9 @@ async def get_measurement(
             start_time=start_time,
             end_time=end_time,
         )
+    if not measurements:
+        # An empty list is ambiguous: no measurements in that range, or no such sensor
+        crud.ensure_exists(db, models.Sensor.sensor_id, sensor_id, "sensor")
     return measurements
 
 @app.get(
@@ -254,7 +264,11 @@ async def delete_measurement(
     response_model=list[schemas.Actuator],
 )
 async def actuator(prototype_id: int, db: Session = Depends(get_db)):
-    return crud.get_actuators(db=db, prototype_id=prototype_id)
+    actuators = crud.get_actuators(db=db, prototype_id=prototype_id)
+    if not actuators:
+        # An empty list is ambiguous: no actuators yet, or no such prototype
+        crud.ensure_exists(db, models.Prototype.prototype_id, prototype_id, "prototype")
+    return actuators
 
 
 @app.get("/picture")

@@ -1,4 +1,4 @@
-from sqlalchemy import and_, insert, select, update
+from sqlalchemy import and_, exists, insert, select, update
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -16,6 +16,19 @@ from datetime import datetime, timedelta
 import random, pytz
 from concurrent.futures import ThreadPoolExecutor
 
+
+
+def ensure_exists(db: Session, id_column, row_id: int, label: str):
+    """
+    Raises a 404 if no row has this id. For list routes under a parent, e.g. /sensors/{prototype_id}:
+    call it only when the list comes back empty, a non-empty list already proves the parent exists.
+    Queries the DB rather than the session cache, so pending deletes are taken into account.
+    """
+    if not db.scalar(select(exists().where(id_column == row_id))):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No {label} with id {row_id}",
+        )
 
 
 def get_prototypes(db: Session, prototype_id: int | None = None):
@@ -42,21 +55,19 @@ def post_prototype(db: Session, prototype: schemas.Prototype):
     Returns:
         models.Prototype: The created prototype.
     Raises:
-        HTTPException: On integrity error (e.g., duplicate), raises 409 with details.
+        HTTPException: On integrity error (e.g., duplicate id), see `integrity_error_to_http`.
     """
+    values = prototype.model_dump()
     query = (
         insert(models.Prototype)
-        .values(prototype.model_dump())
+        .values(values)
         .returning(models.Prototype)
     )
     try:
         result = db.execute(query).scalars().first()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Prototype with this id already exists",
-        )
+        raise integrity_error_to_http(err, values)
 
     db.commit()
     return result
@@ -351,29 +362,16 @@ def update_actuator_last_activated(db: Session, actuator_id: int):
     Returns:
         models.Actuator: The updated actuator instance.
     Raises:
-        HTTPException: If an integrity error occurs during the update (422) or if the actuator_id does not exist (400).
+        HTTPException: If the actuator_id does not exist, raises 404.
     """
-    query = (
-        update(models.Actuator).
-        where(models.Actuator.actuator_id == actuator_id).
-        values(last_activated=datetime.now().astimezone()).
-        returning(models.Actuator)
+    return _patch_row(
+        db,
+        models.Actuator,
+        models.Actuator.actuator_id,
+        actuator_id,
+        {"last_activated": datetime.now().astimezone()},
+        "actuator",
     )
-    try:
-        result = db.execute(query).scalars().first()
-    except IntegrityError as err:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Integrity error in db: {err}",
-        )
-    db.commit()
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Received an actuator with non existant actuator_id {actuator_id}",
-        )
-    return result
 
 def update_sensor(db: Session, sensor_id: int, sensor: schemas.SensorUpdate):
     """
