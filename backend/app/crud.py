@@ -296,55 +296,54 @@ def post_user(db: Session, username: str, password: str):
     db.refresh(db_new_user)
     return db_new_user
 
-def update_actuator(db: Session, actuator: schemas.Actuator):
+def _patch_row(db: Session, model, id_column, row_id: int, values: dict, label: str):
     """
-    Updates an existing actuator in the database.
+    Updates only the given columns of one row and returns the updated row.
+    Raises:
+        HTTPException: 422 if an integrity error occurs (e.g., constraint violation).
+        HTTPException: 404 if no row has this id.
+    """
+    if values:
+        query = update(model).where(id_column == row_id).values(**values).returning(model)
+        try:
+            result = db.execute(query).scalars().first()
+        except IntegrityError as err:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Integrity error in db: {err}",
+            )
+        db.commit()
+    else:
+        result = db.get(model, row_id)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No {label} with id {row_id}",
+        )
+    return result
+
+def update_actuator(db: Session, actuator_id: int, actuator: schemas.ActuatorUpdate):
+    """
+    Updates an existing actuator in the database. Fields not set in `actuator` are left unchanged.
     Args:
         db (Session): SQLAlchemy session.
-        actuator (schemas.Actuator): Validated actuator data to update in the DB.
+        actuator_id (int): The id of the actuator to update.
+        actuator (schemas.ActuatorUpdate): Validated actuator fields to update in the DB.
     Returns:
         models.Actuator: The updated actuator.
     Raises:
         HTTPException: If an integrity error occurs (e.g., constraint violation), raises 422 with details.
-        HTTPException: If the actuator_id does not exist, raises 400 with details.
+        HTTPException: If the actuator_id does not exist, raises 404 with details.
     """
-    query = (
-        update(models.Actuator).
-        where(models.Actuator.actuator_id == actuator.actuator_id).
-        values(**actuator.model_dump()).
-        returning(models.Actuator)
+    return _patch_row(
+        db,
+        models.Actuator,
+        models.Actuator.actuator_id,
+        actuator_id,
+        actuator.model_dump(exclude_unset=True),
+        "actuator",
     )
-    try:
-        result = db.execute(query).scalars().first()
-    except IntegrityError as err:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Integrity error in db: {err}",
-        )
-    db.commit()
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Received an actuator with non existant actuator_id {actuator.actuator_id}",
-        )
-    return result
-
-def update_actuators(db: Session, actuators: list[schemas.Actuator]):
-    """
-    Updates multiple actuators in the database.
-    Args:
-        db (Session): SQLAlchemy session.
-        actuators (list[schemas.Actuator]): List of validated actuator data to update in the DB.
-    Returns:
-        list[models.Actuator]: List of updated actuator objects.
-    Raises:
-        HTTPException: If an actuator update fails, raises an appropriate HTTPException with details.
-    """
-    updated_actuators = []
-    for actuator in actuators:
-        updated_actuators.append(update_actuator(db, actuator))
-    return updated_actuators
 
 def update_actuator_last_activated(db: Session, actuator_id: int):
     """
@@ -379,55 +378,27 @@ def update_actuator_last_activated(db: Session, actuator_id: int):
         )
     return result
 
-def update_sensor(db: Session, sensor: schemas.Sensor):
+def update_sensor(db: Session, sensor_id: int, sensor: schemas.SensorUpdate):
     """
-    Updates an existing sensor in the database.
+    Updates an existing sensor in the database. Fields not set in `sensor` are left unchanged.
     Args:
         db (Session): SQLAlchemy session.
-        sensor (schemas.Sensor): Validated sensor data to update in the DB.
+        sensor_id (int): The id of the sensor to update.
+        sensor (schemas.SensorUpdate): Validated sensor fields to update in the DB.
     Returns:
         models.Sensor: The updated sensor object.
     Raises:
         HTTPException: If an integrity error occurs (e.g., constraint violation), raises 422 with details.
-        HTTPException: If the sensor_id does not exist, raises 400 with details.
+        HTTPException: If the sensor_id does not exist, raises 404 with details.
     """
-    query = (
-        update(models.Sensor).
-        where(models.Sensor.sensor_id == sensor.sensor_id).
-        values(**sensor.model_dump()).
-        returning(models.Sensor)
+    return _patch_row(
+        db,
+        models.Sensor,
+        models.Sensor.sensor_id,
+        sensor_id,
+        sensor.model_dump(exclude_unset=True),
+        "sensor",
     )
-    try:
-        result = db.execute(query).scalars().first()
-    except IntegrityError as err:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Integrity error in db: {err}",
-        )
-    db.commit()
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Received a sensor with non existant sensor_id {sensor.sensor_id}",
-        )
-    return result
-
-def update_sensors(db: Session, sensors: list[schemas.Sensor]):
-    """
-    Updates multiple sensors in the database.
-    Args:
-        db (Session): SQLAlchemy session.
-        sensors (list[schemas.Sensor]): List of validated sensor data to update in the DB.
-    Returns:
-        list[models.Sensor]: List of updated sensor objects.
-    Raises:
-        HTTPException: If an update fails (e.g., sensor not found), raises appropriate HTTP error.
-    """
-    updated_sensors = []
-    for sensor in sensors:
-        updated_sensors.append(update_sensor(db, sensor))
-    return updated_sensors
 
 def default_populate_database(db: Session):
     """

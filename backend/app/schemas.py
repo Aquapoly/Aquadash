@@ -1,11 +1,25 @@
 # TODO: séparer et déplacer les schemas dans un dossier schema (renommer le dossier "classes")
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from .classes.activation_condition import ActivationCondition
 
 from .classes.actuator_type import ActuatorType
 from .classes.sensor_type import SensorType
+
+
+class PartialUpdate(BaseModel):
+    """
+    Base for PATCH bodies. Fields left out of the request are not modified.
+    Fields are optional only so they can be omitted: an explicit null is rejected.
+    """
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def reject_null(cls, value):
+        if value is None:
+            raise ValueError("cannot be null, omit the field to leave it unchanged")
+        return value
 
 
 class Prototype(BaseModel):
@@ -31,6 +45,16 @@ class Sensor(SensorBase):
 
     class Config:
         from_attributes = True
+
+
+class SensorUpdate(PartialUpdate):
+    sensor_type: SensorType | None = None
+    prototype_id: int | None = None
+    sensor_unit: str | None = None
+    threshold_critically_low: float | None = None
+    threshold_low: float | None = None
+    threshold_high: float | None = None
+    threshold_critically_high: float | None = None
 
 
 class MeasurementBase(BaseModel):
@@ -63,6 +87,17 @@ class Actuator(ActuatorBase):
 
     class Config:
         from_attributes = True
+
+
+class ActuatorUpdate(PartialUpdate):
+    # last_activated is left out: it has its own route, PATCH /actuators/{actuator_id}/last_activated
+    actuator_type: ActuatorType | None = None
+    sensor_id: int | None = None
+    condition_value: float | None = None
+    activation_condition: ActivationCondition | None = None
+    activation_period: float | None = None
+    activation_duration: float | None = None
+    enabled: bool | None = None
 
 class ActuatorActivation(BaseModel):
     activate: bool

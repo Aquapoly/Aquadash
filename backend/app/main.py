@@ -118,28 +118,30 @@ async def post_actuator(
     return crud.post_actuator(db=db, actuator=actuator)
 
 @app.patch(
-    "/actuators",
+    "/actuators/{actuator_id}",
     tags=["Actuators"],
     dependencies=[],
-    response_model=list[schemas.Actuator],
+    response_model=schemas.Actuator,
 )
-async def update_actuators(
-    actuators: list[schemas.Actuator],
+async def update_actuator(
+    actuator_id: int,
+    actuator: schemas.ActuatorUpdate,
     db: Session = Depends(get_db),
 ):
-    return crud.update_actuators(db=db, actuators=actuators)
+    return crud.update_actuator(db=db, actuator_id=actuator_id, actuator=actuator)
 
 @app.patch(
-    "/sensors",
+    "/sensors/{sensor_id}",
     tags=["Sensors"],
     dependencies=[],
-    response_model=list[schemas.Sensor]
+    response_model=schemas.Sensor
 )
-async def update_sensors(
-    sensors: list[schemas.Sensor],
+async def update_sensor(
+    sensor_id: int,
+    sensor: schemas.SensorUpdate,
     db: Session = Depends(get_db),
 ):
-    return crud.update_sensors(db=db, sensors=sensors)
+    return crud.update_sensor(db=db, sensor_id=sensor_id, sensor=sensor)
 
 @app.get(
         "/actuators/{actuator_id}/state",

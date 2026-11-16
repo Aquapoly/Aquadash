@@ -16,6 +16,7 @@ import {
 } from '../../constants/constants';
 import { NONE_TYPE } from '@angular/compiler';
 import { Dictionary, error } from 'highcharts';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-actuator-page',
@@ -48,19 +49,26 @@ export class ConfigurationPageComponent implements OnInit {
   }
 
   onSubmit() {
-    this.api.patchActuators(this.actuators).subscribe((res) => {
-      if (res.status === HttpStatusCode.Ok) {
-        if (this.modal) {
-          this.modal.title = MODAL_MESSAGES.SUCCESS_TITLE;
-          this.modal.content = MODAL_MESSAGES.SUCCESS_CONTENT;
-          this.modal.showModal();
+    forkJoin(
+      this.actuators.map((actuator) => this.api.patchActuator(actuator.actuator_id, actuator))
+    ).subscribe({
+      next: (responses) => {
+        if (responses.every((res) => res.status === HttpStatusCode.Ok)) {
+          this.showResponseModal(MODAL_MESSAGES.SUCCESS_TITLE, MODAL_MESSAGES.SUCCESS_CONTENT);
+        } else {
+          this.showResponseModal(MODAL_MESSAGES.ERROR_TITLE, MODAL_MESSAGES.ERROR_CONTENT);
         }
-      } else if (this.modal) {
-        this.modal.title = MODAL_MESSAGES.ERROR_TITLE;
-        this.modal.content = MODAL_MESSAGES.ERROR_CONTENT;
-        this.modal.showModal();
-      }
+      },
+      error: () => this.showResponseModal(MODAL_MESSAGES.ERROR_TITLE, MODAL_MESSAGES.ERROR_CONTENT),
     });
+  }
+
+  private showResponseModal(title: string, content: string) {
+    if (this.modal) {
+      this.modal.title = title;
+      this.modal.content = content;
+      this.modal.showModal();
+    }
   }
 
   showNewActuatorForm() {    
