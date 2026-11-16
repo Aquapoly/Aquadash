@@ -8,6 +8,7 @@ from app.classes.actuator_type import ActuatorType
 from .classes.sensor_type import SensorType
 
 from . import models, schemas
+from .db_errors import integrity_error_to_http
 import secrets
 from .security import authentification
 from .security import permissions
@@ -88,17 +89,15 @@ def post_sensor(db: Session, sensor: schemas.SensorBase):
     Returns:
         models.Sensor: The newly created sensor instance.
     Raises:
-        HTTPException: If an integrity error occurs (e.g., duplicate entry), raises a 409 Conflict with error details.
+        HTTPException: On integrity error (e.g., prototype does not exist), see `integrity_error_to_http`.
     """
     query = insert(models.Sensor).returning(models.Sensor)
+    values = sensor.model_dump()
     try:
-        result = db.execute(query, sensor.model_dump()).scalars().first()
+        result = db.execute(query, values).scalars().first()
     except IntegrityError as err:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Conflict in database: {err}",
-        )
+        raise integrity_error_to_http(err, values)
 
     db.commit()
     return result
@@ -143,17 +142,15 @@ def post_actuator(db: Session, actuator: schemas.ActuatorBase):
     Returns:
         models.Actuator: The created actuator.
     Raises:
-        HTTPException: On integrity error (e.g., duplicate), raises 409 with details.
+        HTTPException: On integrity error (e.g., sensor does not exist), see `integrity_error_to_http`.
     """
     query = insert(models.Actuator).returning(models.Actuator)
+    values = actuator.model_dump()
     try:
-        result = db.scalars(query, actuator.model_dump()).first()
+        result = db.scalars(query, values).first()
     except IntegrityError as err:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Error from db: {err}",
-        )
+        raise integrity_error_to_http(err, values)
 
     db.commit()
     return result
@@ -237,21 +234,19 @@ def post_measurement(db: Session, measurement: schemas.MeasurementBase):
     Returns:
         models.Measurement: The created measurement.
     Raises:
-        HTTPException: On integrity error (e.g., sensor does not exist), raises 422 with details.
+        HTTPException: On integrity error (e.g., sensor does not exist), see `integrity_error_to_http`.
     """
+    values = measurement.model_dump()
     query = (
         insert(models.Measurement)
-        .values(**measurement.model_dump())
+        .values(**values)
         .returning(models.Measurement)
     )
     try:
         result = db.execute(query).scalars().first()
-    except IntegrityError:
+    except IntegrityError as err:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Sensor with this id does not exist",
-        )
+        raise integrity_error_to_http(err, values)
     db.commit()
     return result
 

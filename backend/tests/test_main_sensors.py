@@ -101,7 +101,9 @@ def test_post_sensor_non_existent_prototype(client: TestClient, db_session: Sess
     }
 
     response = client.post("/sensors", json=new_sensor)
-    assert response.status_code == 404, f"Expected status code 404 for not found ressource, got {response.status_code}"
+    # 422, not 404: the URL exists, the prototype_id in the body is invalid
+    assert response.status_code == 422, f"Expected status code 422 for unknown prototype, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "prototype_id"], "Should point at prototype_id"
 
     sensors_in_db = db_session.query(models.Sensor).all()
     for sensor in sensors_in_db:

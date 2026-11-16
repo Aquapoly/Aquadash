@@ -40,7 +40,9 @@ def main():
      val = get_value(sensor_i2c_addr)
      logging.debug(f"Value read: {val}")
      print(f"Valeur lue,: {val}")
-     requests.post(f"{SERVER_URL}/measurements", json={"value":val, "sensor_id": sensor_id})
+     response = requests.post(f"{SERVER_URL}/measurements", json={"value":val, "sensor_id": sensor_id})
+     if not response.ok:
+          logging.error(f"Measurement not saved for sensor {sensor_id}: {response.status_code} {response.text}")
 
 if __name__ == "__main__":
      main()

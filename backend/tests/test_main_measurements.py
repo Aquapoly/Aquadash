@@ -151,7 +151,9 @@ def test_post_measurement_no_sensor(client: TestClient, db_session: Session, dum
     }
 
     response = client.post("/measurements", json=measurement)
-    assert response.status_code == 404, f"Should return 404 for not found sensor, got {response.status_code}"
+    # 422, not 404: the URL exists, the sensor_id in the body is invalid
+    assert response.status_code == 422, f"Should return 422 for unknown sensor, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "sensor_id"], "Should point at sensor_id"
 
 
 def test_post_measurement_invalid_value(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
