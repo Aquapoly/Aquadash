@@ -300,7 +300,7 @@ def _patch_row(db: Session, model, id_column, row_id: int, values: dict, label: 
     """
     Updates only the given columns of one row and returns the updated row.
     Raises:
-        HTTPException: 422 if an integrity error occurs (e.g., constraint violation).
+        HTTPException: On integrity error (e.g., sensor does not exist), see `integrity_error_to_http`.
         HTTPException: 404 if no row has this id.
     """
     if values:
@@ -309,10 +309,7 @@ def _patch_row(db: Session, model, id_column, row_id: int, values: dict, label: 
             result = db.execute(query).scalars().first()
         except IntegrityError as err:
             db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Integrity error in db: {err}",
-            )
+            raise integrity_error_to_http(err, values)
         db.commit()
     else:
         result = db.get(model, row_id)

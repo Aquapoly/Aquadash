@@ -109,20 +109,12 @@ export class ConfigurationPageComponent implements OnInit {
           if (res.status === HttpStatusCode.Ok) {
             this.actuators.push(actuatorToAdd);
           } else {
-            this.showAddErrorModal();
+            this.showResponseModal(MODAL_MESSAGES.ERROR_TITLE, MODAL_MESSAGES.ERROR_CONTENT_ADDED);
           }
         },
         // HttpClient sends 4xx/5xx responses here, not to next
-        error: () => this.showAddErrorModal(),
+        error: () => this.showResponseModal(MODAL_MESSAGES.ERROR_TITLE, MODAL_MESSAGES.ERROR_CONTENT_ADDED),
       });
-  }
-
-  private showAddErrorModal() {
-    if (this.modal) {
-      this.modal.title = MODAL_MESSAGES.ERROR_TITLE;
-      this.modal.content = MODAL_MESSAGES.ERROR_CONTENT_ADDED;
-      this.modal.showModal();
-    }
   }
 
 }

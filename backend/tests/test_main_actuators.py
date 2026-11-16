@@ -203,6 +203,16 @@ def test_patch_actuator_not_existent(client: TestClient, db_session: Session, du
     assert db_session.get(models.Actuator, actuator_id) is None, "Should not add actuator to DB"
 
 
+def test_patch_actuator_unknown_sensor(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id} endpoint with a sensor_id that does not exist"""
+    sensor_ids = [row[0] for row in db_session.query(models.Sensor.sensor_id).all()]
+    unknown_sensor_id = max(sensor_ids, default=0) + 1
+
+    response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}", json={"sensor_id": unknown_sensor_id})
+    assert response.status_code == 422, f"Should return 422 for unknown sensor, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "sensor_id"], "Should point at sensor_id"
+
+
 def test_patch_actuator_keeps_unset_fields(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
     """Test /actuators/{actuator_id} endpoint leaves the fields missing from the request unchanged"""
     actuator = dummy_actuators[0]
