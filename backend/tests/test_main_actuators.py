@@ -179,36 +179,76 @@ def test_post_actuator_impossible_value(client: TestClient, db_session: Session,
         assert actuator.__getattribute__(key) != value, "Should not add actuator with impossible values to DB"
 
 
-# PATCH /actuators
+# PATCH /actuators/{actuator_id}
 @pytest.mark.parametrize("key, val", [
     ("activation_period", 9999.0), ("activation_duration", 8888.0), ("condition_value", 7777.0),
     ("actuator_type", models.ActuatorType.nutrients_A_pump.name), ("activation_condition", models.ActivationCondition.low_or_high.name),
     ("enabled", False)
 ])
 def test_patch_actuator(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator], key, val):
-    """Test /actuators endpoint to modify an existing actuator"""
-    modified_actuator = {
-        "actuator_id": dummy_actuators[0].actuator_id,
-        key: val
-    }
-
-    response = client.patch("/actuators", json=[modified_actuator])
+    """Test /actuators/{actuator_id} endpoint to modify an existing actuator"""
+    response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}", json={key: val})
     assert response.status_code == 200, f"Should return 200 for success, got {response.status_code}"
-    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).__dict__[key] == val, "Should modify actuator"
+    stored = getattr(db_session.get(models.Actuator, dummy_actuators[0].actuator_id), key)
+    assert getattr(stored, "name", stored) == val, "Should modify actuator"  # enums are sent by name
 
 
 def test_patch_actuator_not_existent(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
-    """Test /actuators endpoint with a non-existent actuator"""
+    """Test /actuators/{actuator_id} endpoint with a non-existent actuator"""
+    actuator_id = dummy_actuators[0].actuator_id
     db_session.delete(dummy_actuators[0])
-    actuator = {
-        "actuator_id": dummy_actuators[0].actuator_id,
-        "condition_value": 123
+
+    response = client.patch(f"/actuators/{actuator_id}", json={"condition_value": 123})
+    assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
+    assert db_session.get(models.Actuator, actuator_id) is None, "Should not add actuator to DB"
+
+
+def test_patch_actuator_unknown_sensor(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id} endpoint with a sensor_id that does not exist"""
+    sensor_ids = [row[0] for row in db_session.query(models.Sensor.sensor_id).all()]
+    unknown_sensor_id = max(sensor_ids, default=0) + 1
+
+    response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}", json={"sensor_id": unknown_sensor_id})
+    assert response.status_code == 422, f"Should return 422 for unknown sensor, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "sensor_id"], "Should point at sensor_id"
+
+
+def test_patch_actuator_keeps_unset_fields(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id} endpoint leaves the fields missing from the request unchanged"""
+    actuator = dummy_actuators[0]
+    before = {
+        key: getattr(actuator, key)
+        for key in ("actuator_type", "sensor_id", "activation_condition", "activation_period", "activation_duration", "enabled")
     }
 
-    response = client.patch(f"/actuators", json=actuator)
-    assert response.status_code == 404, f"Should return 404 for bad request, got {response.status_code}"
-    assert db_session.get(models.Actuator, dummy_actuators[0].actuator_id).count() == 0, \
-        "Should not add actuator to DB"
+    response = client.patch(f"/actuators/{actuator.actuator_id}", json={"condition_value": 4242.0})
+    assert response.status_code == 200, f"Should return 200 for success, got {response.status_code}"
+    assert response.json()["condition_value"] == 4242.0, "Should return the updated actuator"
+
+    db_session.refresh(actuator)
+    assert actuator.condition_value == 4242.0, "Should modify the field in the request"
+    for key, value in before.items():
+        assert getattr(actuator, key) == value, f"Should not modify {key}"
+
+
+def test_patch_actuator_null_field(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id} endpoint rejects an explicit null"""
+    actuator = dummy_actuators[0]
+    before = actuator.condition_value
+
+    response = client.patch(f"/actuators/{actuator.actuator_id}", json={"condition_value": None})
+    assert response.status_code == 422, f"Should return 422 for null field, got {response.status_code}"
+    db_session.refresh(actuator)
+    assert actuator.condition_value == before, "Should not modify actuator"
+
+
+def test_patch_actuator_empty_body(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id} endpoint with nothing to update returns the actuator unchanged"""
+    actuator = dummy_actuators[0]
+
+    response = client.patch(f"/actuators/{actuator.actuator_id}", json={})
+    assert response.status_code == 200, f"Should return 200 for success, got {response.status_code}"
+    assert response.json()["condition_value"] == actuator.condition_value, "Should return the actuator"
 
 
 # PATCH /actuators/{actuator_id}/last_activated

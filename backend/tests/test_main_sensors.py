@@ -138,11 +138,11 @@ def test_post_invalid_sensor_thresholds(client: TestClient, db_session: Session,
         } != invalid_sensor_1, "Should not add sensor with invalid thresholds to DB"
 
 
-# PATCH /sensors
+# PATCH /sensors/{sensor_id}
 def test_patch_sensor(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
-    """Test /sensors endpoint to update a sensor"""
-    updated_sensors = [
-        {
+    """Test /sensors/{sensor_id} endpoint to update every field of a sensor"""
+    for sensor in dummy_sensors:
+        updated = {
             "sensor_type": sensor.sensor_type.name,
             "prototype_id": sensor.prototype_id,
             "sensor_unit": "measurements",
@@ -150,40 +150,54 @@ def test_patch_sensor(client: TestClient, db_session: Session, dummy_sensors: li
             "threshold_low": sensor.threshold_low + 1,
             "threshold_high": sensor.threshold_high + 1,
             "threshold_critically_high": sensor.threshold_critically_high + 1,
-            "sensor_id": sensor.sensor_id
-        } for sensor in dummy_sensors
-    ]
+        }
 
-    response = client.patch(f"/sensors", json=updated_sensors)
+        response = client.patch(f"/sensors/{sensor.sensor_id}", json=updated)
+        assert response.status_code == 200, f"Expected status code 200 for OK, got {response.status_code}"
+
+        s = db_session.get(models.Sensor, sensor.sensor_id)
+        assert s is not None, "Should not delete sensor from DB"
+        assert updated["sensor_type"] == s.sensor_type.name, "Should update sensor type"
+        assert updated["prototype_id"] == s.prototype_id, "Should not update prototype id"
+        assert updated["sensor_unit"] == s.sensor_unit, "Should update sensor unit"
+        assert updated["threshold_critically_low"] == s.threshold_critically_low, "Should update sensor critically low threshold"
+        assert updated["threshold_low"] == s.threshold_low, "Should update sensor low threshold"
+        assert updated["threshold_high"] == s.threshold_high, "Should update sensor high threshold"
+        assert updated["threshold_critically_high"] == s.threshold_critically_high, "Should update sensor critically high threshold"
+
+
+def test_patch_sensor_partial(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Test /sensors/{sensor_id} endpoint updates only the fields in the request"""
+    sensor = dummy_sensors[0]
+    before = {
+        key: getattr(sensor, key)
+        for key in ("sensor_type", "prototype_id", "threshold_critically_low", "threshold_low",
+                    "threshold_high", "threshold_critically_high")
+    }
+
+    response = client.patch(f"/sensors/{sensor.sensor_id}", json={"sensor_unit": "°C"})
     assert response.status_code == 200, f"Expected status code 200 for OK, got {response.status_code}"
 
-    for sensor in updated_sensors:
-        s = db_session.get(models.Sensor, sensor['sensor_id'])
-        assert s is not None, "Shold not delete sensor from DB"
-        assert sensor["sensor_type"] == s.sensor_type.name, "Should update sensor type"
-        assert sensor["prototype_id"] == s.prototype_id, "Should not update prototype id"
-        assert sensor["sensor_unit"] == s.sensor_unit, "Should update sensor unit"
-        assert sensor["threshold_critically_low"] == s.threshold_critically_low, "Should update sensor critically low threshold"
-        assert sensor["threshold_low"] == s.threshold_low, "Should update sensor low threshold"
-        assert sensor["threshold_high"] == s.threshold_high, "Should update sensor high threshold"
-        assert sensor["threshold_critically_high"] == s.threshold_critically_high, "Should update sensor critically high threshold"
+    db_session.refresh(sensor)
+    assert sensor.sensor_unit == "°C", "Should update sensor unit"
+    for key, value in before.items():
+        assert getattr(sensor, key) == value, f"Should not modify {key}"
+
+
+def test_patch_sensor_partial_invalid_thresholds(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Test /sensors/{sensor_id} endpoint checks a partial threshold update against the stored thresholds"""
+    # The DB check constraint rejects it. The rollback also discards the fixtures, so only the status is checked.
+    sensor = dummy_sensors[0]
+
+    response = client.patch(f"/sensors/{sensor.sensor_id}", json={"threshold_low": sensor.threshold_critically_high + 1})
+    assert response.status_code == 422, f"Expected status code 422 for invalid thresholds, got {response.status_code}"
 
 
 def test_patch_non_existent_sensor(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
-    """Test /sensors endpoint to update a non-existent sensor"""
+    """Test /sensors/{sensor_id} endpoint to update a non-existent sensor"""
+    sensor_id = dummy_sensors[0].sensor_id
     db_session.delete(dummy_sensors[0]) # Ensure ID does not exist
 
-    sensor = {
-        "sensor_type": dummy_sensors[0].sensor_type.name,
-        "prototype_id": dummy_sensors[0].prototype_id,
-        "sensor_unit": dummy_sensors[0].sensor_unit,
-        "threshold_critically_low": dummy_sensors[0].threshold_critically_low,
-        "threshold_low": dummy_sensors[0].threshold_low,
-        "threshold_high": dummy_sensors[0].threshold_high,
-        "threshold_critically_high": dummy_sensors[0].threshold_critically_high,
-        "sensor_id": dummy_sensors[0].sensor_id
-    }
-
-    response = client.patch(f"/sensors", json=[sensor])
+    response = client.patch(f"/sensors/{sensor_id}", json={"sensor_unit": "°C"})
     assert response.status_code == 404, f"Expected status code 404 for not found, got {response.status_code}"
-    assert db_session.get(models.Sensor, sensor['sensor_id']) is None, "Should not add DB"
+    assert db_session.get(models.Sensor, sensor_id) is None, "Should not add DB"

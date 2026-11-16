@@ -18,8 +18,8 @@ export class ApiService {
     });
   }
 
-  patchActuators(actuators: Actuator[]) {
-    return this.http.patch(this.serverUrl + '/actuators', actuators, {
+  patchActuator(actuatorId: number, changes: Partial<Actuator>) {
+    return this.http.patch(this.serverUrl + `/actuators/${actuatorId}`, changes, {
       observe: 'response',
     });
   }
