@@ -66,6 +66,17 @@ def test_get_actuator_state_active(client: TestClient, db_session: Session, dumm
     assert response.json()["period"] == dummy_actuators[0].activation_period, "Actuator should have the same period"
 
 
+def test_get_actuator_state_unsupported_condition(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id}/state endpoint with a stored condition missing from activation_map (low_or_high)"""
+    actuator = db_session.get(models.Actuator, dummy_actuators[0].actuator_id)
+    actuator.activation_condition = models.ActivationCondition.low_or_high
+    db_session.add(models.Measurement(sensor_id=actuator.sensor_id, value=100))
+
+    response = client.get(f"/actuators/{actuator.actuator_id}/state")
+    assert response.status_code == 200, f"Should return 200, got {response.status_code}"
+    assert response.json()["activate"] == False, "Actuator should not activate with an unsupported condition"
+
+
 @pytest.mark.parametrize("condition, period, value", [
     (models.ActivationCondition.high,100,100),(models.ActivationCondition.high,0.5,0.5),
     (models.ActivationCondition.low,0.5,100), (models.ActivationCondition.low, 100, 0.5)])
@@ -122,6 +133,24 @@ def test_post_actuator(client: TestClient, db_session: Session, dummy_sensors: l
     response = client.post("/actuators", json=new_actuator)
     assert response.status_code == 201, f"Should return 201 for ressource created, got {response.status_code}"
     assert db_session.get(models.Actuator, response.json()["actuator_id"]) is not None, "Should add actuator to database"
+
+
+def test_post_actuator_unsupported_condition(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
+    """Test /actuators endpoint with a condition missing from activation_map (low_or_high)"""
+    new_actuator = {
+        "actuator_type": models.ActuatorType.acid_pump.name,
+        "sensor_id": dummy_sensors[0].sensor_id,
+        "condition_value": 1.0,
+        "activation_condition": models.ActivationCondition.low_or_high.name,
+        "activation_period": 1.0,
+        "activation_duration": 1.0
+    }
+
+    response = client.post("/actuators", json=new_actuator)
+    assert response.status_code == 422, f"Should return 422 for unsupported condition, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "activation_condition"], "Should point at activation_condition"
+    assert db_session.query(models.Actuator).filter_by(sensor_id=dummy_sensors[0].sensor_id).count() == 0, \
+        "Should not add actuator to DB"
 
 
 def test_post_actuator_missing_field(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):
@@ -183,7 +212,7 @@ def test_post_actuator_impossible_value(client: TestClient, db_session: Session,
 # PATCH /actuators/{actuator_id}
 @pytest.mark.parametrize("key, val", [
     ("activation_period", 9999.0), ("activation_duration", 8888.0), ("condition_value", 7777.0),
-    ("actuator_type", models.ActuatorType.nutrients_A_pump.name), ("activation_condition", models.ActivationCondition.low_or_high.name),
+    ("actuator_type", models.ActuatorType.nutrients_A_pump.name), ("activation_condition", models.ActivationCondition.low.name),
     ("enabled", False)
 ])
 def test_patch_actuator(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator], key, val):
@@ -212,6 +241,18 @@ def test_patch_actuator_unknown_sensor(client: TestClient, db_session: Session, 
     response = client.patch(f"/actuators/{dummy_actuators[0].actuator_id}", json={"sensor_id": unknown_sensor_id})
     assert response.status_code == 422, f"Should return 422 for unknown sensor, got {response.status_code}"
     assert response.json()["detail"][0]["loc"] == ["body", "sensor_id"], "Should point at sensor_id"
+
+
+def test_patch_actuator_unsupported_condition(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):
+    """Test /actuators/{actuator_id} endpoint with a condition missing from activation_map (low_or_high)"""
+    actuator = dummy_actuators[0]
+    before = actuator.activation_condition
+
+    response = client.patch(f"/actuators/{actuator.actuator_id}", json={"activation_condition": models.ActivationCondition.low_or_high.name})
+    assert response.status_code == 422, f"Should return 422 for unsupported condition, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "activation_condition"], "Should point at activation_condition"
+    db_session.refresh(actuator)
+    assert actuator.activation_condition == before, "Should not modify actuator"
 
 
 def test_patch_actuator_keeps_unset_fields(client: TestClient, db_session: Session, dummy_actuators: list[models.Actuator]):

@@ -144,12 +144,12 @@ def get_actuator(db: Session, actuator_id: int):
     return db.execute(query).scalars().first()
 
 
-def post_actuator(db: Session, actuator: schemas.ActuatorBase):
+def post_actuator(db: Session, actuator: schemas.ActuatorCreate):
     """
     Inserts a new actuator into the database.
     Args:
         db (Session): SQLAlchemy session.
-        actuator (schemas.ActuatorBase): Validated actuator data to add to the DB.
+        actuator (schemas.ActuatorCreate): Validated actuator data to add to the DB.
     Returns:
         models.Actuator: The created actuator.
     Raises:

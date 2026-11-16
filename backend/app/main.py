@@ -119,7 +119,7 @@ async def post_measurement(
     response_model=schemas.Actuator,
 )
 async def post_actuator(
-    actuator: schemas.ActuatorBase,
+    actuator: schemas.ActuatorCreate,
     db: Session = Depends(get_db),
 ):
     return crud.post_actuator(db=db, actuator=actuator)

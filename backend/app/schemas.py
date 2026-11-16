@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
-from .classes.activation_condition import ActivationCondition
+from .classes.activation_condition import ActivationCondition, activation_map
 
 from .classes.actuator_type import ActuatorType
 from .classes.sensor_type import SensorType
@@ -80,6 +80,19 @@ class ActuatorBase(BaseModel):
 
 
 
+def _supported_activation_condition(condition: ActivationCondition | None):
+    # Some conditions exist in the DB enum but have no implementation in activation_map (e.g. low_or_high)
+    if condition is not None and condition not in activation_map:
+        raise ValueError(f"'{condition.value}' is not a supported activation condition")
+    return condition
+
+
+class ActuatorCreate(ActuatorBase):
+    # The check lives here and not in ActuatorBase: Actuator inherits ActuatorBase and is used to
+    # serialize responses, which would fail for rows already stored with an unsupported condition.
+    _check_condition = field_validator("activation_condition")(_supported_activation_condition)
+
+
 class Actuator(ActuatorBase):
     actuator_id: int
     enabled: bool
@@ -98,6 +111,8 @@ class ActuatorUpdate(PartialUpdate):
     activation_period: float | None = None
     activation_duration: float | None = None
     enabled: bool | None = None
+
+    _check_condition = field_validator("activation_condition")(_supported_activation_condition)
 
 class ActuatorActivation(BaseModel):
     activate: bool

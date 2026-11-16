@@ -25,7 +25,14 @@ def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (model
         return schemas.ActuatorActivation(
             activate=False, status=status, duration=actuator.activation_duration, period=actuator.activation_period)
 
-    
+    # The API refuses unsupported conditions, but rows stored before that can still have one (e.g. low_or_high)
+    condition = activation_map.get(actuator.activation_condition)
+    if (condition is None):
+        status = "La condition d'activation n'est pas supportée."
+        return schemas.ActuatorActivation(
+            activate=False, status=status, duration=actuator.activation_duration, period=actuator.activation_period)
+
+
     if (last_measurement is None):
         status = "Le capteur n'a enregistré aucune mesure."
         return schemas.ActuatorActivation(
@@ -57,8 +64,7 @@ def get_actuator_activation(actuator: schemas.Actuator, last_measurement: (model
     # Check if correction needed, using measurement and activation condition
     #####
 
-    activate = activation_map[actuator.activation_condition](
-        last_measurement.value, actuator.condition_value)
+    activate = condition(last_measurement.value, actuator.condition_value)
 
     return schemas.ActuatorActivation(
         activate=activate, status="OK", duration=actuator.activation_duration, period=actuator.activation_period)
