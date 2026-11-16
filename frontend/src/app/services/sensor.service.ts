@@ -105,7 +105,8 @@ export class SensorService {
         .pipe(
           catchError(
             this.handleError<Sensor[]>(
-              `error getting sensors for prototype ${this.prototypeId}`
+              `error getting sensors for prototype ${this.prototypeId}`,
+              [] // e.g. 404 when the prototype does not exist
             )
           )
         )

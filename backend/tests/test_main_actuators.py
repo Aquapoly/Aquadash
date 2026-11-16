@@ -134,7 +134,8 @@ def test_post_actuator_missing_field(client: TestClient, db_session: Session, du
     }
 
     response = client.post("/actuators", json=new_actuator)
-    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
+    # FastAPI returns 422 for request validation errors
+    assert response.status_code == 422, f"Should return 422 for missing fields, got {response.status_code}"
 
 
 def test_post_actuator_no_sensor(client: TestClient, db_session: Session, dummy_sensors: list[models.Sensor]):

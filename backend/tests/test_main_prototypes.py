@@ -60,7 +60,8 @@ def test_post_invalid_prototype(client: TestClient, db_session: Session):
     invalid_proto = {"prototype_name": "Invalid Proto"}  # Missing prototype_id
 
     response = client.post("/prototypes", json=invalid_proto)
-    assert response.status_code == 400, f"Expected status code 400 for missing field, got {response.status_code}"
+    # FastAPI returns 422 for request validation errors
+    assert response.status_code == 422, f"Expected status code 422 for missing field, got {response.status_code}"
     assert db_session.query(models.Prototype).filter_by(prototype_name="Invalid Proto").count() == 0, \
         "Should not add prototype with no id to DB"
     
@@ -107,4 +108,5 @@ def test_post_negative_id_prototype(client: TestClient, db_session: Session):
     new_proto = {"prototype_id": -1, "prototype_name": "Illegal Proto"}
 
     response = client.post("/prototypes", json=new_proto)
-    assert response.status_code == 400, f"Should return 400 for bad request, got {response.status_code}"
+    # Rejected by the check_id_prototype_positive constraint
+    assert response.status_code == 422, f"Should return 422 for negative id, got {response.status_code}"

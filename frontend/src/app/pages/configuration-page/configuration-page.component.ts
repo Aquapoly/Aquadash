@@ -35,8 +35,14 @@ export class ConfigurationPageComponent implements OnInit {
   constructor(private readonly api: ApiService) { }
 
   ngOnInit(): void {
-    this.api.getActuators(API_DEFAULTS.ACTUATORS_PAGE).subscribe((res) => {
-      this.actuators = res.body as Actuator[];      
+    this.api.getActuators(API_DEFAULTS.ACTUATORS_PAGE).subscribe({
+      next: (res) => {
+        this.actuators = res.body as Actuator[];
+      },
+      // e.g. 404 when the prototype does not exist
+      error: () => {
+        this.actuators = [];
+      },
     });
   }
 
@@ -105,14 +111,8 @@ export class ConfigurationPageComponent implements OnInit {
   addActuator(actuatorToAdd: Actuator) {
     // Ajouter à la liste des actuateurs
       this.api.postActuator(actuatorToAdd).subscribe({
-        next: (res) => {
-          if (res.status === HttpStatusCode.Ok) {
-            this.actuators.push(actuatorToAdd);
-          } else {
-            this.showResponseModal(MODAL_MESSAGES.ERROR_TITLE, MODAL_MESSAGES.ERROR_CONTENT_ADDED);
-          }
-        },
-        // HttpClient sends 4xx/5xx responses here, not to next
+        // Any 2xx (201 Created) lands here, 4xx/5xx go to error
+        next: () => this.actuators.push(actuatorToAdd),
         error: () => this.showResponseModal(MODAL_MESSAGES.ERROR_TITLE, MODAL_MESSAGES.ERROR_CONTENT_ADDED),
       });
   }
