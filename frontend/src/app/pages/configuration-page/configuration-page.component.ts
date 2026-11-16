@@ -96,16 +96,25 @@ export class ConfigurationPageComponent implements OnInit {
 
   addActuator(actuatorToAdd: Actuator) {
     // Ajouter à la liste des actuateurs
-      this.api.postActuator(actuatorToAdd).subscribe((res)=>{
-        if(res.status === HttpStatusCode.Ok) {
-          this.actuators.push(actuatorToAdd);
-        }
-        else if (this.modal) {
-          this.modal.title = MODAL_MESSAGES.ERROR_TITLE;
-          this.modal.content = MODAL_MESSAGES.ERROR_CONTENT_ADDED;
-          this.modal.showModal();
-        }
+      this.api.postActuator(actuatorToAdd).subscribe({
+        next: (res) => {
+          if (res.status === HttpStatusCode.Ok) {
+            this.actuators.push(actuatorToAdd);
+          } else {
+            this.showAddErrorModal();
+          }
+        },
+        // HttpClient sends 4xx/5xx responses here, not to next
+        error: () => this.showAddErrorModal(),
       });
+  }
+
+  private showAddErrorModal() {
+    if (this.modal) {
+      this.modal.title = MODAL_MESSAGES.ERROR_TITLE;
+      this.modal.content = MODAL_MESSAGES.ERROR_CONTENT_ADDED;
+      this.modal.showModal();
+    }
   }
 
 }

@@ -73,7 +73,7 @@ async def post_prototype(
 
 
 
-@app.post("/sensors/", tags=["Sensors"], response_model=schemas.Sensor)
+@app.post("/sensors", tags=["Sensors"], response_model=schemas.Sensor)
 async def post_sensor(
     sensor: schemas.SensorBase, 
     db: Session = Depends(get_db)

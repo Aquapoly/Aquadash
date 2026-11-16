@@ -151,7 +151,9 @@ def test_post_actuator_no_sensor(client: TestClient, db_session: Session, dummy_
     }
 
     response = client.post("/actuators", json=new_actuator)
-    assert response.status_code == 404, f"Should return 404 for not found, got {response.status_code}"
+    # 422, not 404: the URL exists, the sensor_id in the body is invalid
+    assert response.status_code == 422, f"Should return 422 for unknown sensor, got {response.status_code}"
+    assert response.json()["detail"][0]["loc"] == ["body", "sensor_id"], "Should point at sensor_id"
     assert db_session.query(models.Actuator).filter_by(sensor_id=dummy_sensors[0].sensor_id).count() == 0, \
         "Should not add actuator with non-existant sensor to DB"
 
