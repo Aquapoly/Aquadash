@@ -2,6 +2,10 @@
 
 The system uses SQLAlchemy for the database, therefore we use Alembic for migrations.
 
+Alembic manages the whole schema, starting from the initial migration that creates the tables. The app does not create tables itself.
+
+Migrations are applied automatically before the app starts: `./run app` starts the `migrate` service, which runs `alembic upgrade head`, and the `app` service only starts once it succeeds. `./run app --native` runs `alembic upgrade head` before uvicorn.
+
 ## Commands
 
 | Action              | Command                                                |
@@ -10,6 +14,7 @@ The system uses SQLAlchemy for the database, therefore we use Alembic for migrat
 | Apply migration     | ./run alembic upgrade head                             |
 | Downgrade migration | ./run alembic downgrade -1                             |
 | Check status        | ./run alembic current                                  |
+| Mark as up to date  | ./run alembic stamp head                               |
 
 Creating a migration requires `DEV=1` in `.env`, so that the container can write to your local `alembic/versions`.
 
@@ -58,25 +63,20 @@ The second line is used in a downgrade, it requires a name.
 
 ## Applying a migration
 
-To apply a migration, the DB container must be running. However the backend container must be stopped because it locks the database.
-
-### Stopping the backend container
-
-- Option 1 (Docker Desktop):
-
-    Manually stop the backend/app container and ensure the db container is running.
-
-- Option 2:
-
-    1. `docker ps`
-
-    2. `docker stop [container name/id]` with the backend/app container
-
-### Upgrading/downgrading
-
-Run this command to execute the migration in a new backend container that deletes itself after the command.
+Restart the app. The `migrate` service applies any pending migration before the app starts:
 
     cd backend
+    ./run app
+
+With `DEV=0`, add `--build` so the image includes the new migration files: `./run app --build`.
+
+If a migration fails, the app does not start. See the error with:
+
+    docker compose logs migrate
+
+### Upgrading/downgrading manually
+
+These commands run in a new backend container that deletes itself after the command. Stop the app first, since its open connections can block schema changes.
 
 1. Upgrading
 
@@ -102,3 +102,11 @@ This means the container is using the code baked into the image, which it cannot
 ### Database is not up to date
 
 This just means there was a migration you have not applied yet. You can simply run the upgrading command.
+
+### Constraint or table already exists
+
+    psycopg.errors.DuplicateObject: constraint "check_id_prototype_positive" for relation "prototypes" already exists
+
+The database was created by an older version of the app, which created the tables directly instead of through Alembic, so it has no `alembic_version`. Alembic then tries to run every migration from the start. If the schema is otherwise up to date, mark it as being at the latest migration, once:
+
+    ./run alembic stamp head

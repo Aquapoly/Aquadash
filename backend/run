@@ -87,6 +87,7 @@ start_app_native() {
         echo "[Info] Installing dependencies..."
         .venv/bin/pip install -r requirements.txt --quiet
     fi
+    .venv/bin/alembic upgrade head
     .venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 }
 
@@ -121,7 +122,7 @@ MODE="${ARGS[0]:-all}"
 
 case "$MODE" in
     alembic)
-        exec docker compose "${COMPOSE_FILES[@]}" run $BUILD_FLAG --rm app "${ARGS[@]}"
+        exec docker compose "${COMPOSE_FILES[@]}" run $BUILD_FLAG --rm migrate "${ARGS[@]}"
         ;;
     app)
         $NATIVE && start_app_native || start_app

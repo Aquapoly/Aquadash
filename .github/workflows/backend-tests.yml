@@ -7,7 +7,7 @@ on:
         description: Python version used to install and test the backend
         type: string
         required: false
-        default: '3.11'
+        default: "3.11"
       allow-failure:
         description: If true, failing tests only emit a warning instead of failing the job
         type: boolean
@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
 
     # Mirrors the db service in backend/docker-compose.yml.
-    # The app connects to localhost when DOCKER is unset (backend/app/database.py)
-    # and creates its tables on import (backend/app/main.py).
+    # The app and alembic connect to localhost when DOCKER is unset (backend/app/database.py).
+    # Tables are created by the "Apply migrations" step.
     services:
       db:
         image: postgres:18
@@ -54,6 +54,12 @@ jobs:
       - name: Install API dependencies
         working-directory: backend
         run: pip install -r requirements.txt
+
+      - name: Apply migrations
+        working-directory: backend
+        run: |
+          alembic upgrade head
+          alembic check
 
       - name: Run API tests
         id: api_tests
