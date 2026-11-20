@@ -27,6 +27,12 @@ Conventions:
 ## A. Topology
 
 ```mermaid
+---
+config:
+  layout: elk
+  class:
+    layout: elk
+---
 classDiagram
   direction LR
 
@@ -206,6 +212,12 @@ classDiagram
 ## B. Control and commands
 
 ```mermaid
+---
+config:
+  layout: elk
+  class:
+    layout: elk
+---
 classDiagram
   direction LR
 
@@ -342,6 +354,12 @@ classDiagram
 ## C. People, safety and alerts
 
 ```mermaid
+---
+config:
+  layout: elk
+  class:
+    layout: elk
+---
 classDiagram
   direction LR
 
@@ -464,6 +482,12 @@ The rules behind these notes are in [notes §4](conceptual-model-notes.md#4-hold
 ## D. Controller side
 
 ```mermaid
+---
+config:
+  layout: elk
+  class:
+    layout: elk
+---
 classDiagram
   direction LR
 
@@ -552,7 +576,13 @@ What the brain-side model calls a "pump" or an "EC sensor" is a **role**, not a 
 So `atlas-ezo-ph` describes itself, reads its one channel and runs its calibration procedures; `gpio-relay-pump` describes itself and actuates, with no device operations; a mixed board does both. The controller routes each command by its target channel's direction, so it never asks a sensor driver to actuate, which mirrors the Command subtypes in view B. Device-specific operations, such as Atlas calibration, are the one place drivers differ in behavior, and they reach the brain only as a schema the UI renders as a generic form.
 
 ```mermaid
-%%{init: {"flowchart": {"wrappingWidth": 400}}}%%
+---
+config:
+  layout: elk
+  flowchart:
+    layout: elk
+    wrappingWidth: 400
+---
 flowchart LR
   subgraph physical [Physical]
     pi["oasys-pi : Controller"]

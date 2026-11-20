@@ -279,6 +279,12 @@ When a step is refused, the brain shows what blocks it ("this channel is used by
 Every concept whose logic is "a strategy plus parameters" (principle 4) is split into a stable **identity** and a list of immutable **versions**. The diagrams show it once per class, as `<<versioned>>`.
 
 ```mermaid
+---
+config:
+  layout: elk
+  class:
+    layout: elk
+---
 classDiagram
   direction LR
   class Identity {
